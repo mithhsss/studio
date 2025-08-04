@@ -1,8 +1,12 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { BookOpen, Map, Users, Code, Plus, Sparkles, BrainCircuit, FileText, Lightbulb, Bot, Package, WandSparkles } from 'lucide-react';
+import { BookOpen, Map, Users, Code, Plus, Sparkles, BrainCircuit, FileText, Lightbulb, Bot, Package, WandSparkles, Send, BookCopy, Search, FileSignature, MessageSquareQuote } from 'lucide-react';
 import { answerCareerQuestion } from '@/ai/flows/answer-career-questions';
 import { useToast } from "@/hooks/use-toast";
+import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 
 // --- TYPE DEFINITIONS --- //
 
@@ -229,6 +233,9 @@ export default function Home() {
     const [tutorInput, setTutorInput] = useState('');
     const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
     const [roadmapContent, setRoadmapContent] = useState<string>('');
+    const [generatedContent, setGeneratedContent] = useState('');
+    const [generatedIdeas, setGeneratedIdeas] = useState<string[]>([]);
+    const [generatedCode, setGeneratedCode] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -280,6 +287,36 @@ export default function Home() {
             setRoadmapContent(responseText);
         } else {
             setRoadmapContent("# Error\n\nCould not generate the roadmap. Please try again later.");
+        }
+    };
+
+    const handleGenerateContent = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        const formData = new FormData(e.currentTarget);
+        const topic = formData.get('topic') as string;
+        const prompt = `Generate a short blog post about: ${topic}.`;
+        const response = await callAIFlow(prompt);
+        if (response) setGeneratedContent(response);
+    };
+
+    const handleGenerateIdeas = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        const formData = new FormData(e.currentTarget);
+        const topic = formData.get('topic') as string;
+        const prompt = `Generate 5 project ideas related to: ${topic}. Separate each idea with "|||".`;
+        const response = await callAIFlow(prompt);
+        if (response) setGeneratedIdeas(response.split('|||').map(idea => idea.trim()));
+    };
+
+    const handleGenerateCode = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        const formData = new FormData(e.currentTarget);
+        const description = formData.get('description') as string;
+        const prompt = `Generate a React component in TypeScript based on this description: "${description}". Only return the code inside a single code block.`;
+        const response = await callAIFlow(prompt);
+        if (response) {
+            const code = response.match(/```(?:typescript|jsx|tsx)?\n([\s\S]*?)```/);
+            setGeneratedCode(code ? code[1] : response);
         }
     };
     
@@ -378,12 +415,165 @@ export default function Home() {
                          {error && <p className="text-red-500 mt-2">{error}</p>}
                     </div>
                 );
-            default:
+            case 'mentor':
                  return (
                     <div className="bg-white p-6 rounded-xl shadow-sm">
-                        <h2 className="text-xl font-bold text-gray-800">Coming Soon</h2>
-                        <p className="text-gray-500 mt-2">This tool is under development. Check back later!</p>
+                        <div className="flex justify-between items-start">
+                            <div>
+                                <h2 className="text-lg font-bold text-gray-800 flex items-center">
+                                    <span className="p-2 bg-yellow-100 text-yellow-500 rounded-lg mr-3"><Users className="h-5 w-5" /></span>
+                                    AI Mentor
+                                </h2>
+                                <p className="text-sm text-gray-500 ml-10">Guidance on career growth and decisions</p>
+                            </div>
+                            <button className="bg-blue-100 text-blue-700 text-xs font-bold px-3 py-1 rounded-full">5 XP per question</button>
+                        </div>
+                         <div className="mt-6">
+                            {chatHistory.length === 0 ? (
+                                <>
+                                    <h1 className="text-3xl font-bold text-gray-900 mb-4">What's on your mind?</h1>
+                                    <p className="text-gray-600 mb-6">Ask for advice or use a suggestion below</p>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                                        <Suggestion icon={<BookCopy size={24} />} text="How do I prepare for a promotion?" onClick={handleTutorSubmit} />
+                                        <Suggestion icon={<Search size={24} />} text="Review my resume for a UX role" onClick={handleTutorSubmit} />
+                                        <Suggestion icon={<MessageSquareQuote size={24} />} text="Give me feedback on a project idea" onClick={handleTutorSubmit} />
+                                        <Suggestion icon={<FileSignature size={24} />} text="Help me negotiate a job offer" onClick={handleTutorSubmit}/>
+                                    </div>
+                                </>
+                            ) : (
+                                <div className="space-y-4 h-96 overflow-y-auto pr-4 mb-4">
+                                    {chatHistory.map((msg, index) => (
+                                        <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                            <div className={`max-w-lg p-3 rounded-lg ${msg.role === 'user' ? 'bg-yellow-500 text-white' : 'bg-gray-100 text-gray-800'}`}>
+                                                <p style={{ whiteSpace: 'pre-wrap' }}>{msg.text}</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {isLoading && <LoadingSpinner />}
+                                </div>
+                            )}
+                             <div className="mt-6 flex">
+                                <input
+                                    type="text"
+                                    value={tutorInput}
+                                    onChange={(e) => setTutorInput(e.target.value)}
+                                    onKeyPress={(e) => e.key === 'Enter' && handleTutorSubmit(tutorInput)}
+                                    placeholder="💬 Ask for career advice..."
+                                    className="flex-grow border-gray-300 border rounded-l-lg p-3 focus:ring-yellow-500 focus:border-yellow-500"
+                                    disabled={isLoading}
+                                />
+                                <Button onClick={() => handleTutorSubmit(tutorInput)} className="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-3 px-6 rounded-r-lg" disabled={isLoading}>
+                                    <Send size={18} />
+                                </Button>
+                            </div>
+                            {error && <p className="text-red-500 mt-2">{error}</p>}
+                        </div>
                     </div>
+                );
+            case 'content-generator':
+                return (
+                    <Card>
+                        <CardHeader>
+                            <div className="flex justify-between items-start">
+                                <div>
+                                    <h2 className="text-lg font-bold text-gray-800 flex items-center">
+                                        <span className="p-2 bg-blue-100 text-blue-500 rounded-lg mr-3"><FileText className="h-5 w-5" /></span>
+                                        Content Generator
+                                    </h2>
+                                    <p className="text-sm text-gray-500 ml-10">Generate text for blogs, emails, and more</p>
+                                </div>
+                                <button className="bg-blue-100 text-blue-700 text-xs font-bold px-3 py-1 rounded-full">8 XP per generation</button>
+                            </div>
+                        </CardHeader>
+                        <CardContent>
+                            <form onSubmit={handleGenerateContent} className="space-y-4">
+                                <Textarea name="topic" placeholder="e.g., The future of AI in UX Design" required disabled={isLoading} rows={3} />
+                                <Button type="submit" disabled={isLoading} className="w-full bg-blue-600 hover:bg-blue-700">
+                                    {isLoading ? 'Generating...' : 'Generate Content'}
+                                    <Sparkles className="ml-2" size={16} />
+                                </Button>
+                            </form>
+                            {isLoading && !generatedContent && <LoadingSpinner />}
+                            {generatedContent && (
+                                <div className="mt-6 p-4 border rounded-lg bg-gray-50">
+                                     <h3 className="font-bold mb-2">Generated Content:</h3>
+                                     <p className="text-gray-700 whitespace-pre-wrap">{generatedContent}</p>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+                );
+            case 'idea-generator':
+                return (
+                    <Card>
+                        <CardHeader>
+                            <div className="flex justify-between items-start">
+                                <div>
+                                    <h2 className="text-lg font-bold text-gray-800 flex items-center">
+                                        <span className="p-2 bg-purple-100 text-purple-500 rounded-lg mr-3"><Lightbulb className="h-5 w-5" /></span>
+                                        Idea Generator
+                                    </h2>
+                                    <p className="text-sm text-gray-500 ml-10">Brainstorm new project and business ideas</p>
+                                </div>
+                                <button className="bg-blue-100 text-blue-700 text-xs font-bold px-3 py-1 rounded-full">5 XP per brainstorm</button>
+                            </div>
+                        </CardHeader>
+                        <CardContent>
+                             <form onSubmit={handleGenerateIdeas} className="flex gap-2">
+                                <Input name="topic" placeholder="e.g., Mobile apps for sustainability" required disabled={isLoading} className="flex-grow"/>
+                                <Button type="submit" disabled={isLoading} className="bg-purple-600 hover:bg-purple-700">
+                                    {isLoading ? <LoadingSpinner/> : 'Get Ideas'}
+                                </Button>
+                            </form>
+                            {isLoading && generatedIdeas.length === 0 && <LoadingSpinner />}
+                            {generatedIdeas.length > 0 && (
+                                <div className="mt-6 space-y-3">
+                                    <h3 className="font-bold">Generated Ideas:</h3>
+                                    {generatedIdeas.map((idea, index) => (
+                                       <div key={index} className="p-3 bg-gray-50 border rounded-lg flex items-start gap-3">
+                                           <Lightbulb className="h-5 w-5 text-purple-500 mt-1" />
+                                           <p className="text-gray-700 flex-1">{idea}</p>
+                                       </div>
+                                    ))}
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+                );
+            case 'coder':
+                 return (
+                    <Card>
+                        <CardHeader>
+                           <div className="flex justify-between items-start">
+                                <div>
+                                    <h2 className="text-lg font-bold text-gray-800 flex items-center">
+                                        <span className="p-2 bg-green-100 text-green-500 rounded-lg mr-3"><Code className="h-5 w-5" /></span>
+                                        AI Coder
+                                    </h2>
+                                    <p className="text-sm text-gray-500 ml-10">Your AI-powered coding assistant</p>
+                                </div>
+                                <button className="bg-blue-100 text-blue-700 text-xs font-bold px-3 py-1 rounded-full">12 XP per component</button>
+                            </div>
+                        </CardHeader>
+                        <CardContent>
+                            <form onSubmit={handleGenerateCode} className="space-y-4">
+                               <Textarea name="description" placeholder="Describe the component you want to build... e.g., 'A responsive pricing table with three tiers'" required disabled={isLoading} rows={4} />
+                                <Button type="submit" disabled={isLoading} className="w-full bg-green-600 hover:bg-green-700">
+                                    {isLoading ? 'Writing Code...' : 'Generate Code'}
+                                    <WandSparkles className="ml-2" size={16}/>
+                                </Button>
+                            </form>
+                            {isLoading && !generatedCode && <LoadingSpinner />}
+                            {generatedCode && (
+                                <div className="mt-6">
+                                    <h3 className="font-bold mb-2">Generated Code:</h3>
+                                    <pre className="bg-gray-900 text-white p-4 rounded-lg overflow-x-auto text-sm">
+                                        <code>{generatedCode}</code>
+                                    </pre>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
                 );
         }
     };
@@ -429,8 +619,12 @@ export default function Home() {
           {/* Main Content */}
           <main className="lg:col-span-9 space-y-8">
             {renderMainContent()}
-            <StatsSection />
-            <RecommendedToolsSection />
+            {(activeView !== null) && 
+              <>
+                <StatsSection />
+                <RecommendedToolsSection />
+              </>
+            }
           </main>
         </div>
       </div>
