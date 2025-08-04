@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { BookOpen, Map, Users, Code, Plus, Sparkles, BrainCircuit } from 'lucide-react';
+import { BookOpen, Map, Users, Code, Plus, Sparkles, BrainCircuit, FileText, Lightbulb } from 'lucide-react';
 import { answerCareerQuestion } from '@/ai/flows/answer-career-questions';
 import { useToast } from "@/hooks/use-toast";
 
@@ -35,7 +35,7 @@ interface RecommendedToolProps {
   icon: React.ReactNode;
   title: string;
   description: string;
-  color: 'yellow' | 'green';
+  color: 'yellow' | 'green' | 'blue' | 'purple';
 }
 
 interface ChatMessage {
@@ -93,11 +93,15 @@ const Suggestion: React.FC<SuggestionProps> = ({ icon, text, onClick }) => (
 const RecommendedTool: React.FC<RecommendedToolProps> = ({ icon, title, description, color }) => {
     const colorClasses = {
         yellow: 'border-yellow-400 bg-yellow-50',
-        green: 'border-green-400 bg-green-50'
+        green: 'border-green-400 bg-green-50',
+        blue: 'border-blue-400 bg-blue-50',
+        purple: 'border-purple-400 bg-purple-50'
     };
     const iconColorClasses = {
         yellow: 'text-yellow-600',
-        green: 'text-green-600'
+        green: 'text-green-600',
+        blue: 'text-blue-600',
+        purple: 'text-purple-600'
     };
     
     return (
@@ -124,7 +128,7 @@ const LoadingSpinner = () => (
 
 export default function Home() {
     const { toast } = useToast();
-    const [activeView, setActiveView] = useState<'tutor' | 'roadmap' | 'mentor' | 'coder'>('tutor');
+    const [activeView, setActiveView] = useState<'tutor' | 'roadmap' | 'mentor' | 'coder' | 'content-generator' | 'idea-generator'>('tutor');
     const [tutorInput, setTutorInput] = useState('');
     const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
     const [roadmapContent, setRoadmapContent] = useState<string>('');
@@ -286,6 +290,8 @@ export default function Home() {
                 <NavItem icon={<BookOpen className="h-5 w-5" />} label="AI Tutor" subtext="Personalized learning" active={activeView === 'tutor'} onClick={() => setActiveView('tutor')} />
                 <NavItem icon={<Map className="h-5 w-5" />} label="AI Roadmap" subtext="Career pathing" active={activeView === 'roadmap'} onClick={() => setActiveView('roadmap')} />
                 <NavItem icon={<Users className="h-5 w-5" />} label="AI Mentor" subtext="Guidance and behavior" active={activeView === 'mentor'} onClick={() => alert('Mentor view not implemented yet.')} />
+                <NavItem icon={<FileText className="h-5 w-5" />} label="Content Generator" subtext="Generate text content" active={activeView === 'content-generator'} onClick={() => alert('Content Generator not implemented yet.')} />
+                <NavItem icon={<Lightbulb className="h-5 w-5" />} label="Idea Generator" subtext="Brainstorm new ideas" active={activeView === 'idea-generator'} onClick={() => alert('Idea Generator not implemented yet.')} />
                 <NavItem icon={<Code className="h-5 w-5" />} label="AI Coder" subtext="Coding Companion" active={activeView === 'coder'} onClick={() => alert('Coder view not implemented yet.')} />
               </nav>
             </div>
@@ -328,6 +334,18 @@ export default function Home() {
                         title="AI Coder"
                         description="Leverage the power of AI to complement your UX design skills and post your entries."
                         color="green"
+                    />
+                     <RecommendedTool 
+                        icon={<FileText className="h-5 w-5" />}
+                        title="Content Generator"
+                        description="Generate marketing copy, blog posts, and other written content with AI."
+                        color="blue"
+                    />
+                    <RecommendedTool 
+                        icon={<Lightbulb className="h-5 w-5" />}
+                        title="Idea Generator"
+                        description="Brainstorm innovative ideas for projects, features, or business ventures."
+                        color="purple"
                     />
                 </div>
             </div>
