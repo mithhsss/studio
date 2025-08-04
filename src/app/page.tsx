@@ -1,128 +1,339 @@
-import {
-  SidebarProvider,
-  Sidebar,
-  SidebarHeader,
-  SidebarContent,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
-  SidebarFooter,
-} from '@/components/ui/sidebar';
-import AICareerNavigator from '@/components/ai-career-navigator';
-import { AppLogo, OrangeIcon, BlueIcon, YellowIcon, GreenIcon } from '@/components/icons';
-import { BookOpen, Code, GraduationCap, Map, Settings, PlusCircle, Star, GitPullRequestArrow, BadgeCheck } from 'lucide-react';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
+"use client";
+import React, { useState, useEffect } from 'react';
+import { BookOpen, Map, Users, Code, Plus, Sparkles, BrainCircuit } from 'lucide-react';
+import { answerCareerQuestion } from '@/ai/flows/answer-career-questions';
+import { useToast } from "@/hooks/use-toast";
+
+// --- TYPE DEFINITIONS --- //
+
+interface NavItemProps {
+  icon: React.ReactNode;
+  label: string;
+  subtext: string;
+  active?: boolean;
+  onClick?: () => void;
+}
+
+interface StatItemProps {
+  label: string;
+  value: string | number;
+  highlight?: boolean;
+}
+
+interface BadgeProps {
+  icon: React.ReactNode;
+  label: string;
+}
+
+interface SuggestionProps {
+  icon: React.ReactNode;
+  text: string;
+  onClick: (text: string) => void;
+}
+
+interface RecommendedToolProps {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  color: 'yellow' | 'green';
+}
+
+interface ChatMessage {
+    role: 'user' | 'model';
+    text: string;
+}
+
+
+// --- SVG ICONS --- //
+
+const DesignerIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-indigo-500" viewBox="0 0 20 20" fill="currentColor">
+        <path fillRule="evenodd" d="M4 2a2 2 0 00-2 2v12a2 2 0 002 2h12a2 2 0 002-2V4a2 2 0 00-2-2H4zm10.293 9.293a1 1 0 011.414 0l2 2a1 1 0 01-1.414 1.414L14 12.414V14a1 1 0 11-2 0v-1.586l-2.293 2.293a1 1 0 01-1.414-1.414l2-2a1 1 0 010-1.414l-2-2a1 1 0 011.414-1.414L12 8.586V7a1 1 0 112 0v1.586l2.293-2.293zM8 6a2 2 0 100 4 2 2 0 000-4z" clipRule="evenodd" />
+    </svg>
+);
+
+
+// --- COMPONENTS --- //
+
+const NavItem: React.FC<NavItemProps> = ({ icon, label, subtext, active = false, onClick }) => (
+  <div onClick={onClick} className={`flex items-center p-3 rounded-lg cursor-pointer ${active ? 'bg-indigo-100 text-indigo-700' : 'text-gray-600 hover:bg-gray-100'}`}>
+    <div className={`p-2 rounded-lg ${active ? 'bg-white' : 'bg-gray-100'}`}>
+      {icon}
+    </div>
+    <div className="ml-3">
+      <p className="font-semibold text-sm">{label}</p>
+      <p className="text-xs text-gray-500">{subtext}</p>
+    </div>
+  </div>
+);
+
+const StatItem: React.FC<StatItemProps> = ({ label, value, highlight = false }) => (
+  <div className={`flex justify-between items-center text-sm py-2 ${highlight ? 'text-indigo-600 font-bold' : 'text-gray-600'}`}>
+    <span>{label}</span>
+    <span className={`px-2 py-0.5 rounded-full ${highlight ? 'bg-yellow-200 text-yellow-800' : 'bg-gray-200 text-gray-800'}`}>{value}</span>
+  </div>
+);
+
+const Badge: React.FC<BadgeProps> = ({ icon, label }) => (
+  <div className="flex flex-col items-center space-y-1 text-gray-600">
+    <div className="p-3 bg-gray-100 rounded-full">
+      {icon}
+    </div>
+    <p className="text-xs font-medium">{label}</p>
+  </div>
+);
+
+const Suggestion: React.FC<SuggestionProps> = ({ icon, text, onClick }) => (
+  <div onClick={() => onClick(text)} className="flex items-center p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
+    <div className="text-red-500">{icon}</div>
+    <p className="ml-3 font-medium text-gray-700">{text}</p>
+  </div>
+);
+
+const RecommendedTool: React.FC<RecommendedToolProps> = ({ icon, title, description, color }) => {
+    const colorClasses = {
+        yellow: 'border-yellow-400 bg-yellow-50',
+        green: 'border-green-400 bg-green-50'
+    };
+    const iconColorClasses = {
+        yellow: 'text-yellow-600',
+        green: 'text-green-600'
+    };
+    
+    return (
+        <div className={`p-4 rounded-lg border-l-4 ${colorClasses[color]} w-full`}>
+            <div className="flex items-center mb-2">
+                <div className={`p-1 rounded-md ${iconColorClasses[color]}`}>
+                    {icon}
+                </div>
+                <h4 className="ml-2 font-bold text-gray-800">{title}</h4>
+            </div>
+            <p className="text-sm text-gray-600">{description}</p>
+        </div>
+    );
+};
+
+const LoadingSpinner = () => (
+    <div className="flex justify-center items-center p-8">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+    </div>
+);
+
+
+// --- MAIN APP COMPONENT --- //
 
 export default function Home() {
-  return (
-    <SidebarProvider>
-      <Sidebar>
-        <SidebarHeader className="flex items-center justify-center">
-          <div className="flex items-center gap-2">
-            <AppLogo className="w-8 h-8 text-primary" />
-            <h1 className="text-xl font-semibold text-foreground">AI Career Navigator</h1>
-          </div>
-        </SidebarHeader>
-        <SidebarContent>
-          <div className="p-4">
-            <h2 className="text-lg font-semibold mb-2">AI Tools</h2>
-            <div className="space-y-2">
-              <div className="flex items-center gap-3">
-                <OrangeIcon />
-                <div>
-                  <p className="font-semibold">AI Tutor</p>
-                  <p className="text-xs text-muted-foreground">Personalized learning</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <BlueIcon />
-                <div>
-                  <p className="font-semibold">AI Roadmap</p>
-                  <p className="text-xs text-muted-foreground">Career guidance</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <YellowIcon />
-                <div>
-                  <p className="font-semibold">AI Mentor</p>
-                  <p className="text-xs text-muted-foreground">Professional advice</p>
-                </div>
-              </div>
-               <div className="flex items-center gap-3">
-                <GreenIcon />
-                <div>
-                  <p className="font-semibold">AI Coder</p>
-                  <p className="text-xs text-muted-foreground">Coding assistance</p>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="p-4">
-              <h2 className="text-lg font-semibold mb-2">AI Usage Stats</h2>
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm">AI Tutor Sessions</span>
-                  <span className="font-bold text-red-500">24</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm">AI Roadmap Updates</span>
-                  <span className="font-bold text-blue-500">12</span>
-                </div>
-                 <div>
-                  <div className="flex justify-between items-center mb-1">
-                    <span className="text-sm">XP from All Tools</span>
-                    <span className="font-bold text-yellow-500">236</span>
-                  </div>
-                  <Progress value={23.6} className="h-2 bg-yellow-100 [&>div]:bg-yellow-400" />
-                </div>
-              </div>
-          </div>
-           <div className="p-4">
-              <h2 className="text-lg font-semibold mb-2">AI Badges Earned</h2>
-              <div className="flex items-center gap-2">
-                <Badge className="bg-red-100 text-red-700">AI Novice</Badge>
-                <Badge className="bg-blue-100 text-blue-700">Learner</Badge>
-                <Button variant="ghost" size="icon" className="h-7 w-7">
-                  <PlusCircle className="h-4 w-4" />
-                </Button>
-              </div>
-          </div>
-        </SidebarContent>
-        <SidebarFooter>
-            <div className="flex items-center justify-between w-full">
-                <div className="flex items-center gap-3">
-                    <Avatar className="h-9 w-9">
-                        <AvatarImage src="https://placehold.co/40x40.png" alt="User" data-ai-hint="profile picture" />
-                        <AvatarFallback>U</AvatarFallback>
-                    </Avatar>
-                    <div className="flex flex-col">
-                        <span className="font-semibold text-sm text-foreground">Alex Turner</span>
-                        <span className="text-xs text-muted-foreground">alext@email.com</span>
+    const { toast } = useToast();
+    const [activeView, setActiveView] = useState<'tutor' | 'roadmap' | 'mentor' | 'coder'>('tutor');
+    const [tutorInput, setTutorInput] = useState('');
+    const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
+    const [roadmapContent, setRoadmapContent] = useState<string>('');
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const callAIFlow = async (prompt: string): Promise<string | null> => {
+        setIsLoading(true);
+        setError(null);
+        try {
+            const result = await answerCareerQuestion({ question: prompt });
+            return result.answer;
+        } catch (err: any) {
+            console.error("AI flow failed:", err);
+            setError(err.message || "Failed to get a response from the AI. Please try again.");
+            toast({
+              variant: "destructive",
+              title: "Oh no! Something went wrong.",
+              description: "There was a problem with the AI response. Please try again.",
+            });
+            return null;
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleTutorSubmit = async (prompt: string) => {
+        if (!prompt.trim()) return;
+
+        const newHistory: ChatMessage[] = [...chatHistory, { role: 'user', text: prompt }];
+        setChatHistory(newHistory);
+        setTutorInput('');
+
+        const responseText = await callAIFlow(prompt);
+        if (responseText) {
+            setChatHistory([...newHistory, { role: 'model', text: responseText }]);
+        } else {
+             setChatHistory([...newHistory, { role: 'model', text: "Sorry, I couldn't get a response. Please try again." }]);
+        }
+    };
+
+    const handleGenerateRoadmap = async () => {
+        const prompt = `Generate a personalized career roadmap for a UX Designer. The user is a beginner. Structure the response in Markdown. Include:
+        1.  **Introduction:** A brief, motivating intro to the UX design field.
+        2.  **Phase 1: Foundational Skills (Months 1-3):** List core concepts (e.g., User Research, Wireframing, Prototyping) with a brief explanation and links to 1-2 high-quality free learning resources for each.
+        3.  **Phase 2: Tool Proficiency (Months 4-6):** Recommend essential tools (e.g., Figma, Sketch, Adobe XD) and suggest small projects to practice. Include resource links.
+        4.  **Phase 3: Building a Portfolio (Months 7-9):** Suggest 2-3 portfolio project ideas (e.g., redesign a local business website, create a new mobile app concept). Explain what to include in each case study.
+        5.  **Phase 4: Job Readiness (Months 10-12):** Give advice on resume building, networking on platforms like LinkedIn, and preparing for UX interviews.`;
+
+        const responseText = await callAIFlow(prompt);
+        if (responseText) {
+            setRoadmapContent(responseText);
+        } else {
+            setRoadmapContent("# Error\n\nCould not generate the roadmap. Please try again later.");
+        }
+    };
+    
+    // --- RENDER LOGIC --- //
+
+    const renderMainContent = () => {
+        switch (activeView) {
+            case 'tutor':
+                return (
+                    <div className="bg-white p-6 rounded-xl shadow-sm">
+                        <div className="flex justify-between items-start">
+                            <div>
+                                <h2 className="text-lg font-bold text-gray-800 flex items-center">
+                                    <span className="p-2 bg-orange-100 text-orange-500 rounded-lg mr-3"><BookOpen className="h-5 w-5" /></span>
+                                    AI Tutor
+                                </h2>
+                                <p className="text-sm text-gray-500 ml-10">Your personalized caring companion</p>
+                            </div>
+                            <button className="bg-blue-100 text-blue-700 text-xs font-bold px-3 py-1 rounded-full">2 XP per search</button>
+                        </div>
+                        <div className="mt-6">
+                            {chatHistory.length === 0 ? (
+                                <>
+                                    <h1 className="text-3xl font-bold text-gray-900 mb-4">How can I help you?</h1>
+                                    <p className="text-gray-600 mb-6">Ask me anything or use one of the suggestions below</p>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                                        <Suggestion icon={<span className="text-2xl">🎓</span>} text="Help select a career path" onClick={handleTutorSubmit} />
+                                        <Suggestion icon={<span className="text-2xl">🔍</span>} text="What are the best jobs for me?" onClick={handleTutorSubmit} />
+                                        <Suggestion icon={<span className="text-2xl">📚</span>} text="Recommend me a topic I can learn in an hour" onClick={handleTutorSubmit} />
+                                        <Suggestion icon={<span className="text-2xl">🧪</span>} text="Test my Knowledge on UX Design" onClick={handleTutorSubmit}/>
+                                    </div>
+                                </>
+                            ) : (
+                                <div className="space-y-4 h-96 overflow-y-auto pr-4 mb-4">
+                                    {chatHistory.map((msg, index) => (
+                                        <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                            <div className={`max-w-lg p-3 rounded-lg ${msg.role === 'user' ? 'bg-indigo-500 text-white' : 'bg-gray-100 text-gray-800'}`}>
+                                                <p style={{ whiteSpace: 'pre-wrap' }}>{msg.text}</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {isLoading && <LoadingSpinner />}
+                                </div>
+                            )}
+                             <div className="mt-6 flex">
+                                <input
+                                    type="text"
+                                    value={tutorInput}
+                                    onChange={(e) => setTutorInput(e.target.value)}
+                                    onKeyPress={(e) => e.key === 'Enter' && handleTutorSubmit(tutorInput)}
+                                    placeholder="✨ Ask me anything..."
+                                    className="flex-grow border-gray-300 border rounded-l-lg p-3 focus:ring-indigo-500 focus:border-indigo-500"
+                                    disabled={isLoading}
+                                />
+                                <button onClick={() => handleTutorSubmit(tutorInput)} className="bg-indigo-600 text-white font-bold py-3 px-6 rounded-r-lg hover:bg-indigo-700 transition-colors" disabled={isLoading}>
+                                    Send
+                                </button>
+                            </div>
+                            {error && <p className="text-red-500 mt-2">{error}</p>}
+                        </div>
                     </div>
-                </div>
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <Settings className="h-4 w-4" />
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent side="top" align="end">
-                        <DropdownMenuItem>Profile</DropdownMenuItem>
-                        <DropdownMenuItem>Settings</DropdownMenuItem>
-                        <DropdownMenuItem>Logout</DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
+                );
+            case 'roadmap':
+                return (
+                     <div className="bg-white p-6 rounded-xl shadow-sm">
+                        <div className="flex justify-between items-center">
+                             <h2 className="text-lg font-bold text-gray-800 flex items-center">
+                                <span className="p-2 bg-indigo-100 text-indigo-500 rounded-lg mr-3"><Map className="h-5 w-5" /></span>
+                                AI Roadmap
+                            </h2>
+                             <button className="bg-blue-100 text-blue-700 text-xs font-bold px-3 py-1 rounded-full">10 XP per update</button>
+                        </div>
+                         <p className="text-sm text-gray-500 ml-10">Personalized career guidance and skill development</p>
+                        
+                        {isLoading ? <LoadingSpinner /> : roadmapContent ? (
+                            <div className="prose prose-indigo mt-6 max-w-none" dangerouslySetInnerHTML={{ __html: roadmapContent.replace(/\n/g, '<br />') }}></div>
+                        ) : (
+                             <div className="mt-8 text-center">
+                                <DesignerIcon />
+                                <h3 className="text-2xl font-bold text-gray-900 mt-4">Your UX Designer Roadmap</h3>
+                                <p className="text-gray-600 mt-2 max-w-md mx-auto">Get a personalized career roadmap with skill recommendations, learning resources, and milestone tracking.</p>
+                                <button onClick={handleGenerateRoadmap} className="mt-6 bg-indigo-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-indigo-700 transition-colors flex items-center mx-auto">
+                                    <Sparkles className="h-4 w-4 inline-block mr-1" /> Generate Your Roadmap
+                                </button>
+                            </div>
+                        )}
+                         {error && <p className="text-red-500 mt-2">{error}</p>}
+                    </div>
+                );
+            default:
+                return null;
+        }
+    };
+
+  return (
+    <div className="min-h-screen bg-gray-50 font-sans">
+      <div className="container mx-auto p-4 lg:p-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+          {/* Left Sidebar */}
+          <aside className="lg:col-span-3 space-y-8">
+            <div className="bg-white p-4 rounded-xl shadow-sm">
+              <h2 className="text-lg font-bold text-gray-800 mb-4">AI Tools</h2>
+              <nav className="space-y-2">
+                <NavItem icon={<BookOpen className="h-5 w-5" />} label="AI Tutor" subtext="Personalized learning" active={activeView === 'tutor'} onClick={() => setActiveView('tutor')} />
+                <NavItem icon={<Map className="h-5 w-5" />} label="AI Roadmap" subtext="Career pathing" active={activeView === 'roadmap'} onClick={() => setActiveView('roadmap')} />
+                <NavItem icon={<Users className="h-5 w-5" />} label="AI Mentor" subtext="Guidance and behavior" active={activeView === 'mentor'} onClick={() => alert('Mentor view not implemented yet.')} />
+                <NavItem icon={<Code className="h-5 w-5" />} label="AI Coder" subtext="Coding Companion" active={activeView === 'coder'} onClick={() => alert('Coder view not implemented yet.')} />
+              </nav>
             </div>
-        </SidebarFooter>
-      </Sidebar>
-      <main className="flex-1 overflow-auto p-4 md:p-6">
-        <AICareerNavigator />
-      </main>
-    </SidebarProvider>
+
+            <div className="bg-white p-4 rounded-xl shadow-sm">
+              <h2 className="text-lg font-bold text-gray-800 mb-2">AI Usage Stats</h2>
+              <div className="space-y-1">
+                <StatItem label="AI Tutor Sessions" value={24} />
+                <StatItem label="AI Roadmap Updates" value={12} />
+                <StatItem label="XP From All Tools" value={236} highlight />
+              </div>
+            </div>
+
+            <div className="bg-white p-4 rounded-xl shadow-sm">
+              <h2 className="text-lg font-bold text-gray-800 mb-4">AI Badges Earned</h2>
+              <div className="flex justify-around">
+                <Badge icon={<Plus className="h-6 w-6" />} label="AI Novice" />
+                <Badge icon={<BrainCircuit className="h-6 w-6" />} label="Explorer" />
+                <Badge icon={<Users className="h-6 w-6" />} label="Mentor" />
+              </div>
+            </div>
+          </aside>
+
+          {/* Main Content */}
+          <main className="lg:col-span-9 space-y-8">
+            {renderMainContent()}
+            
+            <div className="bg-white p-6 rounded-xl shadow-sm">
+                <h2 className="text-xl font-bold text-gray-800">Recommended AI Tools</h2>
+                <p className="text-gray-500 mb-6">Based on your profile and career goals</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <RecommendedTool 
+                        icon={<Users className="h-5 w-5" />}
+                        title="AI Mentor"
+                        description="Work with an AI mentor specialized in UX to design and advance your career."
+                        color="yellow"
+                    />
+                    <RecommendedTool 
+                        icon={<Code className="h-5 w-5" />}
+                        title="AI Coder"
+                        description="Leverage the power of AI to complement your UX design skills and post your entries."
+                        color="green"
+                    />
+                </div>
+            </div>
+          </main>
+        </div>
+      </div>
+    </div>
   );
-}
+};
