@@ -92,7 +92,7 @@ const WelcomeMessage = () => (
 // Reusable Stat Card Component for the default view
 const StatCard = ({ value, label, color }: { value: number; label: string; color: string }) => (
   <div className="flex flex-col items-center">
-    <p className={`text-5xl font-bold ${color}`}>{value}</p>
+    <p className={`text-4xl font-bold ${color}`}>{value}</p>
     <p className="text-gray-500 mt-2 text-sm font-medium">{label}</p>
   </div>
 );
@@ -107,7 +107,7 @@ const StatsSection = () => {
   ];
 
   return (
-    <div className="mt-8 bg-white rounded-xl shadow-md p-8">
+    <div className="bg-white rounded-xl shadow-md p-8">
       <h3 className="text-xl font-bold text-gray-800 mb-6">Your AI Stats</h3>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 text-center">
         {stats.map((stat, index) => (
@@ -180,6 +180,39 @@ const RecommendedTool: React.FC<RecommendedToolProps> = ({ icon, title, descript
         </div>
     );
 };
+
+const RecommendedToolsSection = () => (
+    <div className="bg-white p-6 rounded-xl shadow-md">
+        <h2 className="text-xl font-bold text-gray-800">Recommended AI Tools</h2>
+        <p className="text-gray-500 mb-6">Based on your profile and career goals</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <RecommendedTool 
+                icon={<Users />}
+                title="AI Mentor"
+                description="Work with an AI mentor specialized in UX to design and advance your career."
+                color="yellow"
+            />
+            <RecommendedTool 
+                icon={<Code />}
+                title="AI Coder"
+                description="Leverage the power of AI to complement your UX design skills and post your entries."
+                color="green"
+            />
+             <RecommendedTool
+                icon={<FileText />}
+                title="Content Generator"
+                description="Generate text content for your projects and career materials."
+                color="blue"
+            />
+            <RecommendedTool
+                icon={<Lightbulb />}
+                title="Idea Generator"
+                description="Brainstorm new ideas for projects and career opportunities."
+                color="purple"
+            />
+        </div>
+    </div>
+);
 
 const LoadingSpinner = () => (
     <div className="flex justify-center items-center p-8">
@@ -258,7 +291,6 @@ export default function Home() {
                 <div className="space-y-8">
                     <DefaultHeader />
                     <WelcomeMessage />
-                    <StatsSection />
                 </div>
             )
         }
@@ -347,7 +379,12 @@ export default function Home() {
                     </div>
                 );
             default:
-                return null;
+                 return (
+                    <div className="bg-white p-6 rounded-xl shadow-sm">
+                        <h2 className="text-xl font-bold text-gray-800">Coming Soon</h2>
+                        <p className="text-gray-500 mt-2">This tool is under development. Check back later!</p>
+                    </div>
+                );
         }
     };
 
@@ -363,10 +400,10 @@ export default function Home() {
               <nav className="space-y-2">
                 <NavItem icon={<BookOpen className="h-5 w-5" />} label="AI Tutor" subtext="Personalized learning" active={activeView === 'tutor'} onClick={() => setActiveView('tutor')} />
                 <NavItem icon={<Map className="h-5 w-5" />} label="AI Roadmap" subtext="Career pathing" active={activeView === 'roadmap'} onClick={() => setActiveView('roadmap')} />
-                <NavItem icon={<Users className="h-5 w-5" />} label="AI Mentor" subtext="Guidance and behavior" active={activeView === 'mentor'} onClick={() => alert('Mentor view not implemented yet.')} />
-                <NavItem icon={<FileText className="h-5 w-5" />} label="Content Generator" subtext="Generate text content" active={activeView === 'content-generator'} onClick={() => alert('Content Generator not implemented yet.')} />
-                <NavItem icon={<Lightbulb className="h-5 w-5" />} label="Idea Generator" subtext="Brainstorm new ideas" active={activeView === 'idea-generator'} onClick={() => alert('Idea Generator not implemented yet.')} />
-                <NavItem icon={<Code className="h-5 w-5" />} label="AI Coder" subtext="Coding Companion" active={activeView === 'coder'} onClick={() => alert('Coder view not implemented yet.')} />
+                <NavItem icon={<Users className="h-5 w-5" />} label="AI Mentor" subtext="Guidance and behavior" active={activeView === 'mentor'} onClick={() => setActiveView('mentor')} />
+                <NavItem icon={<FileText className="h-5 w-5" />} label="Content Generator" subtext="Generate text content" active={activeView === 'content-generator'} onClick={() => setActiveView('content-generator')} />
+                <NavItem icon={<Lightbulb className="h-5 w-5" />} label="Idea Generator" subtext="Brainstorm new ideas" active={activeView === 'idea-generator'} onClick={() => setActiveView('idea-generator')} />
+                <NavItem icon={<Code className="h-5 w-5" />} label="AI Coder" subtext="Coding Companion" active={activeView === 'coder'} onClick={() => setActiveView('coder')} />
               </nav>
             </div>
 
@@ -390,8 +427,10 @@ export default function Home() {
           </aside>
 
           {/* Main Content */}
-          <main className="lg:col-span-9">
+          <main className="lg:col-span-9 space-y-8">
             {renderMainContent()}
+            <StatsSection />
+            <RecommendedToolsSection />
           </main>
         </div>
       </div>
