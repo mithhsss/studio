@@ -1,10 +1,12 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { BookOpen, Map, Users, Code, Plus, Sparkles, BrainCircuit, FileText, Lightbulb } from 'lucide-react';
+import { BookOpen, Map, Users, Code, Plus, Sparkles, BrainCircuit, FileText, Lightbulb, Bot, Package, WandSparkles } from 'lucide-react';
 import { answerCareerQuestion } from '@/ai/flows/answer-career-questions';
 import { useToast } from "@/hooks/use-toast";
 
 // --- TYPE DEFINITIONS --- //
+
+type ActiveView = 'tutor' | 'roadmap' | 'mentor' | 'coder' | 'content-generator' | 'idea-generator' | null;
 
 interface NavItemProps {
   icon: React.ReactNode;
@@ -54,6 +56,68 @@ const DesignerIcon = () => (
 
 
 // --- COMPONENTS --- //
+
+// Header Component for the default view
+const DefaultHeader = () => (
+  <header className="bg-gradient-to-r from-orange-400 to-red-500 rounded-xl p-6 text-white shadow-lg flex justify-between items-center">
+    <div className="flex items-center gap-4">
+      <div className="bg-white/20 p-3 rounded-lg">
+        <Package size={28} className="text-white" />
+      </div>
+      <div>
+        <h1 className="text-2xl font-bold">Select an AI Tool</h1>
+        <p className="text-white/80">Choose a tool to start your AI-powered journey</p>
+      </div>
+    </div>
+    <button className="bg-white/90 text-orange-500 font-semibold py-2 px-4 rounded-full shadow-md hover:bg-white transition-colors duration-300 flex items-center gap-2 text-sm">
+      <WandSparkles size={16} />
+      AI Powered
+    </button>
+  </header>
+);
+
+// Welcome Message Component for the default view
+const WelcomeMessage = () => (
+  <div className="bg-white rounded-xl shadow-md p-8 lg:p-16 text-center flex flex-col items-center justify-center">
+    <div className="bg-gray-100 p-6 rounded-full mb-6">
+       <Bot size={48} className="text-gray-600" />
+    </div>
+    <h2 className="text-3xl font-bold text-gray-800">Welcome to AI Tools</h2>
+    <p className="text-gray-500 mt-2 max-w-md">
+      Select an AI tool from the sidebar to start creating amazing content!
+    </p>
+  </div>
+);
+
+// Reusable Stat Card Component for the default view
+const StatCard = ({ value, label, color }: { value: number; label: string; color: string }) => (
+  <div className="flex flex-col items-center">
+    <p className={`text-5xl font-bold ${color}`}>{value}</p>
+    <p className="text-gray-500 mt-2 text-sm font-medium">{label}</p>
+  </div>
+);
+
+// Stats Section Component for the default view
+const StatsSection = () => {
+  const stats = [
+    { value: 24, label: 'AI Interactions', color: 'text-red-500' },
+    { value: 236, label: 'Total XP', color: 'text-blue-500' },
+    { value: 1, label: 'Current Level', color: 'text-yellow-500' },
+    { value: 3, label: 'Badges Earned', color: 'text-green-500' },
+  ];
+
+  return (
+    <div className="mt-8 bg-white rounded-xl shadow-md p-8">
+      <h3 className="text-xl font-bold text-gray-800 mb-6">Your AI Stats</h3>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 text-center">
+        {stats.map((stat, index) => (
+          <StatCard key={index} value={stat.value} label={stat.label} color={stat.color} />
+        ))}
+      </div>
+    </div>
+  );
+};
+
 
 const NavItem: React.FC<NavItemProps> = ({ icon, label, subtext, active = false, onClick }) => (
   <div onClick={onClick} className={`flex items-center p-3 rounded-lg cursor-pointer ${active ? 'bg-indigo-100 text-indigo-700' : 'text-gray-600 hover:bg-gray-100'}`}>
@@ -128,7 +192,7 @@ const LoadingSpinner = () => (
 
 export default function Home() {
     const { toast } = useToast();
-    const [activeView, setActiveView] = useState<'tutor' | 'roadmap' | 'mentor' | 'coder' | 'content-generator' | 'idea-generator'>('tutor');
+    const [activeView, setActiveView] = useState<ActiveView>(null);
     const [tutorInput, setTutorInput] = useState('');
     const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
     const [roadmapContent, setRoadmapContent] = useState<string>('');
@@ -189,6 +253,16 @@ export default function Home() {
     // --- RENDER LOGIC --- //
 
     const renderMainContent = () => {
+        if (activeView === null) {
+            return (
+                <div className="space-y-8">
+                    <DefaultHeader />
+                    <WelcomeMessage />
+                    <StatsSection />
+                </div>
+            )
+        }
+        
         switch (activeView) {
             case 'tutor':
                 return (
@@ -316,39 +390,8 @@ export default function Home() {
           </aside>
 
           {/* Main Content */}
-          <main className="lg:col-span-9 space-y-8">
+          <main className="lg:col-span-9">
             {renderMainContent()}
-            
-            <div className="bg-white p-6 rounded-xl shadow-sm">
-                <h2 className="text-xl font-bold text-gray-800">Recommended AI Tools</h2>
-                <p className="text-gray-500 mb-6">Based on your profile and career goals</p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <RecommendedTool 
-                        icon={<Users className="h-5 w-5" />}
-                        title="AI Mentor"
-                        description="Work with an AI mentor specialized in UX to design and advance your career."
-                        color="yellow"
-                    />
-                    <RecommendedTool 
-                        icon={<Code className="h-5 w-5" />}
-                        title="AI Coder"
-                        description="Leverage the power of AI to complement your UX design skills and post your entries."
-                        color="green"
-                    />
-                     <RecommendedTool 
-                        icon={<FileText className="h-5 w-5" />}
-                        title="Content Generator"
-                        description="Generate marketing copy, blog posts, and other written content with AI."
-                        color="blue"
-                    />
-                    <RecommendedTool 
-                        icon={<Lightbulb className="h-5 w-5" />}
-                        title="Idea Generator"
-                        description="Brainstorm innovative ideas for projects, features, or business ventures."
-                        color="purple"
-                    />
-                </div>
-            </div>
           </main>
         </div>
       </div>
