@@ -1,7 +1,8 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { BookOpen, Map, Users, Code, Plus, Sparkles, BrainCircuit, FileText, Lightbulb, Bot, Package, WandSparkles, Send, BookCopy, Search, FileSignature, MessageSquareQuote } from 'lucide-react';
+import { BookOpen, Map, Users, Code, Plus, Sparkles, BrainCircuit, FileText, Lightbulb, Bot, Package, WandSparkles, Send, BookCopy, Search, FileSignature, MessageSquareQuote, Paperclip } from 'lucide-react';
 import { answerCareerQuestion } from '@/ai/flows/answer-career-questions';
+import { analyzeResume } from '@/ai/flows/analyze-resume-flow';
 import { useToast } from "@/hooks/use-toast";
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
@@ -96,7 +97,7 @@ const WelcomeMessage = () => (
 // Reusable Stat Card Component for the default view
 const StatCard = ({ value, label, color }: { value: number; label: string; color: string }) => (
   <div className="flex flex-col items-center">
-    <p className={`text-4xl font-bold ${color}`}>{value}</p>
+    <p className={`text-2xl font-bold ${color}`}>{value}</p>
     <p className="text-gray-500 mt-2 text-sm font-medium">{label}</p>
   </div>
 );
@@ -230,7 +231,7 @@ const LoadingSpinner = () => (
 export default function Home() {
     const { toast } = useToast();
     const [activeView, setActiveView] = useState<ActiveView>(null);
-    const [tutorInput, setTutorInput] = useState('');
+    const [userInput, setUserInput] = useState('');
     const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
     const [roadmapContent, setRoadmapContent] = useState<string>('');
     const [generatedContent, setGeneratedContent] = useState('');
@@ -238,6 +239,34 @@ export default function Home() {
     const [generatedCode, setGeneratedCode] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [resumeText, setResumeText] = useState<string | null>(null);
+    const [resumeFileName, setResumeFileName] = useState<string | null>(null);
+
+    const handleViewChange = (view: ActiveView) => {
+        setActiveView(view);
+        setChatHistory([]);
+        setUserInput('');
+        setError(null);
+        setResumeText(null);
+        setResumeFileName(null);
+    };
+
+    const handleResumeUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            setResumeFileName(file.name);
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const text = e.target?.result as string;
+                setResumeText(text);
+                toast({
+                  title: "Resume Uploaded",
+                  description: `${file.name} has been successfully uploaded and read.`,
+                })
+            };
+            reader.readAsText(file);
+        }
+    };
 
     const callAIFlow = async (prompt: string): Promise<string | null> => {
         setIsLoading(true);
@@ -264,9 +293,32 @@ export default function Home() {
 
         const newHistory: ChatMessage[] = [...chatHistory, { role: 'user', text: prompt }];
         setChatHistory(newHistory);
-        setTutorInput('');
+        setUserInput('');
 
-        const responseText = await callAIFlow(prompt);
+        let responseText: string | null = null;
+
+        if (activeView === 'mentor' && resumeText) {
+             setIsLoading(true);
+             setError(null);
+             try {
+                const result = await analyzeResume({ question: prompt, resumeText });
+                responseText = result.analysis;
+             } catch (err: any) {
+                 console.error("AI flow failed:", err);
+                 setError(err.message || "Failed to get a response from the AI. Please try again.");
+                 toast({
+                   variant: "destructive",
+                   title: "Oh no! Something went wrong.",
+                   description: "There was a problem with the AI response. Please try again.",
+                 });
+             } finally {
+                setIsLoading(false);
+             }
+        } else {
+            responseText = await callAIFlow(prompt);
+        }
+
+
         if (responseText) {
             setChatHistory([...newHistory, { role: 'model', text: responseText }]);
         } else {
@@ -373,14 +425,14 @@ export default function Home() {
                              <div className="mt-6 flex">
                                 <input
                                     type="text"
-                                    value={tutorInput}
-                                    onChange={(e) => setTutorInput(e.target.value)}
-                                    onKeyPress={(e) => e.key === 'Enter' && handleTutorSubmit(tutorInput)}
+                                    value={userInput}
+                                    onChange={(e) => setUserInput(e.target.value)}
+                                    onKeyPress={(e) => e.key === 'Enter' && handleTutorSubmit(userInput)}
                                     placeholder="✨ Ask me anything..."
                                     className="flex-grow border-gray-300 border rounded-l-lg p-3 focus:ring-indigo-500 focus:border-indigo-500"
                                     disabled={isLoading}
                                 />
-                                <button onClick={() => handleTutorSubmit(tutorInput)} className="bg-indigo-600 text-white font-bold py-3 px-6 rounded-r-lg hover:bg-indigo-700 transition-colors" disabled={isLoading}>
+                                <button onClick={() => handleTutorSubmit(userInput)} className="bg-indigo-600 text-white font-bold py-3 px-6 rounded-r-lg hover:bg-indigo-700 transition-colors" disabled={isLoading}>
                                     Send
                                 </button>
                             </div>
@@ -432,7 +484,7 @@ export default function Home() {
                             {chatHistory.length === 0 ? (
                                 <>
                                     <h1 className="text-3xl font-bold text-gray-900 mb-4">What's on your mind?</h1>
-                                    <p className="text-gray-600 mb-6">Ask for advice or use a suggestion below</p>
+                                    <p className="text-gray-600 mb-6">Ask for advice or use a suggestion below. For best results, upload your resume!</p>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
                                         <Suggestion icon={<BookCopy size={24} />} text="How do I prepare for a promotion?" onClick={handleTutorSubmit} />
                                         <Suggestion icon={<Search size={24} />} text="Review my resume for a UX role" onClick={handleTutorSubmit} />
@@ -452,17 +504,34 @@ export default function Home() {
                                     {isLoading && <LoadingSpinner />}
                                 </div>
                             )}
-                             <div className="mt-6 flex">
-                                <input
-                                    type="text"
-                                    value={tutorInput}
-                                    onChange={(e) => setTutorInput(e.target.value)}
-                                    onKeyPress={(e) => e.key === 'Enter' && handleTutorSubmit(tutorInput)}
-                                    placeholder="💬 Ask for career advice..."
-                                    className="flex-grow border-gray-300 border rounded-l-lg p-3 focus:ring-yellow-500 focus:border-yellow-500"
-                                    disabled={isLoading}
-                                />
-                                <Button onClick={() => handleTutorSubmit(tutorInput)} className="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-3 px-6 rounded-r-lg" disabled={isLoading}>
+                             <div className="mt-6 flex items-center gap-2">
+                                <Button asChild variant="outline" className="relative">
+                                    <label htmlFor="resume-upload">
+                                        <Paperclip size={18} />
+                                        <span className="sr-only">Upload Resume</span>
+                                    </label>
+                                    <Input id="resume-upload" type="file" className="absolute w-full h-full opacity-0 cursor-pointer" onChange={handleResumeUpload} accept=".txt,.pdf,.md" />
+                                </Button>
+                                <div className="flex-grow relative">
+                                    <input
+                                        type="text"
+                                        value={userInput}
+                                        onChange={(e) => setUserInput(e.target.value)}
+                                        onKeyPress={(e) => e.key === 'Enter' && handleTutorSubmit(userInput)}
+                                        placeholder={resumeFileName ? `Asking about ${resumeFileName}...` : "💬 Ask for career advice..."}
+                                        className="w-full border-gray-300 border rounded-lg p-3 focus:ring-yellow-500 focus:border-yellow-500"
+                                        disabled={isLoading}
+                                    />
+                                    {resumeFileName && (
+                                        <button 
+                                          onClick={() => { setResumeText(null); setResumeFileName(null); }}
+                                          className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                        >
+                                          &times;
+                                        </button>
+                                    )}
+                                </div>
+                                <Button onClick={() => handleTutorSubmit(userInput)} className="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-3 px-4 rounded-lg" disabled={isLoading}>
                                     <Send size={18} />
                                 </Button>
                             </div>
@@ -588,12 +657,12 @@ export default function Home() {
             <div className="bg-white p-4 rounded-xl shadow-sm">
               <h2 className="text-lg font-bold text-gray-800 mb-4">AI Tools</h2>
               <nav className="space-y-2">
-                <NavItem icon={<BookOpen className="h-5 w-5" />} label="AI Tutor" subtext="Personalized learning" active={activeView === 'tutor'} onClick={() => setActiveView('tutor')} />
-                <NavItem icon={<Map className="h-5 w-5" />} label="AI Roadmap" subtext="Career pathing" active={activeView === 'roadmap'} onClick={() => setActiveView('roadmap')} />
-                <NavItem icon={<Users className="h-5 w-5" />} label="AI Mentor" subtext="Guidance and behavior" active={activeView === 'mentor'} onClick={() => setActiveView('mentor')} />
-                <NavItem icon={<FileText className="h-5 w-5" />} label="Content Generator" subtext="Generate text content" active={activeView === 'content-generator'} onClick={() => setActiveView('content-generator')} />
-                <NavItem icon={<Lightbulb className="h-5 w-5" />} label="Idea Generator" subtext="Brainstorm new ideas" active={activeView === 'idea-generator'} onClick={() => setActiveView('idea-generator')} />
-                <NavItem icon={<Code className="h-5 w-5" />} label="AI Coder" subtext="Coding Companion" active={activeView === 'coder'} onClick={() => setActiveView('coder')} />
+                <NavItem icon={<BookOpen className="h-5 w-5" />} label="AI Tutor" subtext="Personalized learning" active={activeView === 'tutor'} onClick={() => handleViewChange('tutor')} />
+                <NavItem icon={<Map className="h-5 w-5" />} label="AI Roadmap" subtext="Career pathing" active={activeView === 'roadmap'} onClick={() => handleViewChange('roadmap')} />
+                <NavItem icon={<Users className="h-5 w-5" />} label="AI Mentor" subtext="Guidance and behavior" active={activeView === 'mentor'} onClick={() => handleViewChange('mentor')} />
+                <NavItem icon={<FileText className="h-5 w-5" />} label="Content Generator" subtext="Generate text content" active={activeView === 'content-generator'} onClick={() => handleViewChange('content-generator')} />
+                <NavItem icon={<Lightbulb className="h-5 w-5" />} label="Idea Generator" subtext="Brainstorm new ideas" active={activeView === 'idea-generator'} onClick={() => handleViewChange('idea-generator')} />
+                <NavItem icon={<Code className="h-5 w-5" />} label="AI Coder" subtext="Coding Companion" active={activeView === 'coder'} onClick={() => handleViewChange('coder')} />
               </nav>
             </div>
 
