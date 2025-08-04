@@ -506,11 +506,13 @@ export default function Home() {
                             )}
                              <div className="mt-6 flex items-center gap-2">
                                 <Button asChild variant="outline" className="relative">
-                                    <label htmlFor="resume-upload">
-                                        <Paperclip size={18} />
-                                        <span className="sr-only">Upload Resume</span>
-                                    </label>
-                                    <Input id="resume-upload" type="file" className="absolute w-full h-full opacity-0 cursor-pointer" onChange={handleResumeUpload} accept=".txt,.pdf,.md" />
+                                    <div>
+                                        <label htmlFor="resume-upload" className="flex items-center cursor-pointer">
+                                            <Paperclip size={18} />
+                                            <span className="sr-only">Upload Resume</span>
+                                        </label>
+                                        <Input id="resume-upload" type="file" className="absolute w-full h-full opacity-0 cursor-pointer" onChange={handleResumeUpload} accept=".txt,.pdf,.md" />
+                                    </div>
                                 </Button>
                                 <div className="flex-grow relative">
                                     <input
