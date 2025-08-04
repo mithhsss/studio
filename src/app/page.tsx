@@ -1,8 +1,11 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { BookOpen, Map, Users, Code, Plus, Sparkles, BrainCircuit, FileText, Lightbulb, Bot, Package, WandSparkles, Send, BookCopy, Search, FileSignature, MessageSquareQuote, Paperclip } from 'lucide-react';
+import { BookOpen, Map, Users, Code, Plus, Sparkles, BrainCircuit, FileText, Lightbulb, Bot, Package, WandSparkles, Send, BookCopy, Search, FileSignature, MessageSquareQuote, Paperclip, Loader, PenTool, ArrowLeft, Wind, Hash } from 'lucide-react';
 import { answerCareerQuestion } from '@/ai/flows/answer-career-questions';
 import { analyzeResume } from '@/ai/flows/analyze-resume-flow';
+import { generateOutline, GenerateOutlineOutput } from '@/ai/flows/generate-outline-flow';
+import { generateDraft } from '@/ai/flows/generate-draft-flow';
+
 import { useToast } from "@/hooks/use-toast";
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
@@ -12,6 +15,7 @@ import { Input } from '@/components/ui/input';
 // --- TYPE DEFINITIONS --- //
 
 type ActiveView = 'tutor' | 'roadmap' | 'mentor' | 'coder' | 'content-generator' | 'idea-generator' | null;
+type ContentGeneratorStep = 'idea' | 'outline' | 'draft';
 
 interface NavItemProps {
   icon: React.ReactNode;
@@ -50,14 +54,12 @@ interface ChatMessage {
     text: string;
 }
 
-
-// --- SVG ICONS --- //
-
-const DesignerIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-indigo-500" viewBox="0 0 20 20" fill="currentColor">
-        <path fillRule="evenodd" d="M4 2a2 2 0 00-2 2v12a2 2 0 002 2h12a2 2 0 002-2V4a2 2 0 00-2-2H4zm10.293 9.293a1 1 0 011.414 0l2 2a1 1 0 01-1.414 1.414L14 12.414V14a1 1 0 11-2 0v-1.586l-2.293 2.293a1 1 0 01-1.414-1.414l2-2a1 1 0 010-1.414l-2-2a1 1 0 011.414-1.414L12 8.586V7a1 1 0 112 0v1.586l2.293-2.293zM8 6a2 2 0 100 4 2 2 0 000-4z" clipRule="evenodd" />
-    </svg>
-);
+interface ContentFormData {
+    topic: string;
+    goal: string;
+    outline: GenerateOutlineOutput | null;
+    draft: string;
+}
 
 
 // --- COMPONENTS --- //
@@ -234,13 +236,21 @@ export default function Home() {
     const [userInput, setUserInput] = useState('');
     const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
     const [roadmapContent, setRoadmapContent] = useState<string>('');
-    const [generatedContent, setGeneratedContent] = useState('');
     const [generatedIdeas, setGeneratedIdeas] = useState<string[]>([]);
     const [generatedCode, setGeneratedCode] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [resumeText, setResumeText] = useState<string | null>(null);
     const [resumeFileName, setResumeFileName] = useState<string | null>(null);
+
+    // State for Content Generator
+    const [contentGeneratorStep, setContentGeneratorStep] = useState<ContentGeneratorStep>('idea');
+    const [contentFormData, setContentFormData] = useState<ContentFormData>({
+        topic: 'The future of AI in UX Design',
+        goal: 'Educate an audience',
+        outline: null,
+        draft: '',
+    });
 
     const handleViewChange = (view: ActiveView) => {
         setActiveView(view);
@@ -342,13 +352,52 @@ export default function Home() {
         }
     };
 
-    const handleGenerateContent = async (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        const formData = new FormData(e.currentTarget);
-        const topic = formData.get('topic') as string;
-        const prompt = `Generate a short blog post about: ${topic}.`;
-        const response = await callAIFlow(prompt);
-        if (response) setGeneratedContent(response);
+    const handleGenerateOutline = async () => {
+        setIsLoading(true);
+        try {
+            const result = await generateOutline({ 
+                topic: contentFormData.topic, 
+                goal: contentFormData.goal 
+            });
+            setContentFormData(prev => ({ ...prev, outline: result }));
+            setContentGeneratorStep('outline');
+        } catch (err) {
+            toast({
+                variant: "destructive",
+                title: "Outline Generation Failed",
+                description: "There was a problem generating the outline. Please try again.",
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleGenerateDraft = async () => {
+        if (!contentFormData.outline) return;
+        setIsLoading(true);
+        try {
+            const result = await generateDraft(contentFormData.outline);
+            setContentFormData(prev => ({ ...prev, draft: result.draft }));
+            setContentGeneratorStep('draft');
+        } catch (err) {
+            toast({
+                variant: "destructive",
+                title: "Draft Generation Failed",
+                description: "There was a problem generating the draft. Please try again.",
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+    
+    const handleContentStartOver = () => {
+        setContentGeneratorStep('idea');
+        setContentFormData({
+            topic: 'The future of AI in UX Design',
+            goal: 'Educate an audience',
+            outline: null,
+            draft: '',
+        });
     };
 
     const handleGenerateIdeas = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -456,12 +505,14 @@ export default function Home() {
                             <div className="prose prose-indigo mt-6 max-w-none" dangerouslySetInnerHTML={{ __html: roadmapContent.replace(/\n/g, '<br />') }}></div>
                         ) : (
                              <div className="mt-8 text-center">
-                                <DesignerIcon />
+                                <div className="flex items-center justify-center">
+                                    <Map size={48} className="text-indigo-500"/>
+                                </div>
                                 <h3 className="text-2xl font-bold text-gray-900 mt-4">Your UX Designer Roadmap</h3>
                                 <p className="text-gray-600 mt-2 max-w-md mx-auto">Get a personalized career roadmap with skill recommendations, learning resources, and milestone tracking.</p>
-                                <button onClick={handleGenerateRoadmap} className="mt-6 bg-indigo-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-indigo-700 transition-colors flex items-center mx-auto">
+                                <Button onClick={handleGenerateRoadmap} className="mt-6 bg-indigo-600 hover:bg-indigo-700">
                                     <Sparkles className="h-4 w-4 inline-block mr-1" /> Generate Your Roadmap
-                                </button>
+                                </Button>
                             </div>
                         )}
                          {error && <p className="text-red-500 mt-2">{error}</p>}
@@ -542,6 +593,132 @@ export default function Home() {
                     </div>
                 );
             case 'content-generator':
+                const renderContentStep = () => {
+                    switch (contentGeneratorStep) {
+                        case 'idea':
+                            return (
+                                <div className="animate-fade-in">
+                                    <div className="flex items-center gap-3 mb-2">
+                                        <div className="bg-indigo-100 text-indigo-600 p-2 rounded-lg">
+                                            <Lightbulb size={20} />
+                                        </div>
+                                        <h2 className="text-2xl font-bold text-gray-800">Step 1: The Spark</h2>
+                                    </div>
+                                    <p className="text-gray-500 mb-6">Start with the core idea and the primary goal of your content.</p>
+
+                                    <div className="space-y-5">
+                                        <div>
+                                            <label htmlFor="topic" className="block text-sm font-medium text-gray-700 mb-1">What's the core topic or question?</label>
+                                            <Textarea
+                                                id="topic"
+                                                name="topic"
+                                                value={contentFormData.topic}
+                                                onChange={(e) => setContentFormData({ ...contentFormData, topic: e.target.value })}
+                                                placeholder="e.g., The future of AI in UX Design"
+                                                rows={3}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label htmlFor="goal" className="block text-sm font-medium text-gray-700 mb-1">What is the primary goal?</label>
+                                            <select
+                                                id="goal"
+                                                name="goal"
+                                                value={contentFormData.goal}
+                                                onChange={(e) => setContentFormData({ ...contentFormData, goal: e.target.value })}
+                                                className="w-full p-3 border border-input rounded-lg focus:ring-2 focus:ring-ring bg-background"
+                                            >
+                                                <option>Educate an audience</option>
+                                                <option>Start a discussion</option>
+                                                <option>Announce a product/feature</option>
+                                                <option>Share a personal experience</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <Button
+                                        onClick={handleGenerateOutline}
+                                        disabled={isLoading}
+                                        className="w-full mt-8 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400"
+                                    >
+                                        {isLoading ? <Loader className="animate-spin" /> : <Sparkles />}
+                                        {isLoading ? 'Generating...' : 'Generate Outline'}
+                                    </Button>
+                                </div>
+                            );
+                        case 'outline':
+                            if (!contentFormData.outline) return null;
+                            const handlePointChange = (index: number, value: string) => {
+                                if (!contentFormData.outline) return;
+                                const newPoints = [...contentFormData.outline.mainPoints];
+                                newPoints[index] = value;
+                                setContentFormData({ ...contentFormData, outline: { ...contentFormData.outline, mainPoints: newPoints }});
+                            };
+
+                            return (
+                                <div className="animate-fade-in">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <div className="flex items-center gap-3">
+                                            <div className="bg-blue-100 text-blue-600 p-2 rounded-lg"><FileText size={20} /></div>
+                                            <h2 className="text-2xl font-bold text-gray-800">Step 2: The Blueprint</h2>
+                                        </div>
+                                        <Button onClick={() => setContentGeneratorStep('idea')} variant="ghost" size="sm"><ArrowLeft size={16} /> Back</Button>
+                                    </div>
+                                    <p className="text-gray-500 mb-6">Review and edit the AI-generated outline. This structure will guide the final draft.</p>
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Title Suggestion</label>
+                                            <Input value={contentFormData.outline.title} onChange={(e) => setContentFormData({...contentFormData, outline: {...contentFormData.outline!, title: e.target.value}})} />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Hook Suggestion</label>
+                                            <Textarea value={contentFormData.outline.hook} onChange={(e) => setContentFormData({...contentFormData, outline: {...contentFormData.outline!, hook: e.target.value}})} rows={3} />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Main Points (Editable)</label>
+                                            <div className="space-y-2 pl-4 border-l-2 border-gray-200">
+                                                {contentFormData.outline.mainPoints.map((point, index) => (
+                                                    <Input key={index} value={point} onChange={(e) => handlePointChange(index, e.target.value)} />
+                                                ))}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Call to Action (CTA)</label>
+                                            <Input value={contentFormData.outline.cta} onChange={(e) => setContentFormData({...contentFormData, outline: {...contentFormData.outline!, cta: e.target.value}})} />
+                                        </div>
+                                    </div>
+                                    <Button onClick={handleGenerateDraft} disabled={isLoading} className="w-full mt-8 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400">
+                                        {isLoading ? <Loader className="animate-spin" /> : <PenTool />}
+                                        {isLoading ? 'Drafting...' : 'Generate Full Draft'}
+                                    </Button>
+                                </div>
+                            );
+                        case 'draft':
+                             const handleRefine = (action: string) => alert(`${action} applied! (This is a demo)`);
+                             return (
+                                <div className="animate-fade-in">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <div className="flex items-center gap-3">
+                                            <div className="bg-green-100 text-green-600 p-2 rounded-lg"><PenTool size={20} /></div>
+                                            <h2 className="text-2xl font-bold text-gray-800">Step 3: The Polish</h2>
+                                        </div>
+                                        <Button onClick={handleContentStartOver} variant="ghost">Start Over</Button>
+                                    </div>
+                                    <p className="text-gray-500 mb-6">Here's your draft. Use the tools to refine it, or copy the text and you're done!</p>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                        <div className="md:col-span-2">
+                                            <Textarea className="w-full h-96 bg-gray-50 font-mono text-sm leading-relaxed" value={contentFormData.draft} readOnly />
+                                        </div>
+                                        <div className="md:col-span-1 space-y-3">
+                                            <h3 className="font-bold text-lg text-gray-800">Refinement Tools</h3>
+                                            <Button onClick={() => handleRefine('Tone Shift')} variant="outline" className="w-full justify-start"><Wind size={18} className="text-sky-500" /> Change Tone</Button>
+                                            <Button onClick={() => handleRefine('Analogy')} variant="outline" className="w-full justify-start"><Sparkles size={18} className="text-amber-500" /> Suggest Analogy</Button>
+                                            <Button onClick={() => handleRefine('Hashtags')} variant="outline" className="w-full justify-start"><Hash size={18} className="text-blue-500" /> Generate Hashtags</Button>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                    }
+                };
                 return (
                     <Card>
                         <CardHeader>
@@ -557,23 +734,11 @@ export default function Home() {
                             </div>
                         </CardHeader>
                         <CardContent>
-                            <form onSubmit={handleGenerateContent} className="space-y-4">
-                                <Textarea name="topic" placeholder="e.g., The future of AI in UX Design" required disabled={isLoading} rows={3} />
-                                <Button type="submit" disabled={isLoading} className="w-full bg-blue-600 hover:bg-blue-700">
-                                    {isLoading ? 'Generating...' : 'Generate Content'}
-                                    <Sparkles className="ml-2" size={16} />
-                                </Button>
-                            </form>
-                            {isLoading && !generatedContent && <LoadingSpinner />}
-                            {generatedContent && (
-                                <div className="mt-6 p-4 border rounded-lg bg-gray-50">
-                                     <h3 className="font-bold mb-2">Generated Content:</h3>
-                                     <p className="text-gray-700 whitespace-pre-wrap">{generatedContent}</p>
-                                </div>
-                            )}
+                           {renderContentStep()}
                         </CardContent>
                     </Card>
                 );
+
             case 'idea-generator':
                 return (
                     <Card>
