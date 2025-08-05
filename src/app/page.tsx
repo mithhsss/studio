@@ -192,7 +192,6 @@ export default function Home() {
     const [userInput, setUserInput] = useState('');
     const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
     const [roadmapContent, setRoadmapContent] = useState<string>('');
-    const [generatedCode, setGeneratedCode] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [resumeText, setResumeText] = useState<string | null>(null);
@@ -221,6 +220,24 @@ export default function Home() {
         other: 'Focus on mental wellness', 
         lens: 'What If?',
         detailedDescription: ''
+    });
+
+    // State for AI Coder
+    const [coderStep, setCoderStep] = useState('blueprint');
+    const [generatedCode, setGeneratedCode] = useState<any>(null);
+    const [coderChatHistory, setCoderChatHistory] = useState<any[]>([]);
+    const [coderFormData, setCoderFormData] = useState({
+        description: 'A responsive pricing table with three tiers and a selected state',
+        framework: 'React',
+        language: 'JavaScript',
+        styling: 'CSS Modules',
+        techStack: 'Next.js, Vercel',
+        schema: `[{
+  "id": 1,
+  "name": "Basic",
+  "price": 10,
+  "features": ["Feature A", "Feature B"]
+}]`
     });
 
     const handleViewChange = (view: ActiveView) => {
@@ -371,18 +388,6 @@ export default function Home() {
         });
     };
 
-    const handleGenerateCode = async (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        const formData = new FormData(e.currentTarget);
-        const description = formData.get('description') as string;
-        const prompt = `Generate a React component in TypeScript based on this description: "${description}". Only return the code inside a single code block.`;
-        const response = await callAIFlow(prompt);
-        if (response) {
-            const code = response.match(/```(?:typescript|jsx|tsx)?\n([\s\S]*?)```/);
-            setGeneratedCode(code ? code[1] : response);
-        }
-    };
-    
     // Idea Generator Functions
     const simulateAICall = (duration = 800) => new Promise(resolve => setTimeout(resolve, duration));
 
@@ -491,6 +496,34 @@ export default function Home() {
       setFinalizedIdea(null);
     };
 
+    // AI Coder functions
+    const mockGeneratedCode = {
+      'pricing-table.jsx': `import React, { useState } from 'react';\nimport './pricing-table.css';\n\nconst PricingTable = ({ data, theme = 'light' }) => {\n  const [selectedTier, setSelectedTier] = useState(null);\n\n  const handleSelect = (id) => {\n    setSelectedTier(id);\n  };\n\n  return (\n    <div className={\`pricing-container theme-\${theme}\`}>\n      {data.map((tier) => (\n        <div \n          key={tier.id} \n          className={\`pricing-tier \${selectedTier === tier.id ? 'selected' : ''}\`}\n        >\n          <h3 className="tier-name">{tier.name}</h3>\n          <p className="tier-price">\${tier.price}/mo</p>\n          <ul className="tier-features">\n            {tier.features.map((feature, i) => <li key={i}>{feature}</li>)}\n          </ul>\n          <button onClick={() => handleSelect(tier.id)} className="tier-button">\n            {selectedTier === tier.id ? 'Selected' : 'Choose Plan'}\n          </button>\n        </div>\n      ))}\n    </div>\n  );\n};\n\nexport default PricingTable;`,
+      'pricing-table.css': `.pricing-container {\n  display: flex;\n  gap: 1rem;\n  font-family: sans-serif;\n}\n.pricing-tier {\n  border: 1px solid #ccc;\n  border-radius: 8px;\n  padding: 1.5rem;\n  flex: 1;\n  text-align: center;\n  transition: transform 0.2s, box-shadow 0.2s;\n}\n.pricing-tier.selected {\n  transform: scale(1.05);\n  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);\n  border-color: #4f46e5;\n}\n.tier-button {\n  background-color: #4f46e5;\n  color: white;\n  border: none;\n  padding: 0.75rem 1.5rem;\n  border-radius: 5px;\n  cursor: pointer;\n}`,
+    };
+
+    const handleGenerateCode = async () => {
+        setIsLoading(true);
+        await simulateAICall();
+        setGeneratedCode(mockGeneratedCode);
+        setCoderChatHistory([{ sender: 'ai', text: 'Component generated! Here is a breakdown of its anatomy.' }]);
+        setIsLoading(false);
+        setCoderStep('workbench');
+    };
+
+    const handleCodeRefine = async (prompt: any) => {
+        setCoderChatHistory((prev: any) => [...prev, { sender: 'user', text: prompt }]);
+        setIsLoading(true);
+        await simulateAICall();
+        // In a real app, the AI would modify the code. We'll just mock a response.
+        setCoderChatHistory((prev: any) => [...prev, { sender: 'ai', text: `Okay, I've updated the code to: ${prompt}. The anatomy panel has been updated.` }]);
+        setIsLoading(false);
+    };
+
+    const handleGoBackToBlueprint = () => {
+        setCoderStep('blueprint');
+    };
+
     // --- RENDER LOGIC --- //
 
     const renderMainContent = () => {
@@ -575,9 +608,15 @@ export default function Home() {
             case 'coder':
                  return (
                     <AICoderView
+                        step={coderStep}
                         isLoading={isLoading}
                         generatedCode={generatedCode}
-                        handleGenerateCode={handleGenerateCode}
+                        chatHistory={coderChatHistory}
+                        formData={coderFormData}
+                        setFormData={setCoderFormData}
+                        onGenerate={handleGenerateCode}
+                        onRefine={handleCodeRefine}
+                        onGoBack={handleGoBackToBlueprint}
                     />
                 );
         }
@@ -622,13 +661,13 @@ export default function Home() {
           </aside>
 
           {/* Main Content */}
-          <main className="lg:col-span-9 space-y-8">
+          <main className="lg:col-span-9">
             {renderMainContent()}
             {(activeView !== null) && 
-              <>
+              <div className="mt-8 space-y-8">
                 <StatsSection />
                 <RecommendedToolsSection />
-              </>
+              </div>
             }
           </main>
         </div>
