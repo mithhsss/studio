@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Code, Settings, Terminal, ArrowRight, Bot, User, File, Folder, Download, Copy, Sparkles, Loader, Puzzle, GitMerge, BrainCircuit, Share2, ArrowLeft, Layers } from 'lucide-react';
+import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 
 // --- MOCK DATA & HELPERS ---
 const simulateAICall = (duration = 1000) => new Promise(resolve => setTimeout(resolve, duration));
@@ -124,7 +125,7 @@ const BlueprintForm = ({ formData, setFormData, onGenerate, isLoading }: any) =>
 );
 
 const AnatomyPanel = () => (
-    <div className="bg-white rounded-lg p-4 border h-full">
+    <div className="bg-white rounded-lg p-4 border h-full overflow-y-auto">
         <h3 className="font-semibold text-sm mb-3">Component Anatomy</h3>
         <div className="space-y-4 text-sm">
             <div className="flex items-start gap-3">
@@ -185,46 +186,54 @@ const WorkbenchView = ({ code, chatHistory, onRefine, onGoBack }: any) => {
           <h2 className="text-2xl font-bold text-gray-800">AI Code Workbench</h2>
           <Button onClick={onGoBack} variant="ghost" size="sm"><ArrowLeft size={16} /> Back to Blueprint</Button>
       </div>
-      <div className="grid grid-cols-12 gap-4">
-        {/* File Tree */}
-        <div className="col-span-2 bg-gray-50 rounded-lg p-3">
-          <h3 className="font-semibold text-sm mb-2 flex items-center gap-2"><Folder size={16} /> Files</h3>
-          {Object.keys(code).map(filename => (
-            <Button key={filename} onClick={() => setActiveFile(filename)} variant={activeFile === filename ? 'secondary' : 'ghost'} size="sm" className="w-full justify-start text-left h-auto px-2 py-1">
-              <File size={14} className="mr-2 flex-shrink-0" />
-              <span className="truncate">{filename}</span>
-            </Button>
-          ))}
-          <Button className="w-full mt-4" variant="outline"><Download size={14}/> Download ZIP</Button>
-        </div>
-
-        {/* Code Editor & Chat */}
-        <div className="col-span-5 flex flex-col gap-4">
-          <div className="flex-grow bg-gray-800 text-white rounded-lg p-4 relative h-96">
-              <Button onClick={() => navigator.clipboard.writeText(code[activeFile])} size="icon" variant="ghost" className="absolute top-2 right-2 h-7 w-7 text-gray-300 hover:bg-gray-600 hover:text-white"><Copy size={14}/></Button>
-              <pre className="h-full overflow-auto text-xs whitespace-pre-wrap">{code[activeFile]}</pre>
-          </div>
-          <div className="bg-gray-50 rounded-lg p-3">
-              <h3 className="font-semibold text-sm mb-2 flex items-center gap-2"><Terminal size={16}/> Refinement Chat</h3>
-              <div className="h-24 overflow-y-auto space-y-2 text-sm mb-2">
-                  {chatHistory.map((msg: any, i: number) => (
-                      <div key={i} className="flex gap-2 items-start">
-                          {msg.sender === 'user' ? <User size={14} className="mt-0.5 text-blue-500"/> : <Bot size={14} className="mt-0.5 text-green-500"/>}
-                          <p>{msg.text}</p>
+      <div className="h-[65vh]">
+          <PanelGroup direction="horizontal" className="w-full h-full">
+              <Panel defaultSize={20} minSize={15}>
+                  {/* File Tree */}
+                  <div className="bg-gray-50 rounded-lg p-3 h-full overflow-y-auto">
+                      <h3 className="font-semibold text-sm mb-2 flex items-center gap-2"><Folder size={16} /> Files</h3>
+                      {Object.keys(code).map(filename => (
+                          <Button key={filename} onClick={() => setActiveFile(filename)} variant={activeFile === filename ? 'secondary' : 'ghost'} size="sm" className="w-full justify-start text-left h-auto px-2 py-1">
+                              <File size={14} className="mr-2 flex-shrink-0" />
+                              <span className="truncate">{filename}</span>
+                          </Button>
+                      ))}
+                      <Button className="w-full mt-4" variant="outline"><Download size={14}/> Download ZIP</Button>
+                  </div>
+              </Panel>
+              <PanelResizeHandle className="w-2 bg-transparent hover:bg-gray-200 active:bg-gray-300 transition-colors rounded-full mx-1" />
+              <Panel defaultSize={50} minSize={30}>
+                  {/* Code Editor & Chat */}
+                  <div className="flex flex-col gap-4 h-full">
+                      <div className="flex-grow bg-gray-800 text-white rounded-lg p-4 relative h-full">
+                          <Button onClick={() => navigator.clipboard.writeText(code[activeFile])} size="icon" variant="ghost" className="absolute top-2 right-2 h-7 w-7 text-gray-300 hover:bg-gray-600 hover:text-white"><Copy size={14}/></Button>
+                          <pre className="h-full overflow-auto text-xs whitespace-pre-wrap">{code[activeFile]}</pre>
                       </div>
-                  ))}
-              </div>
-              <div className="flex gap-2">
-                  <Input type="text" value={refinePrompt} onChange={e => setRefinePrompt(e.target.value)} onKeyPress={e => e.key === 'Enter' && handleRefine()} placeholder="e.g., 'Add a hover effect to the button'" className="text-sm"/>
-                  <Button onClick={handleRefine} className="bg-green-600 text-white p-2 rounded-lg hover:bg-green-700"><ArrowRight size={16}/></Button>
-              </div>
-          </div>
-        </div>
-        
-        {/* Anatomy Panel */}
-        <div className="col-span-5">
-          <AnatomyPanel />
-        </div>
+                      <div className="bg-gray-50 rounded-lg p-3">
+                          <h3 className="font-semibold text-sm mb-2 flex items-center gap-2"><Terminal size={16}/> Refinement Chat</h3>
+                          <div className="h-24 overflow-y-auto space-y-2 text-sm mb-2">
+                              {chatHistory.map((msg: any, i: number) => (
+                                  <div key={i} className="flex gap-2 items-start">
+                                      {msg.sender === 'user' ? <User size={14} className="mt-0.5 text-blue-500"/> : <Bot size={14} className="mt-0.5 text-green-500"/>}
+                                      <p>{msg.text}</p>
+                                  </div>
+                              ))}
+                          </div>
+                          <div className="flex gap-2">
+                              <Input type="text" value={refinePrompt} onChange={e => setRefinePrompt(e.target.value)} onKeyPress={e => e.key === 'Enter' && handleRefine()} placeholder="e.g., 'Add a hover effect to the button'" className="text-sm"/>
+                              <Button onClick={handleRefine} className="bg-green-600 text-white p-2 rounded-lg hover:bg-green-700"><ArrowRight size={16}/></Button>
+                          </div>
+                      </div>
+                  </div>
+              </Panel>
+              <PanelResizeHandle className="w-2 bg-transparent hover:bg-gray-200 active:bg-gray-300 transition-colors rounded-full mx-1" />
+              <Panel defaultSize={30} minSize={20}>
+                  {/* Anatomy Panel */}
+                  <div className="h-full">
+                      <AnatomyPanel />
+                  </div>
+              </Panel>
+          </PanelGroup>
       </div>
     </div>
   );
