@@ -664,12 +664,10 @@ export default function Home() {
           <main className="lg:col-span-9">
             <div className="space-y-8">
               {renderMainContent()}
-              {(activeView !== null) && 
-                <div className="space-y-8">
-                  <StatsSection />
-                  <RecommendedToolsSection />
-                </div>
-              }
+              <div className="space-y-8">
+                <StatsSection />
+                <RecommendedToolsSection />
+              </div>
             </div>
           </main>
         </div>
