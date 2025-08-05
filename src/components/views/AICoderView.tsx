@@ -190,8 +190,9 @@ const WorkbenchView = ({ code, chatHistory, onRefine, onGoBack }: any) => {
         <div className="col-span-2 bg-gray-50 rounded-lg p-3">
           <h3 className="font-semibold text-sm mb-2 flex items-center gap-2"><Folder size={16} /> Files</h3>
           {Object.keys(code).map(filename => (
-            <Button key={filename} onClick={() => setActiveFile(filename)} variant={activeFile === filename ? 'secondary' : 'ghost'} size="sm" className='w-full justify-start gap-2'>
-              <File size={14} /> {filename}
+            <Button key={filename} onClick={() => setActiveFile(filename)} variant={activeFile === filename ? 'secondary' : 'ghost'} size="sm" className="w-full justify-start text-left h-auto px-2 py-1">
+              <File size={14} className="mr-2 flex-shrink-0" />
+              <span className="truncate">{filename}</span>
             </Button>
           ))}
           <Button className="w-full mt-4" variant="outline"><Download size={14}/> Download ZIP</Button>
