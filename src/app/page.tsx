@@ -10,6 +10,8 @@ import { answerCareerQuestion } from '@/ai/flows/answer-career-questions';
 import { analyzeResume } from '@/ai/flows/analyze-resume-flow';
 import { generateOutline, GenerateOutlineOutput } from '@/ai/flows/generate-outline-flow';
 import { generateDraft } from '@/ai/flows/generate-draft-flow';
+import { generateCode, GenerateCodeOutput } from '@/ai/flows/generate-code-flow';
+
 
 import AITutorView from '@/components/views/AITutorView';
 import AIRoadmapView from '@/components/views/AIRoadmapView';
@@ -24,6 +26,8 @@ import DefaultView from '@/components/views/DefaultView';
 export type ActiveView = 'tutor' | 'roadmap' | 'mentor' | 'coder' | 'content-generator' | 'idea-generator' | null;
 export type ContentGeneratorStep = 'idea' | 'outline' | 'draft';
 export type IdeaGeneratorStep = 'input' | 'results' | 'finalized';
+export type CoderStep = 'blueprint' | 'workbench';
+
 
 export interface ChatMessage {
     role: 'user' | 'model';
@@ -223,8 +227,8 @@ export default function Home() {
     });
 
     // State for AI Coder
-    const [coderStep, setCoderStep] = useState('blueprint');
-    const [generatedCode, setGeneratedCode] = useState<any>(null);
+    const [coderStep, setCoderStep] = useState<CoderStep>('blueprint');
+    const [generatedCode, setGeneratedCode] = useState<GenerateCodeOutput | null>(null);
     const [coderChatHistory, setCoderChatHistory] = useState<any[]>([]);
     const [coderFormData, setCoderFormData] = useState({
         description: 'A responsive pricing table with three tiers and a selected state',
@@ -497,18 +501,23 @@ export default function Home() {
     };
 
     // AI Coder functions
-    const mockGeneratedCode = {
-      'pricing-table.jsx': `import React, { useState } from 'react';\nimport './pricing-table.css';\n\nconst PricingTable = ({ data, theme = 'light' }) => {\n  const [selectedTier, setSelectedTier] = useState(null);\n\n  const handleSelect = (id) => {\n    setSelectedTier(id);\n  };\n\n  return (\n    <div className={\`pricing-container theme-\${theme}\`}>\n      {data.map((tier) => (\n        <div \n          key={tier.id} \n          className={\`pricing-tier \${selectedTier === tier.id ? 'selected' : ''}\`}\n        >\n          <h3 className="tier-name">{tier.name}</h3>\n          <p className="tier-price">\${tier.price}/mo</p>\n          <ul className="tier-features">\n            {tier.features.map((feature, i) => <li key={i}>{feature}</li>)}\n          </ul>\n          <button onClick={() => handleSelect(tier.id)} className="tier-button">\n            {selectedTier === tier.id ? 'Selected' : 'Choose Plan'}\n          </button>\n        </div>\n      ))}\n    </div>\n  );\n};\n\nexport default PricingTable;`,
-      'pricing-table.css': `.pricing-container {\n  display: flex;\n  gap: 1rem;\n  font-family: sans-serif;\n}\n.pricing-tier {\n  border: 1px solid #ccc;\n  border-radius: 8px;\n  padding: 1.5rem;\n  flex: 1;\n  text-align: center;\n  transition: transform 0.2s, box-shadow 0.2s;\n}\n.pricing-tier.selected {\n  transform: scale(1.05);\n  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);\n  border-color: #4f46e5;\n}\n.tier-button {\n  background-color: #4f46e5;\n  color: white;\n  border: none;\n  padding: 0.75rem 1.5rem;\n  border-radius: 5px;\n  cursor: pointer;\n}`,
-    };
-
     const handleGenerateCode = async () => {
         setIsLoading(true);
-        await simulateAICall();
-        setGeneratedCode(mockGeneratedCode);
-        setCoderChatHistory([{ sender: 'ai', text: 'Component generated! Here is a breakdown of its anatomy.' }]);
-        setIsLoading(false);
-        setCoderStep('workbench');
+        setGeneratedCode(null);
+        try {
+            const result = await generateCode(coderFormData);
+            setGeneratedCode(result);
+            setCoderChatHistory([{ sender: 'ai', text: 'Component generated! Here is a breakdown of its anatomy.' }]);
+            setCoderStep('workbench');
+        } catch (err) {
+            toast({
+                variant: "destructive",
+                title: "Code Generation Failed",
+                description: "There was a problem generating the code. Please try again.",
+            });
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const handleCodeRefine = async (prompt: any) => {
@@ -522,6 +531,7 @@ export default function Home() {
 
     const handleGoBackToBlueprint = () => {
         setCoderStep('blueprint');
+        setGeneratedCode(null);
     };
 
     // --- RENDER LOGIC --- //

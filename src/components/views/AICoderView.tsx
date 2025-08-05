@@ -5,70 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Code, Settings, Terminal, ArrowRight, Bot, User, File, Folder, Download, Copy, Sparkles, Loader, Puzzle, GitMerge, BrainCircuit, Share2, ArrowLeft, Layers } from 'lucide-react';
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
-
-// --- MOCK DATA & HELPERS ---
-const simulateAICall = (duration = 1000) => new Promise(resolve => setTimeout(resolve, duration));
-
-const mockGeneratedCode = {
-  'pricing-table.jsx': `import React, { useState } from 'react';
-import './pricing-table.css';
-
-const PricingTable = ({ data, theme = 'light' }) => {
-  const [selectedTier, setSelectedTier] = useState(null);
-
-  const handleSelect = (id) => {
-    setSelectedTier(id);
-  };
-
-  return (
-    <div className={\`pricing-container theme-\${theme}\`}>
-      {data.map((tier) => (
-        <div 
-          key={tier.id} 
-          className={\`pricing-tier \${selectedTier === tier.id ? 'selected' : ''}\`}
-        >
-          <h3 className="tier-name">{tier.name}</h3>
-          <p className="tier-price">\${tier.price}/mo</p>
-          <ul className="tier-features">
-            {tier.features.map((feature, i) => <li key={i}>{feature}</li>)}
-          </ul>
-          <button onClick={() => handleSelect(tier.id)} className="tier-button">
-            {selectedTier === tier.id ? 'Selected' : 'Choose Plan'}
-          </button>
-        </div>
-      ))}
-    </div>
-  );
-};
-
-export default PricingTable;`,
-  'pricing-table.css': `.pricing-container {
-  display: flex;
-  gap: 1rem;
-  font-family: sans-serif;
-}
-.pricing-tier {
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  padding: 1.5rem;
-  flex: 1;
-  text-align: center;
-  transition: transform 0.2s, box-shadow 0.2s;
-}
-.pricing-tier.selected {
-  transform: scale(1.05);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-  border-color: #4f46e5;
-}
-.tier-button {
-  background-color: #4f46e5;
-  color: white;
-  border: none;
-  padding: 0.75rem 1.5rem;
-  border-radius: 5px;
-  cursor: pointer;
-}`,
-};
+import type { CoderStep } from '@/app/page';
+import type { GenerateCodeOutput } from '@/ai/flows/generate-code-flow';
 
 // --- SUB-COMPONENTS ---
 
@@ -124,7 +62,7 @@ const BlueprintForm = ({ formData, setFormData, onGenerate, isLoading }: any) =>
   </div>
 );
 
-const AnatomyPanel = () => (
+const AnatomyPanel = ({ anatomy }: { anatomy: GenerateCodeOutput['anatomy'] }) => (
     <div className="bg-white rounded-lg p-4 border h-full overflow-y-auto">
         <h3 className="font-semibold text-sm mb-3">Component Anatomy</h3>
         <div className="space-y-4 text-sm">
@@ -132,13 +70,8 @@ const AnatomyPanel = () => (
                 <Puzzle size={18} className="text-blue-500 mt-0.5"/>
                 <div>
                     <h4 className="font-semibold">Visual Structure</h4>
-                    <div className="text-xs text-gray-600 mt-1 font-mono bg-gray-100 p-2 rounded">
-                        div.pricing-container<br/>
-                        &nbsp;&nbsp;└ div.pricing-tier (map)<br/>
-                        &nbsp;&nbsp;&nbsp;&nbsp;├ h3.tier-name<br/>
-                        &nbsp;&nbsp;&nbsp;&nbsp;├ p.tier-price<br/>
-                        &nbsp;&nbsp;&nbsp;&nbsp;├ ul.tier-features<br/>
-                        &nbsp;&nbsp;&nbsp;&nbsp;└ button.tier-button<br/>
+                    <div className="text-xs text-gray-600 mt-1 font-mono bg-gray-100 p-2 rounded whitespace-pre-wrap">
+                        {anatomy.visualStructure}
                     </div>
                 </div>
             </div>
@@ -146,24 +79,25 @@ const AnatomyPanel = () => (
                 <GitMerge size={18} className="text-purple-500 mt-0.5"/>
                 <div>
                     <h4 className="font-semibold">Props & State</h4>
-                    <p className="text-xs text-gray-600 mt-1"><code className="bg-gray-200 px-1 rounded">data</code>: array (required)</p>
-                    <p className="text-xs text-gray-600 mt-0.5"><code className="bg-gray-200 px-1 rounded">theme</code>: string (optional, default: 'light')</p>
-                    <p className="text-xs text-gray-600 mt-0.5"><code className="bg-gray-200 px-1 rounded">selectedTier</code>: internal state</p>
+                    {anatomy.propsAndState.map((item, index) => (
+                        <p key={index} className="text-xs text-gray-600 mt-0.5"><code className="bg-gray-200 px-1 rounded">{item}</code></p>
+                    ))}
                 </div>
             </div>
              <div className="flex items-start gap-3">
                 <Share2 size={18} className="text-orange-500 mt-0.5"/>
                 <div>
                     <h4 className="font-semibold">Dependencies</h4>
-                    <p className="text-xs text-gray-600 mt-1"><code className="bg-gray-200 px-1 rounded">react</code> (useState)</p>
-                    <p className="text-xs text-gray-600 mt-0.5"><code className="bg-gray-200 px-1 rounded">./pricing-table.css</code></p>
+                     {anatomy.dependencies.map((item, index) => (
+                        <p key={index} className="text-xs text-gray-600 mt-0.5"><code className="bg-gray-200 px-1 rounded">{item}</code></p>
+                    ))}
                 </div>
             </div>
             <div className="flex items-start gap-3">
                 <BrainCircuit size={18} className="text-green-500 mt-0.5"/>
                 <div>
                     <h4 className="font-semibold">AI Logic Explanation</h4>
-                    <p className="text-xs text-gray-600 mt-1">This component maps over a `data` prop to render pricing tiers. It uses an internal `selectedTier` state to track which tier is clicked, applying a 'selected' class for styling.</p>
+                    <p className="text-xs text-gray-600 mt-1">{anatomy.logicExplanation}</p>
                 </div>
             </div>
         </div>
@@ -171,7 +105,7 @@ const AnatomyPanel = () => (
 );
 
 const WorkbenchView = ({ code, chatHistory, onRefine, onGoBack }: any) => {
-  const [activeFile, setActiveFile] = useState('pricing-table.jsx');
+  const [activeFile, setActiveFile] = useState(code.files[0]?.filename || '');
   const [refinePrompt, setRefinePrompt] = useState('');
 
   const handleRefine = () => {
@@ -179,6 +113,8 @@ const WorkbenchView = ({ code, chatHistory, onRefine, onGoBack }: any) => {
     onRefine(refinePrompt);
     setRefinePrompt('');
   };
+  
+  const activeFileContent = code.files.find((f: any) => f.filename === activeFile)?.code || '';
 
   return (
     <div className="animate-fade-in">
@@ -186,16 +122,16 @@ const WorkbenchView = ({ code, chatHistory, onRefine, onGoBack }: any) => {
           <h2 className="text-2xl font-bold text-gray-800">AI Code Workbench</h2>
           <Button onClick={onGoBack} variant="ghost" size="sm"><ArrowLeft size={16} /> Back to Blueprint</Button>
       </div>
-      <div className="h-[65vh]">
+      <div>
           <PanelGroup direction="horizontal" className="w-full h-full">
               <Panel defaultSize={20} minSize={15}>
                   {/* File Tree */}
                   <div className="bg-gray-50 rounded-lg p-3 h-full overflow-y-auto">
                       <h3 className="font-semibold text-sm mb-2 flex items-center gap-2"><Folder size={16} /> Files</h3>
-                      {Object.keys(code).map(filename => (
-                          <Button key={filename} onClick={() => setActiveFile(filename)} variant={activeFile === filename ? 'secondary' : 'ghost'} size="sm" className="w-full justify-start text-left h-auto px-2 py-1">
+                      {code.files.map((file: any) => (
+                          <Button key={file.filename} onClick={() => setActiveFile(file.filename)} variant={activeFile === file.filename ? 'secondary' : 'ghost'} size="sm" className="w-full justify-start text-left h-auto px-2 py-1">
                               <File size={14} className="mr-2 flex-shrink-0" />
-                              <span className="truncate">{filename}</span>
+                              <span className="truncate">{file.filename}</span>
                           </Button>
                       ))}
                       <Button className="w-full mt-4" variant="outline"><Download size={14}/> Download ZIP</Button>
@@ -206,8 +142,8 @@ const WorkbenchView = ({ code, chatHistory, onRefine, onGoBack }: any) => {
                   {/* Code Editor & Chat */}
                   <div className="flex flex-col gap-4 h-full">
                       <div className="flex-grow bg-gray-800 text-white rounded-lg p-4 relative h-full">
-                          <Button onClick={() => navigator.clipboard.writeText(code[activeFile])} size="icon" variant="ghost" className="absolute top-2 right-2 h-7 w-7 text-gray-300 hover:bg-gray-600 hover:text-white"><Copy size={14}/></Button>
-                          <pre className="h-full overflow-auto text-xs whitespace-pre-wrap">{code[activeFile]}</pre>
+                          <Button onClick={() => navigator.clipboard.writeText(activeFileContent)} size="icon" variant="ghost" className="absolute top-2 right-2 h-7 w-7 text-gray-300 hover:bg-gray-600 hover:text-white"><Copy size={14}/></Button>
+                          <pre className="h-full overflow-auto text-xs whitespace-pre-wrap">{activeFileContent}</pre>
                       </div>
                       <div className="bg-gray-50 rounded-lg p-3">
                           <h3 className="font-semibold text-sm mb-2 flex items-center gap-2"><Terminal size={16}/> Refinement Chat</h3>
@@ -230,7 +166,7 @@ const WorkbenchView = ({ code, chatHistory, onRefine, onGoBack }: any) => {
               <Panel defaultSize={30} minSize={20}>
                   {/* Anatomy Panel */}
                   <div className="h-full">
-                      <AnatomyPanel />
+                      <AnatomyPanel anatomy={code.anatomy} />
                   </div>
               </Panel>
           </PanelGroup>
@@ -239,8 +175,19 @@ const WorkbenchView = ({ code, chatHistory, onRefine, onGoBack }: any) => {
   );
 };
 
+interface AICoderViewProps {
+    step: CoderStep;
+    isLoading: boolean;
+    generatedCode: GenerateCodeOutput | null;
+    chatHistory: any[];
+    formData: any;
+    setFormData: (data: any) => void;
+    onGenerate: () => void;
+    onRefine: (prompt: string) => void;
+    onGoBack: () => void;
+}
 
-const AICoderView: React.FC<any> = ({
+const AICoderView: React.FC<AICoderViewProps> = ({
     step,
     isLoading,
     generatedCode,
@@ -269,9 +216,9 @@ const AICoderView: React.FC<any> = ({
             <CardContent>
                 {step === 'blueprint' ? (
                   <BlueprintForm formData={formData} setFormData={setFormData} onGenerate={onGenerate} isLoading={isLoading} />
-                ) : (
+                ) : generatedCode ? (
                   <WorkbenchView code={generatedCode} chatHistory={chatHistory} onRefine={onRefine} onGoBack={onGoBack} />
-                )}
+                ) : null}
             </CardContent>
         </Card>
     );
