@@ -1,6 +1,8 @@
+
 "use client";
 import React, { useState, useEffect } from 'react';
-import { BookOpen, Map, Users, Code, Plus, Sparkles, BrainCircuit, FileText, Lightbulb, Bot, Package, WandSparkles, Send, BookCopy, Search, FileSignature, MessageSquareQuote, Paperclip, Loader, PenTool, ArrowLeft, Wind, Hash } from 'lucide-react';
+import { BookOpen, Map, Users, Code, Plus, Sparkles, BrainCircuit, FileText, Lightbulb, Bot, Package, WandSparkles, Send, BookCopy, Search, FileSignature, MessageSquareQuote, Paperclip, Loader, PenTool, ArrowLeft, Wind, Hash, ThumbsUp, Combine, X, Trophy, Download, Copy, Zap, Box, PlusSquare, Filter, MessageSquare, Star } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { answerCareerQuestion } from '@/ai/flows/answer-career-questions';
 import { analyzeResume } from '@/ai/flows/analyze-resume-flow';
 import { generateOutline, GenerateOutlineOutput } from '@/ai/flows/generate-outline-flow';
@@ -16,6 +18,7 @@ import { Input } from '@/components/ui/input';
 
 type ActiveView = 'tutor' | 'roadmap' | 'mentor' | 'coder' | 'content-generator' | 'idea-generator' | null;
 type ContentGeneratorStep = 'idea' | 'outline' | 'draft';
+type IdeaGeneratorStep = 'input' | 'results' | 'finalized';
 
 interface NavItemProps {
   icon: React.ReactNode;
@@ -60,7 +63,6 @@ interface ContentFormData {
     outline: GenerateOutlineOutput | null;
     draft: string;
 }
-
 
 // --- COMPONENTS --- //
 
@@ -236,7 +238,6 @@ export default function Home() {
     const [userInput, setUserInput] = useState('');
     const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
     const [roadmapContent, setRoadmapContent] = useState<string>('');
-    const [generatedIdeas, setGeneratedIdeas] = useState<string[]>([]);
     const [generatedCode, setGeneratedCode] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -250,6 +251,22 @@ export default function Home() {
         goal: 'Educate an audience',
         outline: null,
         draft: '',
+    });
+
+    // State for Idea Generator
+    const [ideaGeneratorStep, setIdeaGeneratorStep] = useState<IdeaGeneratorStep>('input');
+    const [ideas, setIdeas] = useState<any[]>([]);
+    const [activeChatIdea, setActiveChatIdea] = useState<any | null>(null);
+    const [combinePair, setCombinePair] = useState<any[]>([]);
+    const [finalizedIdea, setFinalizedIdea] = useState<any | null>(null);
+    const [dragOverId, setDragOverId] = useState<number | null>(null);
+    const [ideaFormData, setIdeaFormData] = useState({ 
+        subject: 'Annual company retreat', 
+        audience: 'Remote-first tech employees', 
+        constraints: 'Budget under $10k', 
+        other: 'Focus on mental wellness', 
+        lens: 'What If?',
+        detailedDescription: ''
     });
 
     const handleViewChange = (view: ActiveView) => {
@@ -400,15 +417,6 @@ export default function Home() {
         });
     };
 
-    const handleGenerateIdeas = async (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        const formData = new FormData(e.currentTarget);
-        const topic = formData.get('topic') as string;
-        const prompt = `Generate 5 project ideas related to: ${topic}. Separate each idea with "|||".`;
-        const response = await callAIFlow(prompt);
-        if (response) setGeneratedIdeas(response.split('|||').map(idea => idea.trim()));
-    };
-
     const handleGenerateCode = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         const formData = new FormData(e.currentTarget);
@@ -421,6 +429,114 @@ export default function Home() {
         }
     };
     
+    // Idea Generator Functions
+    const simulateAICall = (duration = 800) => new Promise(resolve => setTimeout(resolve, duration));
+
+    const getMockIdeas = () => ([
+      { id: 1, title: "Eco-Hackathon Retreat", shortDesc: "A 3-day retreat focused on building sustainable tech solutions.", longDesc: "Imagine a serene, off-grid lodge where teams collaborate not just on code, but on tangible environmental projects. Workshops on permaculture and sustainable energy could run alongside coding sessions, fostering a holistic approach to innovation.", previewPoints: ["Collaborate on tangible environmental projects.", "Foster a holistic approach to innovation."], tags: ["team-building", "eco-friendly"], likes: 0, isFavorited: false, column: 'ideas', chatHistory: [] },
+      { id: 2, title: "The 'Unconference' Festival", shortDesc: "The agenda is created by attendees on day one. A highly interactive format.", longDesc: "This flips the traditional conference on its head. There are no pre-planned speakers. Instead, attendees pitch sessions they want to lead or see. It's chaotic, democratic, and incredibly engaging, ensuring every topic is relevant to the audience.", previewPoints: ["Attendees pitch and lead all sessions.", "Ensures every topic is relevant and engaging."], tags: ["innovative", "interactive"], likes: 0, isFavorited: false, column: 'ideas', chatHistory: [] },
+      { id: 3, title: "Around the World (Virtual)", shortDesc: "A week-long virtual event with cultural workshops and online games.", longDesc: "More than just Zoom calls. Each day, employees receive a 'travel kit' with snacks and items from a specific country. Activities include virtual cooking classes with local chefs, language lessons, and collaborative online 'escape rooms' themed around global landmarks.", previewPoints: ["Receive daily 'travel kits' with snacks.", "Engage in virtual cooking classes and games."], tags: ["virtual", "cultural"], likes: 0, isFavorited: false, column: 'ideas', chatHistory: [] },
+      { id: 4, title: "City-Wide Scavenger Hunt", shortDesc: "An app-guided scavenger hunt across the city, ending in a final party.", longDesc: "Teams use a custom app to solve riddles that lead them to local landmarks, businesses, and art installations. It encourages teamwork, problem-solving, and a deeper connection with the local community, culminating in a celebration where stories are shared.", previewPoints: ["Solve riddles using a custom app.", "Connect with local community and landmarks."], tags: ["active", "local"], likes: 0, isFavorited: false, column: 'ideas', chatHistory: [] },
+    ]);
+
+    const handleGenerateIdeas = async () => {
+        setIsLoading(true);
+        // In a real app, you would use a Genkit flow here.
+        // For now, we simulate the call and use mock data.
+        const prompt = `Generate 5 creative event ideas based on the following criteria:
+        Subject: ${ideaFormData.subject}
+        Audience: ${ideaFormData.audience}
+        Constraints: ${ideaFormData.constraints}
+        Other criteria: ${ideaFormData.other}
+        Creativity Lens: ${ideaFormData.lens}
+        Detailed Description: ${ideaFormData.detailedDescription}
+
+        Format each idea with a title, short description, long description, 2 preview points, and 2-3 tags.
+        `;
+        // We are not calling the AI yet, just using mock data.
+        await simulateAICall(); 
+        setIdeas(getMockIdeas());
+        setIsLoading(false);
+        setIdeaGeneratorStep('results');
+    };
+
+    const handleIdeaAction = async (action: string, id: number, data?: any) => {
+        switch (action) {
+          case 'like':
+            setIdeas(ideas.map(i => i.id === id ? { ...i, likes: i.likes + 1 } : i));
+            break;
+          case 'favorite':
+            setIdeas(ideas.map(i => i.id === id ? { ...i, isFavorited: !i.isFavorited } : i));
+            break;
+          case 'chat':
+            const ideaToChat = ideas.find(i => i.id === id);
+            setActiveChatIdea(ideaToChat);
+            setIdeas(ideas.map(i => i.id === id ? { ...i, column: 'chat' } : i));
+            break;
+          case 'message':
+            const userMessage = { sender: 'user', text: data };
+            setActiveChatIdea((prev: any) => ({ ...prev, chatHistory: [...prev.chatHistory, userMessage] }));
+            await simulateAICall(600);
+            const aiResponse = { sender: 'ai', text: `That's a great question! Regarding "${data}", we could...` };
+            setActiveChatIdea((prev: any) => ({ ...prev, chatHistory: [...prev.chatHistory, aiResponse] }));
+            break;
+        }
+    };
+
+    const handleDragStart = (e: React.DragEvent, id: number) => {
+        e.dataTransfer.setData("ideaId", id.toString());
+    };
+
+    const handleDragEnd = () => {
+        setDragOverId(null);
+    };
+
+    const handleDrop = (e: React.DragEvent, targetId: number) => {
+        e.preventDefault();
+        setDragOverId(null);
+        const draggedId = parseInt(e.dataTransfer.getData("ideaId"));
+        
+        if (draggedId && targetId && draggedId !== targetId) {
+          const idea1 = ideas.find(i => i.id === draggedId);
+          const idea2 = ideas.find(i => i.id === targetId);
+          if (idea1 && idea2) {
+            setCombinePair([idea1, idea2]);
+          }
+        }
+    };
+  
+    const handleCombine = async () => {
+      setIsLoading(true);
+      await simulateAICall();
+      const [idea1, idea2] = combinePair;
+      const newIdea = {
+          id: Date.now(),
+          title: `Hybrid: ${idea1.title} + ${idea2.title}`,
+          shortDesc: `A new concept combining the core elements of both ideas.`,
+          longDesc: `This hybrid event starts with the interactive elements of "${idea1.title}" and culminates in the collaborative project-based approach of "${idea2.title}". It's the best of both worlds, designed for maximum engagement and impact.`,
+          previewPoints: ["Combines interactive discovery.", "Features a collaborative project."],
+          tags: [...new Set([...idea1.tags, ...idea2.tags, "hybrid"])],
+          likes: 1, isFavorited: true, column: 'chat',
+          chatHistory: [{ sender: 'ai', text: 'I\'ve combined these two ideas. What would you like to refine first?' }]
+      };
+      setIdeas([...ideas.filter(i => i.id !== idea1.id && i.id !== idea2.id), newIdea]);
+      setActiveChatIdea(newIdea);
+      setCombinePair([]);
+      setIsLoading(false);
+    };
+  
+    const handleFinalize = (idea: any) => {
+      setFinalizedIdea(idea);
+      setIdeaGeneratorStep('finalized');
+    };
+  
+    const handleIdeaRestart = () => {
+      setIdeaGeneratorStep('input');
+      setIdeas([]);
+      setActiveChatIdea(null);
+      setFinalizedIdea(null);
+    };
+
     // --- RENDER LOGIC --- //
 
     const renderMainContent = () => {
@@ -557,13 +673,13 @@ export default function Home() {
                             )}
                              <div className="mt-6 flex items-center gap-2">
                                 <Button asChild variant="outline" className="relative">
-                                    <div>
+                                     <div>
                                         <label htmlFor="resume-upload" className="flex items-center cursor-pointer">
                                             <Paperclip size={18} />
                                             <span className="sr-only">Upload Resume</span>
                                         </label>
                                         <Input id="resume-upload" type="file" className="absolute w-full h-full opacity-0 cursor-pointer" onChange={handleResumeUpload} accept=".txt,.pdf,.md" />
-                                    </div>
+                                     </div>
                                 </Button>
                                 <div className="flex-grow relative">
                                     <input
@@ -740,6 +856,213 @@ export default function Home() {
                 );
 
             case 'idea-generator':
+                const IdeaCard = ({ idea, onAction, onDragStart, onDragEnd, isDraggedOver }: { idea: any, onAction: any, onDragStart: any, onDragEnd: any, isDraggedOver: boolean }) => {
+                  const [showPreview, setShowPreview] = useState(false);
+                  return (
+                    <motion.div
+                      draggable
+                      onDragStart={(e) => onDragStart(e, idea.id)}
+                      onDragEnd={onDragEnd}
+                      layoutId={`card-${idea.id}`}
+                      className={`bg-white border rounded-lg p-3 shadow-sm cursor-grab active:cursor-grabbing transition-all duration-200 ${isDraggedOver ? 'ring-2 ring-indigo-400' : 'border-gray-200'}`}
+                      onMouseEnter={() => setShowPreview(true)}
+                      onMouseLeave={() => setShowPreview(false)}
+                    >
+                      <div className="flex justify-between items-start">
+                        <h3 className="font-bold text-gray-800 text-sm w-5/6">{idea.title}</h3>
+                        <button onClick={() => onAction('favorite', idea.id)} className="text-gray-300 hover:text-amber-400">
+                          <Star size={16} className={idea.isFavorited ? "text-amber-400 fill-current" : ""} />
+                        </button>
+                      </div>
+                      <AnimatePresence>
+                        {showPreview && (
+                          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="mt-2 text-xs">
+                            <ul className="space-y-1 list-disc list-inside text-gray-600">
+                              {idea.previewPoints.map((point: string, i: number) => <li key={i}>{point}</li>)}
+                            </ul>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                      <div className="flex items-center justify-between mt-3 text-xs">
+                        <div className="flex gap-1.5 flex-wrap">
+                          {idea.tags.map((tag: string) => <span key={tag} className="font-medium bg-gray-100 text-gray-700 px-1.5 py-0.5 rounded-full">{tag}</span>)}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button onClick={() => onAction('like', idea.id)} className="flex items-center gap-1 text-gray-500 font-semibold hover:text-indigo-600">
+                            <ThumbsUp size={14} className={idea.likes > 0 ? 'text-indigo-600' : ''} /> {idea.likes}
+                          </button>
+                          <button onClick={() => onAction('chat', idea.id)} className="flex items-center gap-1 text-indigo-600 font-semibold hover:text-indigo-800">
+                            Chat <MessageSquare size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    </motion.div>
+                  );
+                };
+
+                const ChatWorkspace = ({ idea, onAction, onFinalize }: { idea: any, onAction: any, onFinalize: any }) => {
+                  const [message, setMessage] = useState('');
+                  const handleSend = () => {
+                    if (!message.trim()) return;
+                    onAction('message', idea.id, message);
+                    setMessage('');
+                  };
+                  return (
+                    <motion.div layoutId={`card-${idea.id}`} className="bg-white border-2 border-indigo-500 rounded-lg p-4 shadow-lg">
+                      <h3 className="font-bold text-gray-800 text-lg">{idea.title}</h3>
+                      <p className="text-sm text-gray-600 mt-2 mb-4">{idea.longDesc}</p>
+                      <div className="bg-gray-50 h-48 rounded p-2 overflow-y-auto text-sm space-y-2">
+                        {idea.chatHistory.map((chat: any, i: number) => (
+                          <div key={i} className={`p-2 rounded-lg ${chat.sender === 'user' ? 'bg-indigo-100 text-indigo-800' : 'bg-gray-200 text-gray-800'}`}>{chat.text}</div>
+                        ))}
+                      </div>
+                      <div className="flex gap-2 mt-2">
+                        <input type="text" value={message} onChange={e => setMessage(e.target.value)} onKeyPress={e => e.key === 'Enter' && handleSend()} placeholder="Ask a question..." className="flex-grow p-2 border rounded-md text-sm" />
+                        <button onClick={handleSend} className="bg-indigo-600 text-white p-2 rounded-md hover:bg-indigo-700"><Send size={16} /></button>
+                      </div>
+                      <button onClick={() => onFinalize(idea)} className="w-full mt-3 bg-green-500 text-white font-bold py-2 rounded-lg hover:bg-green-600 flex items-center justify-center gap-2">
+                        <Trophy size={16} /> Finalize This Idea
+                      </button>
+                    </motion.div>
+                  );
+                };
+
+                const CombineView = ({ idea1, idea2, onCombine, onCancel, isLoading }: { idea1: any, idea2: any, onCombine: any, onCancel: any, isLoading: boolean }) => (
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+                    <div className="bg-white rounded-xl p-6 w-full max-w-2xl text-center shadow-2xl">
+                      <h2 className="text-2xl font-bold text-gray-800">Combine Ideas</h2>
+                      <div className="flex gap-4 my-4">
+                        <div className="flex-1 bg-gray-50 p-3 rounded-lg">
+                          <h3 className="font-bold">{idea1.title}</h3>
+                          <p className="text-xs text-gray-600 mt-1">{idea1.shortDesc}</p>
+                        </div>
+                        <div className="flex items-center"><Combine size={24} className="text-indigo-500" /></div>
+                        <div className="flex-1 bg-gray-50 p-3 rounded-lg">
+                          <h3 className="font-bold">{idea2.title}</h3>
+                          <p className="text-xs text-gray-600 mt-1">{idea2.shortDesc}</p>
+                        </div>
+                      </div>
+                      <div className="bg-indigo-50 p-4 rounded-lg">
+                        <h4 className="font-semibold text-indigo-800">Blended Concept:</h4>
+                        <p className="text-sm text-indigo-700 mt-1">A hybrid event that starts with a city-wide scavenger hunt and ends with a 2-day eco-hackathon at a nature retreat.</p>
+                      </div>
+                      <div className="flex gap-3 mt-6">
+                        <Button onClick={onCancel} variant="outline" className="flex-1">Cancel</Button>
+                        <Button onClick={onCombine} disabled={isLoading} className="flex-1">
+                          {isLoading ? 'Combining...' : 'Send to Chat'}
+                        </Button>
+                      </div>
+                    </div>
+                  </motion.div>
+                );
+
+                const FinalizationView = ({ idea, onRestart }: { idea: any, onRestart: any }) => (
+                  <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center">
+                    <Trophy size={48} className="mx-auto text-amber-400" />
+                    <h2 className="text-3xl font-bold text-gray-800 mt-2">Your idea has evolved!</h2>
+                    <div className="bg-gray-50 rounded-lg p-6 mt-6 text-left shadow-inner">
+                      <h3 className="text-xl font-bold text-indigo-700">{idea.title}</h3>
+                      <p className="text-gray-600 mt-2">{idea.longDesc}</p>
+                      <div className="mt-4 border-t pt-4">
+                        <h4 className="font-semibold">Next Steps:</h4>
+                        <ul className="list-disc list-inside text-sm text-gray-600">
+                          <li>Draft a project brief and budget proposal.</li>
+                          <li>Form a small team to flesh out logistics.</li>
+                          <li>Survey potential attendees for interest.</li>
+                        </ul>
+                      </div>
+                      <div className="mt-4">
+                        <h4 className="font-semibold">Mood Board:</h4>
+                        <div className="flex gap-2 text-2xl mt-1">🌳 💻 🤝 🏆 🌎</div>
+                      </div>
+                    </div>
+                    <div className="flex gap-3 mt-6">
+                      <Button variant="outline" className="flex-1"><Download size={16}/> Download PDF</Button>
+                      <Button variant="outline" className="flex-1"><Copy size={16}/> Copy to Notion</Button>
+                    </div>
+                    <button onClick={onRestart} className="mt-4 text-indigo-600 font-semibold hover:underline">Start a New Brainstorm</button>
+                  </motion.div>
+                );
+                
+                const renderIdeaGeneratorContent = () => {
+                    switch (ideaGeneratorStep) {
+                        case 'input':
+                            return (
+                                <div className="animate-fade-in">
+                                    <div className="flex items-center gap-3 mb-2"><div className="bg-purple-100 text-purple-600 p-2 rounded-lg"><Lightbulb size={20} /></div><h2 className="text-2xl font-bold text-gray-800">Idea Generator</h2></div>
+                                    <p className="text-gray-500 mb-6">Define your challenge and let the AI brainstorm creative solutions.</p>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                                      <div><label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1"><Zap size={14}/> Core Subject</label><Input type="text" value={ideaFormData.subject} onChange={(e) => setIdeaFormData({...ideaFormData, subject: e.target.value})} /></div>
+                                      <div><label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1"><Users size={14}/> Target Audience</label><Input type="text" value={ideaFormData.audience} onChange={(e) => setIdeaFormData({...ideaFormData, audience: e.target.value})} /></div>
+                                      <div><label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1"><Box size={14}/> Key Constraints</label><Input type="text" value={ideaFormData.constraints} onChange={(e) => setIdeaFormData({...ideaFormData, constraints: e.target.value})} /></div>
+                                      <div><label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1"><PlusSquare size={14}/> Other Criteria</label><Input type="text" value={ideaFormData.other} onChange={(e) => setIdeaFormData({...ideaFormData, other: e.target.value})} /></div>
+                                      
+                                      <div className="md:col-span-2">
+                                        <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1">
+                                          <FileText size={14}/> Describe Your Idea in Detail (Optional)
+                                        </label>
+                                        <Textarea 
+                                          value={ideaFormData.detailedDescription} 
+                                          onChange={(e) => setIdeaFormData({...ideaFormData, detailedDescription: e.target.value})}
+                                          rows={4}
+                                          placeholder="Provide any additional context, background, or specific thoughts you have about the idea..."
+                                        />
+                                      </div>
+
+                                      <div className="md:col-span-2"><label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1"><Filter size={14}/> Creativity Lens</label>
+                                        <select value={ideaFormData.lens} onChange={(e) => setIdeaFormData({...ideaFormData, lens: e.target.value})} className="w-full p-2 border border-input rounded-lg bg-background">
+                                          <option>What If? (Expansive)</option>
+                                          <option>Problem/Solution (Focused)</option>
+                                          <option>Analogous (Borrowing)</option>
+                                          <option>The Minimalist (Simplifying)</option>
+                                        </select>
+                                      </div>
+                                    </div>
+                                    <Button onClick={handleGenerateIdeas} disabled={isLoading} className="w-full mt-8 bg-purple-600 hover:bg-purple-700 transition-colors flex items-center justify-center gap-2 disabled:bg-purple-300">{isLoading ? <div className="animate-spin"><Sparkles size={20}/></div> : <Sparkles size={20} />}{isLoading ? 'Generating...' : 'Generate Ideas'}</Button>
+                                  </div>
+                            );
+                        case 'results':
+                             return (
+                                <div className="animate-fade-in">
+                                  <div className="flex justify-between items-center mb-4">
+                                    <h2 className="text-2xl font-bold text-gray-800">Ideation Workspace</h2>
+                                    <button onClick={handleIdeaRestart} className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900 font-medium"><ArrowLeft size={16} /> New Brainstorm</button>
+                                  </div>
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="bg-gray-100 rounded-lg p-3">
+                                      <h3 className="font-semibold text-gray-700 mb-3 px-1 flex items-center gap-2">💡 Ideas <span className="text-xs bg-gray-300 text-gray-600 rounded-full px-2">{ideas.filter(i => i.column === 'ideas').length}</span></h3>
+                                      <div className="space-y-3">
+                                        {ideas.filter(i => i.column === 'ideas').map(idea => 
+                                          <div 
+                                            key={idea.id} 
+                                            onDrop={(e) => handleDrop(e, idea.id)} 
+                                            onDragOver={(e) => { e.preventDefault(); setDragOverId(idea.id); }}
+                                            onDragLeave={() => setDragOverId(null)}
+                                          >
+                                            <IdeaCard 
+                                              idea={idea} 
+                                              onAction={handleIdeaAction} 
+                                              onDragStart={handleDragStart} 
+                                              onDragEnd={handleDragEnd}
+                                              isDraggedOver={dragOverId === idea.id}
+                                            />
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                    <div className="bg-gray-100 rounded-lg p-3">
+                                      <h3 className="font-semibold text-gray-700 mb-3 px-1 flex items-center gap-2">💬 Chat with Idea</h3>
+                                      {activeChatIdea ? <ChatWorkspace idea={activeChatIdea} onAction={handleIdeaAction} onFinalize={handleFinalize} /> : <div className="text-center text-sm text-gray-500 p-10">Send an idea here to start chatting!</div>}
+                                    </div>
+                                  </div>
+                                  <AnimatePresence>{combinePair.length === 2 && <CombineView idea1={combinePair[0]} idea2={combinePair[1]} onCombine={handleCombine} onCancel={() => setCombinePair([])} isLoading={isLoading} />}</AnimatePresence>
+                                </div>
+                              );
+                        case 'finalized':
+                            return <FinalizationView idea={finalizedIdea} onRestart={handleIdeaRestart} />;
+                        default: return null;
+                    }
+                }
                 return (
                     <Card>
                         <CardHeader>
@@ -755,24 +1078,9 @@ export default function Home() {
                             </div>
                         </CardHeader>
                         <CardContent>
-                             <form onSubmit={handleGenerateIdeas} className="flex gap-2">
-                                <Input name="topic" placeholder="e.g., Mobile apps for sustainability" required disabled={isLoading} className="flex-grow"/>
-                                <Button type="submit" disabled={isLoading} className="bg-purple-600 hover:bg-purple-700">
-                                    {isLoading ? <LoadingSpinner/> : 'Get Ideas'}
-                                </Button>
-                            </form>
-                            {isLoading && generatedIdeas.length === 0 && <LoadingSpinner />}
-                            {generatedIdeas.length > 0 && (
-                                <div className="mt-6 space-y-3">
-                                    <h3 className="font-bold">Generated Ideas:</h3>
-                                    {generatedIdeas.map((idea, index) => (
-                                       <div key={index} className="p-3 bg-gray-50 border rounded-lg flex items-start gap-3">
-                                           <Lightbulb className="h-5 w-5 text-purple-500 mt-1" />
-                                           <p className="text-gray-700 flex-1">{idea}</p>
-                                       </div>
-                                    ))}
-                                </div>
-                            )}
+                            <div className="w-full transition-all duration-500">
+                                {renderIdeaGeneratorContent()}
+                            </div>
                         </CardContent>
                     </Card>
                 );
