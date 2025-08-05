@@ -185,7 +185,7 @@ const WorkbenchView = ({ code, chatHistory, onRefine, onGoBack }: any) => {
           <h2 className="text-2xl font-bold text-gray-800">AI Code Workbench</h2>
           <Button onClick={onGoBack} variant="ghost" size="sm"><ArrowLeft size={16} /> Back to Blueprint</Button>
       </div>
-      <div className="grid grid-cols-12 gap-4 h-[70vh]">
+      <div className="grid grid-cols-12 gap-4">
         {/* File Tree */}
         <div className="col-span-2 bg-gray-50 rounded-lg p-3">
           <h3 className="font-semibold text-sm mb-2 flex items-center gap-2"><Folder size={16} /> Files</h3>
@@ -199,7 +199,7 @@ const WorkbenchView = ({ code, chatHistory, onRefine, onGoBack }: any) => {
 
         {/* Code Editor & Chat */}
         <div className="col-span-5 flex flex-col gap-4">
-          <div className="flex-grow bg-gray-800 text-white rounded-lg p-4 relative">
+          <div className="flex-grow bg-gray-800 text-white rounded-lg p-4 relative h-96">
               <Button onClick={() => navigator.clipboard.writeText(code[activeFile])} size="icon" variant="ghost" className="absolute top-2 right-2 h-7 w-7 text-gray-300 hover:bg-gray-600 hover:text-white"><Copy size={14}/></Button>
               <pre className="h-full overflow-auto text-xs whitespace-pre-wrap">{code[activeFile]}</pre>
           </div>
@@ -230,46 +230,17 @@ const WorkbenchView = ({ code, chatHistory, onRefine, onGoBack }: any) => {
 };
 
 
-const AICoderView: React.FC = () => {
-    const [step, setStep] = useState('blueprint'); // blueprint, workbench
-    const [isLoading, setIsLoading] = useState(false);
-    const [generatedCode, setGeneratedCode] = useState<any>(null);
-    const [chatHistory, setChatHistory] = useState<any[]>([]);
-    const [formData, setFormData] = useState({
-        description: 'A responsive pricing table with three tiers and a selected state',
-        framework: 'React',
-        language: 'JavaScript',
-        styling: 'CSS Modules',
-        techStack: 'Next.js, Vercel',
-        schema: `[{
-  "id": 1,
-  "name": "Basic",
-  "price": 10,
-  "features": ["Feature A", "Feature B"]
-}]`
-    });
-
-    const handleGenerate = async () => {
-        setIsLoading(true);
-        await simulateAICall();
-        setGeneratedCode(mockGeneratedCode);
-        setChatHistory([{ sender: 'ai', text: 'Component generated! Here is a breakdown of its anatomy.' }]);
-        setIsLoading(false);
-        setStep('workbench');
-    };
-
-    const handleRefine = async (prompt: any) => {
-        setChatHistory(prev => [...prev, { sender: 'user', text: prompt }]);
-        setIsLoading(true);
-        await simulateAICall();
-        // In a real app, the AI would modify the code. We'll just mock a response.
-        setChatHistory(prev => [...prev, { sender: 'ai', text: `Okay, I've updated the code to: ${prompt}. The anatomy panel has been updated.` }]);
-        setIsLoading(false);
-    };
-
-    const handleGoBack = () => {
-        setStep('blueprint');
-    };
+const AICoderView: React.FC<any> = ({
+    step,
+    isLoading,
+    generatedCode,
+    chatHistory,
+    formData,
+    setFormData,
+    onGenerate,
+    onRefine,
+    onGoBack
+}) => {
     
     return (
         <Card>
@@ -287,9 +258,9 @@ const AICoderView: React.FC = () => {
             </CardHeader>
             <CardContent>
                 {step === 'blueprint' ? (
-                  <BlueprintForm formData={formData} setFormData={setFormData} onGenerate={handleGenerate} isLoading={isLoading} />
+                  <BlueprintForm formData={formData} setFormData={setFormData} onGenerate={onGenerate} isLoading={isLoading} />
                 ) : (
-                  <WorkbenchView code={generatedCode} chatHistory={chatHistory} onRefine={handleRefine} onGoBack={handleGoBack} />
+                  <WorkbenchView code={generatedCode} chatHistory={chatHistory} onRefine={onRefine} onGoBack={onGoBack} />
                 )}
             </CardContent>
         </Card>
