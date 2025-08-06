@@ -11,7 +11,8 @@ import { analyzeResume } from '@/ai/flows/analyze-resume-flow';
 import { generateOutline, GenerateOutlineOutput } from '@/ai/flows/generate-outline-flow';
 import { generateDraft } from '@/ai/flows/generate-draft-flow';
 import { generateCode, GenerateCodeOutput } from '@/ai/flows/generate-code-flow';
-import { generateIdeas, GenerateIdeasInput, GenerateIdeasOutput } from '@/ai/flows/generate-ideas-flow';
+import { generateIdeas } from '@/ai/flows/generate-ideas-flow';
+import type { GenerateIdeasInput, GenerateIdeasOutput } from '@/ai/schemas/idea-generation-schemas';
 
 
 import AITutorView from '@/components/views/AITutorView';
@@ -658,15 +659,15 @@ export default function Home() {
 
           {/* Main Content */}
           <main className="lg:col-span-9">
-             <div className="space-y-8">
-                {renderMainContent()}
-             </div>
-             {activeView === null && (
-                <div className="space-y-8 mt-8">
-                    <StatsSection />
-                    <RecommendedToolsSection />
-                </div>
-            )}
+            <div className="space-y-8">
+              {renderMainContent()}
+              {activeView === null && (
+                <>
+                  <StatsSection />
+                  <RecommendedToolsSection />
+                </>
+              )}
+            </div>
           </main>
         </div>
       </div>

@@ -3,46 +3,27 @@
 /**
  * @fileOverview A Genkit flow for generating creative ideas based on user criteria.
  * 
- * - generateIdeas - A function that takes user-defined criteria and returns a list of generated ideas.
- * - GenerateIdeasInput - The input type for the generateIdeas function.
- * - GenerateIdeasOutput - The return type for the generateIdeas function.
+ * This file only exports the main `generateIdeas` function to comply with "use server" constraints.
+ * Schemas and types are defined in `src/ai/schemas/idea-generation-schemas.ts`.
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import type { GenerateIdeasInput, GenerateIdeasOutput } from '../schemas/idea-generation-schemas';
+import { GenerateIdeasInputSchema, GenerateIdeasOutputSchema } from '../schemas/idea-generation-schemas';
 
-export const GenerateIdeasInputSchema = z.object({
-    subject: z.string().describe('The core subject or area for which ideas are needed (e.g., "company retreat", "new app feature").'),
-    audience: z.string().describe('The target audience for these ideas (e.g., "remote employees", "power users").'),
-    constraints: z.string().optional().describe('Any key constraints to consider (e.g., "budget under $10k", "must be virtual").'),
-    other: z.string().optional().describe('Any other miscellaneous criteria or goals (e.g., "focus on wellness", "encourage collaboration").'),
-    lens: z.string().describe('A "creativity lens" to guide the style of idea generation (e.g., "What If?", "Problem/Solution").'),
-    detailedDescription: z.string().optional().describe('A more detailed, free-form description of the challenge or goal.'),
-});
-export type GenerateIdeasInput = z.infer<typeof GenerateIdeasInputSchema>;
 
-const IdeaSchema = z.object({
-    title: z.string().describe('A short, catchy title for the idea.'),
-    shortDesc: z.string().describe('A one-sentence summary of the idea.'),
-    longDesc: z.string().describe('A more detailed paragraph explaining the idea, its value, and how it might work.'),
-    previewPoints: z.array(z.string()).length(2).describe('A list of exactly two key bullet points that highlight the most exciting aspects of the idea.'),
-    tags: z.array(z.string()).describe('A list of 2-3 relevant keywords or tags for the idea (e.g., "team-building", "innovative").'),
-});
-
-export const GenerateIdeasOutputSchema = z.object({
-    ideas: z.array(IdeaSchema).length(4).describe('An array of exactly 4 generated ideas that fit the user\'s criteria.'),
-});
-export type GenerateIdeasOutput = z.infer<typeof GenerateIdeasOutputSchema>;
-
-export async function generateIdeas(input: GenerateIdeasInput): Promise<GenerateIdeasOutput> {
-    return generateIdeasFlow(input);
-}
-
-const prompt = ai.definePrompt({
-    name: 'generateIdeasPrompt',
-    input: { schema: GenerateIdeasInputSchema },
-    output: { schema: GenerateIdeasOutputSchema },
-    prompt: `You are an expert idea generator and creative strategist. Your task is to brainstorm 4 distinct, creative, and actionable ideas based on the user's provided criteria.
+const generateIdeasFlow = ai.defineFlow(
+    {
+        name: 'generateIdeasFlow',
+        inputSchema: GenerateIdeasInputSchema,
+        outputSchema: GenerateIdeasOutputSchema,
+    },
+    async (input) => {
+        const prompt = ai.definePrompt({
+            name: 'generateIdeasPrompt',
+            input: { schema: GenerateIdeasInputSchema },
+            output: { schema: GenerateIdeasOutputSchema },
+            prompt: `You are an expert idea generator and creative strategist. Your task is to brainstorm 4 distinct, creative, and actionable ideas based on the user's provided criteria.
 
 User's Criteria:
 - Core Subject: {{{subject}}}
@@ -60,15 +41,13 @@ For each of the 4 ideas, you must provide:
 5.  A list of 2-3 relevant tags.
 
 Return the final list of ideas in the specified structured format. Ensure the ideas are diverse and genuinely creative.`,
-});
+        });
 
-const generateIdeasFlow = ai.defineFlow(
-    {
-        name: 'generateIdeasFlow',
-        inputSchema: GenerateIdeasInputSchema,
-        outputSchema: GenerateIdeasOutputSchema,
-    },
-async (input) => {
-    const { output } = await prompt(input);
-    return output!;
-});
+        const { output } = await prompt(input);
+        return output!;
+    }
+);
+
+export async function generateIdeas(input: GenerateIdeasInput): Promise<GenerateIdeasOutput> {
+    return await generateIdeasFlow(input);
+}
