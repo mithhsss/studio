@@ -7,6 +7,9 @@ import { Code, Settings, Terminal, ArrowRight, Bot, User, File, Folder, Download
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import type { CoderStep } from '@/app/page';
 import type { GenerateCodeOutput } from '@/ai/flows/generate-code-flow';
+import { refineCode } from '@/ai/flows/refine-code-flow';
+import { useToast } from "@/hooks/use-toast";
+
 
 // --- SUB-COMPONENTS ---
 
@@ -104,17 +107,56 @@ const AnatomyPanel = ({ anatomy }: { anatomy: GenerateCodeOutput['anatomy'] }) =
     </div>
 );
 
-const WorkbenchView = ({ code, chatHistory, onRefine, onGoBack }: any) => {
-  const [activeFile, setActiveFile] = useState(code.files[0]?.filename || '');
+const WorkbenchView = ({ generatedCode, setGeneratedCode, chatHistory, setChatHistory, onGoBack }: any) => {
+  const { toast } = useToast();
+  const [activeFile, setActiveFile] = useState(generatedCode.files[0]?.filename || '');
   const [refinePrompt, setRefinePrompt] = useState('');
+  const [isRefining, setIsRefining] = useState(false);
 
-  const handleRefine = () => {
+  const handleRefine = async () => {
     if (!refinePrompt.trim()) return;
-    onRefine(refinePrompt);
+
+    const userMessage = { sender: 'user', text: refinePrompt };
+    setChatHistory((prev: any) => [...prev, userMessage]);
     setRefinePrompt('');
+    setIsRefining(true);
+
+    try {
+        const result = await refineCode({
+            prompt: refinePrompt,
+            files: generatedCode.files,
+        });
+
+        // Create a map of the updated files for easy lookup
+        const updatedFilesMap = new Map(result.modifiedFiles.map(file => [file.filename, file.code]));
+
+        // Update the files in our state
+        const newFiles = generatedCode.files.map((file: any) => {
+            if (updatedFilesMap.has(file.filename)) {
+                return { ...file, code: updatedFilesMap.get(file.filename) };
+            }
+            return file;
+        });
+
+        setGeneratedCode({ ...generatedCode, files: newFiles });
+        
+        const aiResponse = { sender: 'ai', text: "Okay, I've updated the code based on your request. The files have been modified." };
+        setChatHistory((prev: any) => [...prev, aiResponse]);
+
+    } catch (err) {
+        toast({
+            variant: "destructive",
+            title: "Refinement Failed",
+            description: "There was a problem refining the code. Please try again.",
+        });
+        const aiErrorResponse = { sender: 'ai', text: "Sorry, I encountered an error while trying to modify the code." };
+        setChatHistory((prev: any) => [...prev, aiErrorResponse]);
+    } finally {
+        setIsRefining(false);
+    }
   };
   
-  const activeFileContent = code.files.find((f: any) => f.filename === activeFile)?.code || '';
+  const activeFileContent = generatedCode.files.find((f: any) => f.filename === activeFile)?.code || '';
 
   return (
     <div className="animate-fade-in">
@@ -122,13 +164,13 @@ const WorkbenchView = ({ code, chatHistory, onRefine, onGoBack }: any) => {
           <h2 className="text-2xl font-bold text-gray-800">AI Code Workbench</h2>
           <Button onClick={onGoBack} variant="ghost" size="sm"><ArrowLeft size={16} /> Back to Blueprint</Button>
       </div>
-      <div>
+      <div className="min-h-[60vh]">
           <PanelGroup direction="horizontal" className="w-full h-full">
               <Panel defaultSize={20} minSize={15}>
                   {/* File Tree */}
                   <div className="bg-gray-50 rounded-lg p-3 h-full overflow-y-auto">
                       <h3 className="font-semibold text-sm mb-2 flex items-center gap-2"><Folder size={16} /> Files</h3>
-                      {code.files.map((file: any) => (
+                      {generatedCode.files.map((file: any) => (
                           <Button key={file.filename} onClick={() => setActiveFile(file.filename)} variant={activeFile === file.filename ? 'secondary' : 'ghost'} size="sm" className="w-full justify-start text-left h-auto px-2 py-1">
                               <File size={14} className="mr-2 flex-shrink-0" />
                               <span className="truncate">{file.filename}</span>
@@ -154,10 +196,13 @@ const WorkbenchView = ({ code, chatHistory, onRefine, onGoBack }: any) => {
                                       <p>{msg.text}</p>
                                   </div>
                               ))}
+                              {isRefining && <Loader className="animate-spin text-green-500" size={16} />}
                           </div>
                           <div className="flex gap-2">
-                              <Input type="text" value={refinePrompt} onChange={e => setRefinePrompt(e.target.value)} onKeyPress={e => e.key === 'Enter' && handleRefine()} placeholder="e.g., 'Add a hover effect to the button'" className="text-sm"/>
-                              <Button onClick={handleRefine} className="bg-green-600 text-white p-2 rounded-lg hover:bg-green-700"><ArrowRight size={16}/></Button>
+                              <Input type="text" value={refinePrompt} onChange={e => setRefinePrompt(e.target.value)} onKeyPress={e => e.key === 'Enter' && handleRefine()} placeholder="e.g., 'Add a hover effect to the button'" className="text-sm" disabled={isRefining} />
+                              <Button onClick={handleRefine} className="bg-green-600 text-white p-2 rounded-lg hover:bg-green-700" disabled={isRefining}>
+                                {isRefining ? <Loader className="animate-spin" size={16} /> : <ArrowRight size={16}/>}
+                              </Button>
                           </div>
                       </div>
                   </div>
@@ -166,7 +211,7 @@ const WorkbenchView = ({ code, chatHistory, onRefine, onGoBack }: any) => {
               <Panel defaultSize={30} minSize={20}>
                   {/* Anatomy Panel */}
                   <div className="h-full">
-                      <AnatomyPanel anatomy={code.anatomy} />
+                      <AnatomyPanel anatomy={generatedCode.anatomy} />
                   </div>
               </Panel>
           </PanelGroup>
@@ -179,11 +224,12 @@ interface AICoderViewProps {
     step: CoderStep;
     isLoading: boolean;
     generatedCode: GenerateCodeOutput | null;
+    setGeneratedCode: (code: GenerateCodeOutput | null) => void;
     chatHistory: any[];
+    setCoderChatHistory: (history: any[]) => void;
     formData: any;
     setFormData: (data: any) => void;
     onGenerate: () => void;
-    onRefine: (prompt: string) => void;
     onGoBack: () => void;
 }
 
@@ -191,11 +237,12 @@ const AICoderView: React.FC<AICoderViewProps> = ({
     step,
     isLoading,
     generatedCode,
+    setGeneratedCode,
     chatHistory,
+    setCoderChatHistory,
     formData,
     setFormData,
     onGenerate,
-    onRefine,
     onGoBack
 }) => {
     
@@ -217,7 +264,13 @@ const AICoderView: React.FC<AICoderViewProps> = ({
                 {step === 'blueprint' ? (
                   <BlueprintForm formData={formData} setFormData={setFormData} onGenerate={onGenerate} isLoading={isLoading} />
                 ) : generatedCode ? (
-                  <WorkbenchView code={generatedCode} chatHistory={chatHistory} onRefine={onRefine} onGoBack={onGoBack} />
+                  <WorkbenchView 
+                    generatedCode={generatedCode}
+                    setGeneratedCode={setGeneratedCode} 
+                    chatHistory={chatHistory}
+                    setChatHistory={setCoderChatHistory}
+                    onGoBack={onGoBack} 
+                  />
                 ) : null}
             </CardContent>
         </Card>

@@ -520,15 +520,6 @@ export default function Home() {
         }
     };
 
-    const handleCodeRefine = async (prompt: any) => {
-        setCoderChatHistory((prev: any) => [...prev, { sender: 'user', text: prompt }]);
-        setIsLoading(true);
-        await simulateAICall();
-        // In a real app, the AI would modify the code. We'll just mock a response.
-        setCoderChatHistory((prev: any) => [...prev, { sender: 'ai', text: `Okay, I've updated the code to: ${prompt}. The anatomy panel has been updated.` }]);
-        setIsLoading(false);
-    };
-
     const handleGoBackToBlueprint = () => {
         setCoderStep('blueprint');
         setGeneratedCode(null);
@@ -621,11 +612,12 @@ export default function Home() {
                         step={coderStep}
                         isLoading={isLoading}
                         generatedCode={generatedCode}
+                        setGeneratedCode={setGeneratedCode}
                         chatHistory={coderChatHistory}
+                        setCoderChatHistory={setCoderChatHistory}
                         formData={coderFormData}
                         setFormData={setCoderFormData}
                         onGenerate={handleGenerateCode}
-                        onRefine={handleCodeRefine}
                         onGoBack={handleGoBackToBlueprint}
                     />
                 );
@@ -674,7 +666,7 @@ export default function Home() {
           <main className="lg:col-span-9">
             <div className="space-y-8">
               {renderMainContent()}
-              <div className="space-y-8">
+              <div className="space-y-8 mt-8">
                 <StatsSection />
                 <RecommendedToolsSection />
               </div>
