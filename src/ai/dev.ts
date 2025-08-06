@@ -7,3 +7,4 @@ import '@/ai/flows/generate-outline-flow.ts';
 import '@/ai/flows/generate-draft-flow.ts';
 import '@/ai/flows/generate-code-flow.ts';
 import '@/ai/flows/refine-code-flow.ts';
+import '@/ai/flows/generate-ideas-flow.ts';

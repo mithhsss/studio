@@ -11,6 +11,7 @@ import { analyzeResume } from '@/ai/flows/analyze-resume-flow';
 import { generateOutline, GenerateOutlineOutput } from '@/ai/flows/generate-outline-flow';
 import { generateDraft } from '@/ai/flows/generate-draft-flow';
 import { generateCode, GenerateCodeOutput } from '@/ai/flows/generate-code-flow';
+import { generateIdeas, GenerateIdeasInput, GenerateIdeasOutput } from '@/ai/flows/generate-ideas-flow';
 
 
 import AITutorView from '@/components/views/AITutorView';
@@ -217,7 +218,7 @@ export default function Home() {
     const [combinePair, setCombinePair] = useState<any[]>([]);
     const [finalizedIdea, setFinalizedIdea] = useState<any | null>(null);
     const [dragOverId, setDragOverId] = useState<number | null>(null);
-    const [ideaFormData, setIdeaFormData] = useState({ 
+    const [ideaFormData, setIdeaFormData] = useState<GenerateIdeasInput>({ 
         subject: 'Annual company retreat', 
         audience: 'Remote-first tech employees', 
         constraints: 'Budget under $10k', 
@@ -395,32 +396,29 @@ export default function Home() {
     // Idea Generator Functions
     const simulateAICall = (duration = 800) => new Promise(resolve => setTimeout(resolve, duration));
 
-    const getMockIdeas = () => ([
-      { id: 1, title: "Eco-Hackathon Retreat", shortDesc: "A 3-day retreat focused on building sustainable tech solutions.", longDesc: "Imagine a serene, off-grid lodge where teams collaborate not just on code, but on tangible environmental projects. Workshops on permaculture and sustainable energy could run alongside coding sessions, fostering a holistic approach to innovation.", previewPoints: ["Collaborate on tangible environmental projects.", "Foster a holistic approach to innovation."], tags: ["team-building", "eco-friendly"], likes: 0, isFavorited: false, column: 'ideas', chatHistory: [] },
-      { id: 2, title: "The 'Unconference' Festival", shortDesc: "The agenda is created by attendees on day one. A highly interactive format.", longDesc: "This flips the traditional conference on its head. There are no pre-planned speakers. Instead, attendees pitch sessions they want to lead or see. It's chaotic, democratic, and incredibly engaging, ensuring every topic is relevant to the audience.", previewPoints: ["Attendees pitch and lead all sessions.", "Ensures every topic is relevant and engaging."], tags: ["innovative", "interactive"], likes: 0, isFavorited: false, column: 'ideas', chatHistory: [] },
-      { id: 3, title: "Around the World (Virtual)", shortDesc: "A week-long virtual event with cultural workshops and online games.", longDesc: "More than just Zoom calls. Each day, employees receive a 'travel kit' with snacks and items from a specific country. Activities include virtual cooking classes with local chefs, language lessons, and collaborative online 'escape rooms' themed around global landmarks.", previewPoints: ["Receive daily 'travel kits' with snacks.", "Engage in virtual cooking classes and games."], tags: ["virtual", "cultural"], likes: 0, isFavorited: false, column: 'ideas', chatHistory: [] },
-      { id: 4, title: "City-Wide Scavenger Hunt", shortDesc: "An app-guided scavenger hunt across the city, ending in a final party.", longDesc: "Teams use a custom app to solve riddles that lead them to local landmarks, businesses, and art installations. It encourages teamwork, problem-solving, and a deeper connection with the local community, culminating in a celebration where stories are shared.", previewPoints: ["Solve riddles using a custom app.", "Connect with local community and landmarks."], tags: ["active", "local"], likes: 0, isFavorited: false, column: 'ideas', chatHistory: [] },
-    ]);
-
     const handleGenerateIdeas = async () => {
         setIsLoading(true);
-        // In a real app, you would use a Genkit flow here.
-        // For now, we simulate the call and use mock data.
-        const prompt = `Generate 5 creative event ideas based on the following criteria:
-        Subject: ${ideaFormData.subject}
-        Audience: ${ideaFormData.audience}
-        Constraints: ${ideaFormData.constraints}
-        Other criteria: ${ideaFormData.other}
-        Creativity Lens: ${ideaFormData.lens}
-        Detailed Description: ${ideaFormData.detailedDescription}
-
-        Format each idea with a title, short description, long description, 2 preview points, and 2-3 tags.
-        `;
-        // We are not calling the AI yet, just using mock data.
-        await simulateAICall(); 
-        setIdeas(getMockIdeas());
-        setIsLoading(false);
-        setIdeaGeneratorStep('results');
+        try {
+            const result = await generateIdeas(ideaFormData);
+            const ideasWithState = result.ideas.map((idea, index) => ({
+                ...idea,
+                id: index + 1, // Add a unique ID
+                likes: 0,
+                isFavorited: false,
+                column: 'ideas',
+                chatHistory: [],
+            }));
+            setIdeas(ideasWithState);
+            setIdeaGeneratorStep('results');
+        } catch (err) {
+             toast({
+                variant: "destructive",
+                title: "Idea Generation Failed",
+                description: "There was a problem generating ideas. Please try again.",
+            });
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const handleIdeaAction = async (action: string, id: number, data?: any) => {
@@ -663,10 +661,12 @@ export default function Home() {
              <div className="space-y-8">
                 {renderMainContent()}
              </div>
-             <div className="space-y-8 mt-8">
-                <StatsSection />
-                <RecommendedToolsSection />
-             </div>
+             {activeView === null && (
+                <div className="space-y-8 mt-8">
+                    <StatsSection />
+                    <RecommendedToolsSection />
+                </div>
+            )}
           </main>
         </div>
       </div>
