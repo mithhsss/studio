@@ -47,7 +47,7 @@ const prompt = ai.definePrompt({
 
 You must return a structured response containing:
 1.  An array of file objects, each with a \`filename\` and its corresponding \`code\`. Generate all necessary files, such as JSX/TSX components, CSS/styling files, and storybook files if applicable.
-2.  A detailed component \`anatomy\` breaking down its structure, props, state, dependencies, and logic. For dependencies, list the exact npm package names.
+2.  A detailed component \`anatomy\` breaking down its structure, props, state, dependencies, and logic. For dependencies, list the exact npm package names (e.g., "react", "prop-types").
 
 User Specifications:
 - Component Description: {{{description}}}

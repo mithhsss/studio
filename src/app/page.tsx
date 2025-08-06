@@ -501,26 +501,16 @@ export default function Home() {
     };
 
     // AI Coder functions
-    const handleGenerateCode = async () => {
+    const handleCoderGenerate = async () => {
         setIsLoading(true);
-        setGeneratedCode(null);
-        try {
-            const result = await generateCode(coderFormData);
-            setGeneratedCode(result);
-            setCoderChatHistory([{ sender: 'ai', text: 'Component generated! Here is a breakdown of its anatomy.' }]);
-            setCoderStep('workbench');
-        } catch (err) {
-            toast({
-                variant: "destructive",
-                title: "Code Generation Failed",
-                description: "There was a problem generating the code. Please try again.",
-            });
-        } finally {
-            setIsLoading(false);
-        }
+        // This is where the call to the real AI flow will happen
+        // For now, it's just a delay.
+        await simulateAICall(1500); 
+        setIsLoading(false);
+        setCoderStep('workbench');
     };
-
-    const handleGoBackToBlueprint = () => {
+    
+    const handleCoderGoBack = () => {
         setCoderStep('blueprint');
         setGeneratedCode(null);
     };
@@ -612,13 +602,19 @@ export default function Home() {
                         step={coderStep}
                         isLoading={isLoading}
                         generatedCode={generatedCode}
-                        setGeneratedCode={setGeneratedCode}
+                        setGeneratedCode={(code) => {
+                            setGeneratedCode(code);
+                            if (code) {
+                                setIsLoading(false);
+                                setCoderStep('workbench');
+                            }
+                        }}
                         chatHistory={coderChatHistory}
                         setCoderChatHistory={setCoderChatHistory}
                         formData={coderFormData}
                         setFormData={setCoderFormData}
-                        onGenerate={handleGenerateCode}
-                        onGoBack={handleGoBackToBlueprint}
+                        onGenerate={() => setIsLoading(true)}
+                        onGoBack={handleCoderGoBack}
                     />
                 );
         }
@@ -664,13 +660,13 @@ export default function Home() {
 
           {/* Main Content */}
           <main className="lg:col-span-9">
-            <div className="space-y-8">
-              {renderMainContent()}
-              <div className="space-y-8 mt-8">
+             <div className="space-y-8">
+                {renderMainContent()}
+             </div>
+             <div className="space-y-8 mt-8">
                 <StatsSection />
                 <RecommendedToolsSection />
-              </div>
-            </div>
+             </div>
           </main>
         </div>
       </div>
