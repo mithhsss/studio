@@ -8,3 +8,6 @@ import '@/ai/flows/generate-draft-flow.ts';
 import '@/ai/flows/generate-code-flow.ts';
 import '@/ai/flows/refine-code-flow.ts';
 import '@/ai/flows/generate-ideas-flow.ts';
+import '@/ai/flows/refine-content-flow.ts';
+import '@/ai/flows/chat-with-idea-flow.ts';
+import '@/ai/flows/combine-ideas-flow.ts';

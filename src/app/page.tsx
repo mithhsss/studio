@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { BookOpen, Map, Users, Code, Plus, Sparkles, BrainCircuit, FileText, Lightbulb, Bot, Package, WandSparkles } from 'lucide-react';
+import { BookOpen, Map, Users, Code, Plus, Sparkles, BrainCircuit, FileText, Lightbulb, Bot, Package, WandSparkles, Wind, Hash } from 'lucide-react';
 
 import { useToast } from "@/hooks/use-toast";
 import { Button } from '@/components/ui/button';
@@ -8,11 +8,15 @@ import { Card, CardHeader } from '@/components/ui/card';
 
 import { answerCareerQuestion } from '@/ai/flows/answer-career-questions';
 import { analyzeResume } from '@/ai/flows/analyze-resume-flow';
-import { generateOutline, GenerateOutlineOutput } from '@/ai/flows/generate-outline-flow';
+import { generateOutline, type GenerateOutlineOutput } from '@/ai/flows/generate-outline-flow';
 import { generateDraft } from '@/ai/flows/generate-draft-flow';
-import { generateCode, GenerateCodeOutput } from '@/ai/flows/generate-code-flow';
+import { generateCode, type GenerateCodeOutput } from '@/ai/flows/generate-code-flow';
 import { generateIdeas } from '@/ai/flows/generate-ideas-flow';
-import type { GenerateIdeasInput, GenerateIdeasOutput } from '@/ai/schemas/idea-generation-schemas';
+import { refineContent } from '@/ai/flows/refine-content-flow';
+import { chatWithIdea } from '@/ai/flows/chat-with-idea-flow';
+import { combineIdeas } from '@/ai/flows/combine-ideas-flow';
+
+import type { GenerateIdeasInput, Idea } from '@/ai/schemas/idea-generation-schemas';
 
 
 import AITutorView from '@/components/views/AITutorView';
@@ -41,6 +45,14 @@ export interface ContentFormData {
     goal: string;
     outline: GenerateOutlineOutput | null;
     draft: string;
+}
+
+export interface IdeaWithState extends Idea {
+    id: number;
+    likes: number;
+    isFavorited: boolean;
+    column: 'ideas' | 'chat';
+    chatHistory: { sender: 'user' | 'ai'; text: string }[];
 }
 
 interface NavItemProps {
@@ -214,9 +226,9 @@ export default function Home() {
 
     // State for Idea Generator
     const [ideaGeneratorStep, setIdeaGeneratorStep] = useState<IdeaGeneratorStep>('input');
-    const [ideas, setIdeas] = useState<any[]>([]);
-    const [activeChatIdea, setActiveChatIdea] = useState<any | null>(null);
-    const [combinePair, setCombinePair] = useState<any[]>([]);
+    const [ideas, setIdeas] = useState<IdeaWithState[]>([]);
+    const [activeChatIdea, setActiveChatIdea] = useState<IdeaWithState | null>(null);
+    const [combinePair, setCombinePair] = useState<IdeaWithState[]>([]);
     const [finalizedIdea, setFinalizedIdea] = useState<any | null>(null);
     const [dragOverId, setDragOverId] = useState<number | null>(null);
     const [ideaFormData, setIdeaFormData] = useState<GenerateIdeasInput>({ 
@@ -383,6 +395,26 @@ export default function Home() {
             setIsLoading(false);
         }
     };
+
+    const handleRefineContent = async (command: string) => {
+        setIsLoading(true);
+        try {
+            const result = await refineContent({ text: contentFormData.draft, command });
+            setContentFormData(prev => ({ ...prev, draft: result.refinedText }));
+            toast({
+                title: "Content Refined!",
+                description: "The draft has been updated.",
+            });
+        } catch (err) {
+            toast({
+                variant: "destructive",
+                title: "Refinement Failed",
+                description: "The AI could not refine the content. Please try again.",
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    };
     
     const handleContentStartOver = () => {
         setContentGeneratorStep('idea');
@@ -395,13 +427,11 @@ export default function Home() {
     };
 
     // Idea Generator Functions
-    const simulateAICall = (duration = 800) => new Promise(resolve => setTimeout(resolve, duration));
-
     const handleGenerateIdeas = async () => {
         setIsLoading(true);
         try {
             const result = await generateIdeas(ideaFormData);
-            const ideasWithState = result.ideas.map((idea, index) => ({
+            const ideasWithState: IdeaWithState[] = result.ideas.map((idea, index) => ({
                 ...idea,
                 id: index + 1, // Add a unique ID
                 likes: 0,
@@ -423,25 +453,41 @@ export default function Home() {
     };
 
     const handleIdeaAction = async (action: string, id: number, data?: any) => {
-        switch (action) {
-          case 'like':
-            setIdeas(ideas.map(i => i.id === id ? { ...i, likes: i.likes + 1 } : i));
-            break;
-          case 'favorite':
-            setIdeas(ideas.map(i => i.id === id ? { ...i, isFavorited: !i.isFavorited } : i));
-            break;
-          case 'chat':
-            const ideaToChat = ideas.find(i => i.id === id);
-            setActiveChatIdea(ideaToChat);
-            setIdeas(ideas.map(i => i.id === id ? { ...i, column: 'chat' } : i));
-            break;
-          case 'message':
-            const userMessage = { sender: 'user', text: data };
-            setActiveChatIdea((prev: any) => ({ ...prev, chatHistory: [...prev.chatHistory, userMessage] }));
-            await simulateAICall(600);
-            const aiResponse = { sender: 'ai', text: `That's a great question! Regarding "${data}", we could...` };
-            setActiveChatIdea((prev: any) => ({ ...prev, chatHistory: [...prev.chatHistory, aiResponse] }));
-            break;
+        setIsLoading(true);
+        try {
+            switch (action) {
+              case 'like':
+                setIdeas(ideas.map(i => i.id === id ? { ...i, likes: i.likes + 1 } : i));
+                break;
+              case 'favorite':
+                setIdeas(ideas.map(i => i.id === id ? { ...i, isFavorited: !i.isFavorited } : i));
+                break;
+              case 'chat':
+                const ideaToChat = ideas.find(i => i.id === id);
+                setActiveChatIdea(ideaToChat as IdeaWithState);
+                setIdeas(ideas.map(i => i.id === id ? { ...i, column: 'chat' } : i));
+                break;
+              case 'message':
+                const currentIdea = ideas.find(i => i.id === id);
+                if (!currentIdea) return;
+                
+                const userMessage = { sender: 'user' as const, text: data };
+                const updatedChatHistory = [...currentIdea.chatHistory, userMessage];
+                setIdeas(ideas.map(i => i.id === id ? { ...i, chatHistory: updatedChatHistory } : i));
+                setActiveChatIdea(prev => prev ? {...prev, chatHistory: updatedChatHistory} : null);
+
+                const result = await chatWithIdea({ idea: currentIdea, message: data });
+                const aiResponse = { sender: 'ai' as const, text: result.response };
+
+                const finalChatHistory = [...updatedChatHistory, aiResponse];
+                setIdeas(ideas.map(i => i.id === id ? { ...i, chatHistory: finalChatHistory } : i));
+                setActiveChatIdea(prev => prev ? {...prev, chatHistory: finalChatHistory} : null);
+                break;
+            }
+        } catch (err) {
+             toast({ variant: "destructive", title: "Action Failed", description: "An error occurred. Please try again." });
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -469,22 +515,26 @@ export default function Home() {
   
     const handleCombine = async () => {
       setIsLoading(true);
-      await simulateAICall();
       const [idea1, idea2] = combinePair;
-      const newIdea = {
-          id: Date.now(),
-          title: `Hybrid: ${idea1.title} + ${idea2.title}`,
-          shortDesc: `A new concept combining the core elements of both ideas.`,
-          longDesc: `This hybrid event starts with the interactive elements of "${idea1.title}" and culminates in the collaborative project-based approach of "${idea2.title}". It's the best of both worlds, designed for maximum engagement and impact.`,
-          previewPoints: ["Combines interactive discovery.", "Features a collaborative project."],
-          tags: [...new Set([...idea1.tags, ...idea2.tags, "hybrid"])],
-          likes: 1, isFavorited: true, column: 'chat',
-          chatHistory: [{ sender: 'ai', text: 'I\'ve combined these two ideas. What would you like to refine first?' }]
-      };
-      setIdeas([...ideas.filter(i => i.id !== idea1.id && i.id !== idea2.id), newIdea]);
-      setActiveChatIdea(newIdea);
-      setCombinePair([]);
-      setIsLoading(false);
+      
+      try {
+        const result = await combineIdeas({ idea1, idea2 });
+        const newIdea: IdeaWithState = {
+            ...result.combinedIdea,
+            id: Date.now(),
+            likes: 1, 
+            isFavorited: true, 
+            column: 'chat',
+            chatHistory: [{ sender: 'ai', text: 'I\'ve combined these two ideas. What would you like to refine first?' }]
+        };
+        setIdeas([...ideas.filter(i => i.id !== idea1.id && i.id !== idea2.id), newIdea]);
+        setActiveChatIdea(newIdea);
+        setCombinePair([]);
+      } catch (err) {
+        toast({ variant: "destructive", title: "Combine Error", description: "Failed to combine ideas." });
+      } finally {
+        setIsLoading(false);
+      }
     };
   
     const handleFinalize = (idea: any) => {
@@ -504,7 +554,7 @@ export default function Home() {
         setIsLoading(true);
         // This is where the call to the real AI flow will happen
         // For now, it's just a delay.
-        await simulateAICall(1500); 
+        // await simulateAICall(1500); 
         setIsLoading(false);
         setCoderStep('workbench');
     };
@@ -567,6 +617,7 @@ export default function Home() {
                         isLoading={isLoading}
                         handleGenerateOutline={handleGenerateOutline}
                         handleGenerateDraft={handleGenerateDraft}
+                        handleRefineContent={handleRefineContent}
                         handleStartOver={handleContentStartOver}
                     />
                 );

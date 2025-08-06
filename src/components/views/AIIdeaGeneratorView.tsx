@@ -5,14 +5,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Lightbulb, MessageSquare, Star, ThumbsUp, Combine, Send, Trophy, Download, Copy, Sparkles, Zap, Users, Box, PlusSquare, Filter, ArrowLeft, FileText } from 'lucide-react';
-import type { IdeaGeneratorStep } from '@/app/page';
+import type { IdeaGeneratorStep, IdeaWithState } from '@/app/page';
 
 interface AIIdeaGeneratorViewProps {
     step: IdeaGeneratorStep;
     isLoading: boolean;
-    ideas: any[];
-    activeChatIdea: any;
-    combinePair: any[];
+    ideas: IdeaWithState[];
+    activeChatIdea: IdeaWithState | null;
+    combinePair: IdeaWithState[];
     finalizedIdea: any;
     dragOverId: number | null;
     formData: any;
@@ -117,7 +117,7 @@ const CombineView = ({ idea1, idea2, onCombine, onCancel, isLoading }: { idea1: 
             </div>
             <div className="bg-indigo-50 p-4 rounded-lg">
                 <h4 className="font-semibold text-indigo-800">Blended Concept:</h4>
-                <p className="text-sm text-indigo-700 mt-1">A hybrid event that starts with a city-wide scavenger hunt and ends with a 2-day eco-hackathon at a nature retreat.</p>
+                <p className="text-sm text-indigo-700 mt-1">Combine these ideas to create a new, hybrid concept. The AI will synthesize the best elements of both.</p>
             </div>
             <div className="flex gap-3 mt-6">
                 <Button onClick={onCancel} variant="outline" className="flex-1">Cancel</Button>

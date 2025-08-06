@@ -14,6 +14,7 @@ interface AIContentGeneratorViewProps {
     isLoading: boolean;
     handleGenerateOutline: () => void;
     handleGenerateDraft: () => void;
+    handleRefineContent: (command: string) => void;
     handleStartOver: () => void;
 }
 
@@ -25,6 +26,7 @@ const AIContentGeneratorView: React.FC<AIContentGeneratorViewProps> = ({
     isLoading,
     handleGenerateOutline,
     handleGenerateDraft,
+    handleRefineContent,
     handleStartOver,
 }) => {
 
@@ -128,7 +130,6 @@ const AIContentGeneratorView: React.FC<AIContentGeneratorViewProps> = ({
                     </div>
                 );
             case 'draft':
-                const handleRefine = (action: string) => alert(`${action} applied! (This is a demo)`);
                 return (
                     <div className="animate-fade-in">
                         <div className="flex items-center justify-between mb-2">
@@ -141,13 +142,14 @@ const AIContentGeneratorView: React.FC<AIContentGeneratorViewProps> = ({
                         <p className="text-gray-500 mb-6">Here's your draft. Use the tools to refine it, or copy the text and you're done!</p>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div className="md:col-span-2">
-                                <Textarea className="w-full h-96 bg-gray-50 font-mono text-sm leading-relaxed" value={formData.draft} readOnly />
+                                <Textarea className="w-full h-96 bg-gray-50 font-mono text-sm leading-relaxed" value={formData.draft} onChange={(e) => setFormData({...formData, draft: e.target.value})} />
                             </div>
                             <div className="md:col-span-1 space-y-3">
                                 <h3 className="font-bold text-lg text-gray-800">Refinement Tools</h3>
-                                <Button onClick={() => handleRefine('Tone Shift')} variant="outline" className="w-full justify-start"><Wind size={18} className="text-sky-500" /> Change Tone</Button>
-                                <Button onClick={() => handleRefine('Analogy')} variant="outline" className="w-full justify-start"><Sparkles size={18} className="text-amber-500" /> Suggest Analogy</Button>
-                                <Button onClick={() => handleRefine('Hashtags')} variant="outline" className="w-full justify-start"><Hash size={18} className="text-blue-500" /> Generate Hashtags</Button>
+                                <Button onClick={() => handleRefineContent('Change the tone to be more casual and friendly.')} variant="outline" className="w-full justify-start" disabled={isLoading}><Wind size={18} className="text-sky-500" /> Change Tone</Button>
+                                <Button onClick={() => handleRefineContent('Suggest an analogy to explain the main point.')} variant="outline" className="w-full justify-start" disabled={isLoading}><Sparkles size={18} className="text-amber-500" /> Suggest Analogy</Button>
+                                <Button onClick={() => handleRefineContent('Generate 5 relevant hashtags for social media.')} variant="outline" className="w-full justify-start" disabled={isLoading}><Hash size={18} className="text-blue-500" /> Generate Hashtags</Button>
+                                {isLoading && <div className="flex justify-center pt-4"><Loader className="animate-spin"/></div>}
                             </div>
                         </div>
                     </div>
