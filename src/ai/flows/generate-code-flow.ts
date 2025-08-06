@@ -29,7 +29,7 @@ const GenerateCodeOutputSchema = z.object({
   anatomy: z.object({
       visualStructure: z.string().describe('A tree-like representation of the component\'s HTML/JSX structure.'),
       propsAndState: z.array(z.string()).describe('A list of the component\'s props and internal state variables.'),
-      dependencies: z.array(z.string()).describe('A list of external libraries or internal modules the component depends on.'),
+      dependencies: z.array(z.string()).describe('A list of external libraries or internal modules the component depends on (e.g., "react", "prop-types"). Provide exact package names for dependencies.'),
       logicExplanation: z.string().describe('A brief explanation of the component\'s core logic.'),
   }).describe('A detailed breakdown of the generated component\'s architecture.')
 });
@@ -47,7 +47,7 @@ const prompt = ai.definePrompt({
 
 You must return a structured response containing:
 1.  An array of file objects, each with a \`filename\` and its corresponding \`code\`. Generate all necessary files, such as JSX/TSX components, CSS/styling files, and storybook files if applicable.
-2.  A detailed component \`anatomy\` breaking down its structure, props, state, dependencies, and logic.
+2.  A detailed component \`anatomy\` breaking down its structure, props, state, dependencies, and logic. For dependencies, list the exact npm package names.
 
 User Specifications:
 - Component Description: {{{description}}}
