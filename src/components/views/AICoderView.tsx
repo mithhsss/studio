@@ -195,9 +195,9 @@ const WorkbenchView = ({ generatedCode, setGeneratedCode, chatHistory, setChatHi
               <PanelResizeHandle className="w-2 bg-transparent hover:bg-gray-200 active:bg-gray-300 transition-colors rounded-full mx-1" />
               <Panel defaultSize={50} minSize={30}>
                   <div className="flex flex-col gap-4 h-full">
-                      <div className="flex-grow bg-gray-800 text-white rounded-lg p-4 relative h-full">
+                      <div className="flex-grow bg-gray-800 text-white rounded-lg p-4 relative h-[45vh] overflow-hidden">
                           <Button onClick={() => navigator.clipboard.writeText(activeFileContent)} size="icon" variant="ghost" className="absolute top-2 right-2 h-7 w-7 text-gray-300 hover:bg-gray-600 hover:text-white"><Copy size={14}/></Button>
-                          <pre className="h-full overflow-auto text-xs whitespace-pre-wrap">{activeFileContent}</pre>
+                          <pre className="h-full overflow-auto text-xs whitespace-pre-wrap [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">{activeFileContent}</pre>
                       </div>
                       <div className="bg-gray-50 rounded-lg p-3">
                           <h3 className="font-semibold text-sm mb-2 flex items-center gap-2"><Terminal size={16}/> Refinement Chat</h3>
