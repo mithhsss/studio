@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -184,7 +185,7 @@ const AIIdeaGeneratorView: React.FC<AIIdeaGeneratorViewProps> = ({
             case 'input':
                 return (
                     <div className="animate-fade-in">
-                        <div className="flex items-center gap-3 mb-2"><div className="bg-purple-100 text-purple-600 p-2 rounded-lg"><Lightbulb size={20} /></div><h2 className="text-2xl font-bold text-gray-800">Idea Generator</h2></div>
+                        <div className="flex items-center gap-3 mb-2"><div className="bg-purple-100 text-purple-600 p-2 rounded-lg"><Lightbulb size={20} /></div><h2 className="text-2xl font-bold text-gray-800">Brainstorming Brief</h2></div>
                         <p className="text-gray-500 mb-6">Define your challenge and let the AI brainstorm creative solutions.</p>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
                             <div><label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1"><Zap size={14} /> Core Subject</label><Input type="text" value={formData.subject} onChange={(e) => setFormData({ ...formData, subject: e.target.value })} /></div>
