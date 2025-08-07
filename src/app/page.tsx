@@ -51,7 +51,6 @@ export interface IdeaWithState extends Idea {
     id: number;
     likes: number;
     isFavorited: boolean;
-    column: 'ideas' | 'chat';
     chatHistory: { sender: 'user' | 'ai'; text: string }[];
 }
 
@@ -436,7 +435,6 @@ export default function Home() {
                 id: index + 1, // Add a unique ID
                 likes: 0,
                 isFavorited: false,
-                column: 'ideas',
                 chatHistory: [],
             }));
             setIdeas(ideasWithState);
@@ -465,7 +463,9 @@ export default function Home() {
               case 'chat':
                 const ideaToChat = ideas.find(i => i.id === id);
                 setActiveChatIdea(ideaToChat as IdeaWithState);
-                setIdeas(ideas.map(i => i.id === id ? { ...i, column: 'chat' } : i));
+                break;
+              case 'closeChat':
+                setActiveChatIdea(null);
                 break;
               case 'message':
                 const currentIdea = ideas.find(i => i.id === id);
@@ -473,14 +473,17 @@ export default function Home() {
                 
                 const userMessage = { sender: 'user' as const, text: data };
                 const updatedChatHistory = [...currentIdea.chatHistory, userMessage];
-                setIdeas(ideas.map(i => i.id === id ? { ...i, chatHistory: updatedChatHistory } : i));
+                
+                const updatedIdeasWithMessage = ideas.map(i => i.id === id ? { ...i, chatHistory: updatedChatHistory } : i);
+                setIdeas(updatedIdeasWithMessage);
                 setActiveChatIdea(prev => prev ? {...prev, chatHistory: updatedChatHistory} : null);
 
                 const result = await chatWithIdea({ idea: currentIdea, message: data });
                 const aiResponse = { sender: 'ai' as const, text: result.response };
 
                 const finalChatHistory = [...updatedChatHistory, aiResponse];
-                setIdeas(ideas.map(i => i.id === id ? { ...i, chatHistory: finalChatHistory } : i));
+                const finalIdeas = ideas.map(i => i.id === id ? { ...i, chatHistory: finalChatHistory } : i);
+                setIdeas(finalIdeas);
                 setActiveChatIdea(prev => prev ? {...prev, chatHistory: finalChatHistory} : null);
                 break;
             }
@@ -491,29 +494,8 @@ export default function Home() {
         }
     };
 
-    const handleDragStart = (e: React.DragEvent, id: number) => {
-        e.dataTransfer.setData("ideaId", id.toString());
-    };
-
-    const handleDragEnd = () => {
-        setDragOverId(null);
-    };
-
-    const handleDrop = (e: React.DragEvent, targetId: number) => {
-        e.preventDefault();
-        setDragOverId(null);
-        const draggedId = parseInt(e.dataTransfer.getData("ideaId"));
-        
-        if (draggedId && targetId && draggedId !== targetId) {
-          const idea1 = ideas.find(i => i.id === draggedId);
-          const idea2 = ideas.find(i => i.id === targetId);
-          if (idea1 && idea2) {
-            setCombinePair([idea1, idea2]);
-          }
-        }
-    };
-  
     const handleCombine = async () => {
+      if(combinePair.length !== 2) return;
       setIsLoading(true);
       const [idea1, idea2] = combinePair;
       
@@ -524,12 +506,12 @@ export default function Home() {
             id: Date.now(),
             likes: 1, 
             isFavorited: true, 
-            column: 'chat',
             chatHistory: [{ sender: 'ai', text: 'I\'ve combined these two ideas. What would you like to refine first?' }]
         };
-        setIdeas([...ideas.filter(i => i.id !== idea1.id && i.id !== idea2.id), newIdea]);
-        setActiveChatIdea(newIdea);
+        // Remove the two old ideas and add the new one
+        setIdeas(prevIdeas => [...prevIdeas.filter(i => i.id !== idea1.id && i.id !== idea2.id), newIdea]);
         setCombinePair([]);
+        toast({ title: "Ideas Combined!", description: "A new hybrid idea has been added." });
       } catch (err) {
         toast({ variant: "destructive", title: "Combine Error", description: "Failed to combine ideas." });
       } finally {
@@ -547,6 +529,7 @@ export default function Home() {
       setIdeas([]);
       setActiveChatIdea(null);
       setFinalizedIdea(null);
+      setCombinePair([]);
     };
 
     // AI Coder functions
@@ -636,10 +619,10 @@ export default function Home() {
                         setFormData={setIdeaFormData}
                         handleGenerateIdeas={handleGenerateIdeas}
                         handleAction={handleIdeaAction}
-                        handleDragStart={handleDragStart}
-                        handleDragEnd={handleDragEnd}
-                        handleDrop={handleDrop}
-                        setDragOverId={setDragOverId}
+                        handleDragStart={() => {}} // Deprecated
+                        handleDragEnd={() => {}} // Deprecated
+                        handleDrop={() => {}} // Deprecated
+                        setDragOverId={() => {}} // Deprecated
                         handleCombine={handleCombine}
                         setCombinePair={setCombinePair}
                         handleFinalize={handleFinalize}
@@ -725,3 +708,5 @@ export default function Home() {
     </div>
   );
 };
+
+    
