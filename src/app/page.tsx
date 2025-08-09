@@ -538,7 +538,7 @@ export default function Home() {
         }
     };
 
-    const handleIdeaAction = async (action: string, id: number, data?: any) => {
+    const handleAction = async (action: string, id: number, data?: any) => {
         setIsLoading(true);
         try {
             switch (action) {
@@ -704,7 +704,7 @@ export default function Home() {
                         finalizedIdea={finalizedIdea}
                         dragOverId={dragOverId}
                         formData={ideaFormData}
-                        setFormData={setIdeaFormData}
+                        setFormData={setFormData}
                         handleGenerateIdeas={handleGenerateIdeas}
                         handleAction={handleAction}
                         handleDragStart={() => {}} // Deprecated
@@ -785,3 +785,5 @@ export default function Home() {
     </div>
   );
 };
+
+    
