@@ -1,10 +1,9 @@
 
 "use client";
-import React, { useState, useEffect } from 'react';
-import { BookOpen, Map, Users, Code, Plus, Sparkles, BrainCircuit, FileText, Lightbulb, Bot, Package, WandSparkles, Wind, Hash } from 'lucide-react';
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import React, { useState, useEffect, useRef } from 'react';
+import { BookOpen, Map, Users, Code, Plus, Sparkles, BrainCircuit, FileText, Lightbulb, Bot, Package, WandSparkles, Wind, Hash, TrendingUp, Award, BarChart } from 'lucide-react';
+import { Chart } from 'chart.js/auto';
 
-import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartConfig } from '@/components/ui/chart';
 import { useToast } from "@/hooks/use-toast";
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader } from '@/components/ui/card';
@@ -65,10 +64,6 @@ interface NavItemProps {
   onClick?: () => void;
 }
 
-interface BadgeProps {
-  icon: React.ReactNode;
-  label: string;
-}
 
 interface RecommendedToolProps {
   icon: React.ReactNode;
@@ -76,6 +71,139 @@ interface RecommendedToolProps {
   description: string;
   color: 'yellow' | 'green' | 'blue' | 'purple';
 }
+
+// --- NEW GROWTH & MASTERY COMPONENTS ---
+const userStats = {
+  level: 1,
+  currentXp: 236,
+  xpToNextLevel: 500,
+  interactions: 24,
+  badges: [
+    { name: 'AI Novice', icon: Plus },
+    { name: 'Explorer', icon: BrainCircuit },
+    { name: 'Mentor', icon: Users },
+  ],
+};
+
+const usageData = {
+  labels: ['Idea Gen', 'Content Gen', 'AI Coder', 'AI Mentor', 'AI Roadmap'],
+  values: [90, 65, 120, 30, 50],
+};
+
+const RadarChart = ({ data }: { data: { labels: string[]; values: number[] } }) => {
+  const chartRef = useRef<HTMLCanvasElement>(null);
+  const chartInstance = useRef<Chart | null>(null);
+
+  useEffect(() => {
+    if (chartInstance.current) {
+      chartInstance.current.destroy();
+    }
+    if (chartRef.current) {
+      const ctx = chartRef.current.getContext('2d');
+      if (ctx) {
+        chartInstance.current = new Chart(ctx, {
+          type: 'radar',
+          data: {
+            labels: data.labels,
+            datasets: [{
+              label: 'Tool Mastery',
+              data: data.values,
+              backgroundColor: 'rgba(99, 102, 241, 0.2)', // indigo-500
+              borderColor: 'rgba(99, 102, 241, 1)',
+              borderWidth: 2,
+              pointBackgroundColor: 'rgba(99, 102, 241, 1)',
+              pointBorderColor: '#fff',
+              pointHoverBackgroundColor: '#fff',
+              pointHoverBorderColor: 'rgba(99, 102, 241, 1)'
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              r: {
+                angleLines: { color: 'rgba(0, 0, 0, 0.1)' },
+                grid: { color: 'rgba(0, 0, 0, 0.1)' },
+                pointLabels: { font: { size: 12, weight: '500' }, color: '#4b5563' }, // gray-600
+                ticks: { display: false }
+              }
+            },
+            plugins: {
+              legend: { display: false }
+            }
+          }
+        });
+      }
+    }
+    return () => {
+      if (chartInstance.current) {
+        chartInstance.current.destroy();
+      }
+    };
+  }, [data]);
+
+  return <canvas ref={chartRef} />;
+};
+
+
+const GrowthProfile = () => {
+  const progressPercentage = (userStats.currentXp / userStats.xpToNextLevel) * 100;
+
+  return (
+    <div className="bg-white rounded-xl shadow-sm p-4">
+      <h2 className="text-lg font-bold text-gray-800 mb-4">Your Growth Profile</h2>
+      <div className="space-y-4">
+        {/* Level & Progress */}
+        <div className="bg-gray-50 p-3 rounded-lg">
+          <div className="flex justify-between items-center mb-1">
+            <p className="text-sm font-semibold text-gray-600">Level {userStats.level}</p>
+            <p className="text-sm font-bold text-indigo-600">{userStats.currentXp} / {userStats.xpToNextLevel} XP</p>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div className="bg-indigo-600 h-2 rounded-full" style={{ width: `${progressPercentage}%` }}></div>
+          </div>
+        </div>
+        {/* Badges */}
+        <div>
+          <h3 className="font-semibold text-sm text-gray-700 mb-2">Badges Earned</h3>
+          <div className="flex justify-around gap-2">
+            {userStats.badges.map((badge) => {
+              const BadgeIcon = badge.icon;
+              return (
+                <div key={badge.name} className="flex flex-col items-center text-center p-2 bg-gray-50 rounded-lg w-20">
+                  <div className="p-2 bg-amber-100 text-amber-600 rounded-full">
+                    <BadgeIcon size={18} />
+                  </div>
+                  <p className="text-xs font-semibold mt-1 text-gray-600">{badge.name}</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+
+const ToolMastery = () => {
+  const powerToolIndex = usageData.values.indexOf(Math.max(...usageData.values));
+  const powerTool = usageData.labels[powerToolIndex];
+
+  return (
+    <div className="bg-white rounded-xl shadow-md p-6">
+       <h2 className="text-xl font-bold text-gray-800 mb-2">Tool Mastery</h2>
+       <div className="text-center bg-indigo-50 border border-indigo-200 p-2 rounded-lg mb-4">
+         <p className="text-sm font-semibold text-gray-600">Your Power Tool is</p>
+         <p className="font-bold text-indigo-600">{powerTool}</p>
+       </div>
+       <div className="relative h-64">
+         <RadarChart data={usageData} />
+       </div>
+    </div>
+  );
+};
+
 
 // --- REUSABLE COMPONENTS --- //
 
@@ -88,15 +216,6 @@ const NavItem: React.FC<NavItemProps> = ({ icon, label, subtext, active = false,
       <p className="font-semibold text-sm">{label}</p>
       <p className="text-xs text-gray-500">{subtext}</p>
     </div>
-  </div>
-);
-
-const Badge: React.FC<BadgeProps> = ({ icon, label }) => (
-  <div className="flex flex-col items-center space-y-1 text-gray-600">
-    <div className="p-3 bg-gray-100 rounded-full">
-      {icon}
-    </div>
-    <p className="text-xs font-medium">{label}</p>
   </div>
 );
 
@@ -125,35 +244,6 @@ const RecommendedTool: React.FC<RecommendedToolProps> = ({ icon, title, descript
             </div>
             <p className="text-sm text-gray-600">{description}</p>
         </div>
-    );
-};
-
-// Reusable Stat Card Component for the default view
-const StatCard = ({ value, label, color }: { value: number; label: string; color: string }) => (
-    <div className="flex flex-col items-center">
-      <p className={`text-2xl font-bold ${color}`}>{value}</p>
-      <p className="text-gray-500 mt-2 text-sm font-medium">{label}</p>
-    </div>
-  );
-  
-// Stats Section Component for the default view
-const StatsSection = () => {
-    const stats = [
-      { value: 24, label: 'AI Interactions', color: 'text-red-500' },
-      { value: 236, label: 'Total XP', color: 'text-blue-500' },
-      { value: 1, label: 'Current Level', color: 'text-yellow-500' },
-      { value: 3, label: 'Badges Earned', color: 'text-green-500' },
-    ];
-  
-    return (
-      <div className="bg-white rounded-xl shadow-md p-8">
-        <h3 className="text-xl font-bold text-gray-800 mb-6">Your AI Stats</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 text-center">
-          {stats.map((stat, index) => (
-            <StatCard key={index} value={stat.value} label={stat.label} color={stat.color} />
-          ))}
-        </div>
-      </div>
     );
 };
 
@@ -186,49 +276,6 @@ const RecommendedToolsSection = () => (
                 description="Brainstorm new ideas for projects and career opportunities."
                 color="purple"
             />
-        </div>
-    </div>
-);
-
-// --- NEW STATS GRAPH COMPONENT --- //
-const usageData = [
-  { tool: 'Tutor', usage: 24, xp: 48 },
-  { tool: 'Roadmap', usage: 12, xp: 120 },
-  { tool: 'Mentor', usage: 15, xp: 75 },
-  { tool: 'Content', usage: 8, xp: 64 },
-  { tool: 'Ideas', usage: 5, xp: 25 },
-  { tool: 'Coder', usage: 2, xp: 24 },
-];
-
-const chartConfig = {
-  xp: {
-    label: "XP Earned",
-    color: "hsl(40 90% 60%)", // Amber
-  },
-  usage: {
-    label: "Usage",
-    color: "hsl(30 80% 70%)", // Light Orange
-  },
-} satisfies ChartConfig
-
-const StatsGraph = () => (
-    <div className="bg-white p-4 rounded-xl shadow-sm">
-        <h2 className="text-lg font-bold text-gray-800 mb-2">AI Usage Stats</h2>
-        <div className="h-[200px] w-full -ml-2">
-            <ChartContainer config={chartConfig}>
-                <BarChart data={usageData} margin={{ top: 20, right: 10, left: -10, bottom: 0 }}>
-                    <CartesianGrid vertical={false} strokeDasharray="3 3" />
-                    <XAxis dataKey="tool" tickLine={false} tickMargin={10} axisLine={false} fontSize={12} />
-                    <YAxis tickLine={false} axisLine={false} fontSize={12} />
-                    <ChartTooltip
-                        cursor={false}
-                        content={<ChartTooltipContent indicator="dot" />}
-                    />
-                    <Legend />
-                    <Bar dataKey="usage" fill="var(--color-usage)" radius={4} />
-                    <Bar dataKey="xp" fill="var(--color-xp)" radius={4} />
-                </BarChart>
-            </ChartContainer>
         </div>
     </div>
 );
@@ -705,16 +752,8 @@ export default function Home() {
               </nav>
             </div>
 
-            <StatsGraph />
-
-            <div className="bg-white p-4 rounded-xl shadow-sm">
-              <h2 className="text-lg font-bold text-gray-800 mb-4">AI Badges Earned</h2>
-              <div className="flex justify-around">
-                <Badge icon={<Plus className="h-6 w-6" />} label="AI Novice" />
-                <Badge icon={<BrainCircuit className="h-6 w-6" />} label="Explorer" />
-                <Badge icon={<Users className="h-6 w-6" />} label="Mentor" />
-              </div>
-            </div>
+            <GrowthProfile />
+            
           </aside>
 
           {/* Main Content */}
@@ -723,7 +762,7 @@ export default function Home() {
               {renderMainContent()}
               {activeView === null && (
                 <>
-                  <StatsSection />
+                  <ToolMastery />
                   <RecommendedToolsSection />
                 </>
               )}
