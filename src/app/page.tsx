@@ -72,7 +72,6 @@ interface RecommendedToolProps {
   color: 'yellow' | 'green' | 'blue' | 'purple';
 }
 
-// --- NEW GROWTH & MASTERY COMPONENTS ---
 const userStats = {
   level: 1,
   currentXp: 236,
@@ -278,7 +277,7 @@ const RecommendedToolsSection = () => (
                     color="blue"
                 />
                 <RecommendedTool
-                    icon={<Lightbulb />}
+                    icon={<Rocket />}
                     title="Idea Generator"
                     description="Brainstorm new ideas for projects and career opportunities."
                     color="purple"
@@ -704,7 +703,7 @@ export default function Home() {
                         finalizedIdea={finalizedIdea}
                         dragOverId={dragOverId}
                         formData={ideaFormData}
-                        setFormData={setFormData}
+                        setFormData={setIdeaFormData}
                         handleGenerateIdeas={handleGenerateIdeas}
                         handleAction={handleAction}
                         handleDragStart={() => {}} // Deprecated
@@ -787,3 +786,4 @@ export default function Home() {
 };
 
     
+
