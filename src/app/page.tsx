@@ -1,7 +1,10 @@
+
 "use client";
 import React, { useState, useEffect } from 'react';
 import { BookOpen, Map, Users, Code, Plus, Sparkles, BrainCircuit, FileText, Lightbulb, Bot, Package, WandSparkles, Wind, Hash } from 'lucide-react';
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
+import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartConfig } from '@/components/ui/chart';
 import { useToast } from "@/hooks/use-toast";
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader } from '@/components/ui/card';
@@ -62,12 +65,6 @@ interface NavItemProps {
   onClick?: () => void;
 }
 
-interface StatItemProps {
-  label: string;
-  value: string | number;
-  highlight?: boolean;
-}
-
 interface BadgeProps {
   icon: React.ReactNode;
   label: string;
@@ -91,13 +88,6 @@ const NavItem: React.FC<NavItemProps> = ({ icon, label, subtext, active = false,
       <p className="font-semibold text-sm">{label}</p>
       <p className="text-xs text-gray-500">{subtext}</p>
     </div>
-  </div>
-);
-
-const StatItem: React.FC<StatItemProps> = ({ label, value, highlight = false }) => (
-  <div className={`flex justify-between items-center text-sm py-2 ${highlight ? 'text-indigo-600 font-bold' : 'text-gray-600'}`}>
-    <span>{label}</span>
-    <span className={`px-2 py-0.5 rounded-full ${highlight ? 'bg-yellow-200 text-yellow-800' : 'bg-gray-200 text-gray-800'}`}>{value}</span>
   </div>
 );
 
@@ -196,6 +186,49 @@ const RecommendedToolsSection = () => (
                 description="Brainstorm new ideas for projects and career opportunities."
                 color="purple"
             />
+        </div>
+    </div>
+);
+
+// --- NEW STATS GRAPH COMPONENT --- //
+const usageData = [
+  { tool: 'Tutor', usage: 24, xp: 48 },
+  { tool: 'Roadmap', usage: 12, xp: 120 },
+  { tool: 'Mentor', usage: 15, xp: 75 },
+  { tool: 'Content', usage: 8, xp: 64 },
+  { tool: 'Ideas', usage: 5, xp: 25 },
+  { tool: 'Coder', usage: 2, xp: 24 },
+];
+
+const chartConfig = {
+  xp: {
+    label: "XP Earned",
+    color: "hsl(40 90% 60%)", // Amber
+  },
+  usage: {
+    label: "Usage",
+    color: "hsl(30 80% 70%)", // Light Orange
+  },
+} satisfies ChartConfig
+
+const StatsGraph = () => (
+    <div className="bg-white p-4 rounded-xl shadow-sm">
+        <h2 className="text-lg font-bold text-gray-800 mb-2">AI Usage Stats</h2>
+        <div className="h-[200px] w-full -ml-2">
+            <ChartContainer config={chartConfig}>
+                <BarChart data={usageData} margin={{ top: 20, right: 10, left: -10, bottom: 0 }}>
+                    <CartesianGrid vertical={false} strokeDasharray="3 3" />
+                    <XAxis dataKey="tool" tickLine={false} tickMargin={10} axisLine={false} fontSize={12} />
+                    <YAxis tickLine={false} axisLine={false} fontSize={12} />
+                    <ChartTooltip
+                        cursor={false}
+                        content={<ChartTooltipContent indicator="dot" />}
+                    />
+                    <Legend />
+                    <Bar dataKey="usage" fill="var(--color-usage)" radius={4} />
+                    <Bar dataKey="xp" fill="var(--color-xp)" radius={4} />
+                </BarChart>
+            </ChartContainer>
         </div>
     </div>
 );
@@ -618,7 +651,7 @@ export default function Home() {
                         formData={ideaFormData}
                         setFormData={setIdeaFormData}
                         handleGenerateIdeas={handleGenerateIdeas}
-                        handleAction={handleIdeaAction}
+                        handleAction={handleAction}
                         handleDragStart={() => {}} // Deprecated
                         handleDragEnd={() => {}} // Deprecated
                         handleDrop={() => {}} // Deprecated
@@ -672,14 +705,7 @@ export default function Home() {
               </nav>
             </div>
 
-            <div className="bg-white p-4 rounded-xl shadow-sm">
-              <h2 className="text-lg font-bold text-gray-800 mb-2">AI Usage Stats</h2>
-              <div className="space-y-1">
-                <StatItem label="AI Tutor Sessions" value={24} />
-                <StatItem label="AI Roadmap Updates" value={12} />
-                <StatItem label="XP From All Tools" value={236} highlight />
-              </div>
-            </div>
+            <StatsGraph />
 
             <div className="bg-white p-4 rounded-xl shadow-sm">
               <h2 className="text-lg font-bold text-gray-800 mb-4">AI Badges Earned</h2>
@@ -708,5 +734,3 @@ export default function Home() {
     </div>
   );
 };
-
-    
