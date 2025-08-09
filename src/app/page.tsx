@@ -1,12 +1,12 @@
 
 "use client";
 import React, { useState, useEffect, useRef } from 'react';
-import { BookOpen, Map, Users, Code, Plus, Sparkles, BrainCircuit, FileText, Lightbulb, Bot, Package, WandSparkles, Wind, Hash, TrendingUp, Award, BarChart } from 'lucide-react';
+import { BookOpen, Map, Users, Code, Plus, Sparkles, BrainCircuit, FileText, Lightbulb, Bot, Package, WandSparkles, Wind, Hash, TrendingUp, Award, BarChart, Rocket } from 'lucide-react';
 import { Chart } from 'chart.js/auto';
 
 import { useToast } from "@/hooks/use-toast";
 import { Button } from '@/components/ui/button';
-import { Card, CardHeader } from '@/components/ui/card';
+import { Card, CardHeader, CardContent } from '@/components/ui/card';
 
 import { answerCareerQuestion } from '@/ai/flows/answer-career-questions';
 import { analyzeResume } from '@/ai/flows/analyze-resume-flow';
@@ -149,54 +149,62 @@ const GrowthProfile = () => {
   const progressPercentage = (userStats.currentXp / userStats.xpToNextLevel) * 100;
 
   return (
-    <div className="bg-white rounded-xl shadow-sm p-4">
-      <h2 className="text-lg font-bold text-gray-800 mb-4">Your Growth Profile</h2>
-      <div className="space-y-4">
-        {/* Level & Progress */}
-        <div className="bg-gray-50 p-3 rounded-lg">
-          <div className="flex justify-between items-center mb-1">
-            <p className="text-sm font-semibold text-gray-600">Level {userStats.level}</p>
-            <p className="text-sm font-bold text-indigo-600">{userStats.currentXp} / {userStats.xpToNextLevel} XP</p>
+    <Card>
+      <CardHeader>
+        <h2 className="text-lg font-bold text-gray-800">Your Growth Profile</h2>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          {/* Level & Progress */}
+          <div className="bg-gray-50 p-3 rounded-lg">
+            <div className="flex justify-between items-center mb-1">
+              <p className="text-sm font-semibold text-gray-600">Level {userStats.level}</p>
+              <p className="text-sm font-bold text-indigo-600">{userStats.currentXp} / {userStats.xpToNextLevel} XP</p>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div className="bg-indigo-600 h-2 rounded-full" style={{ width: `${progressPercentage}%` }}></div>
+            </div>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div className="bg-indigo-600 h-2 rounded-full" style={{ width: `${progressPercentage}%` }}></div>
-          </div>
-        </div>
-        {/* Badges */}
-        <div>
-          <h3 className="font-semibold text-sm text-gray-700 mb-2">Badges Earned</h3>
-          <div className="flex justify-around gap-2">
-            {userStats.badges.map((badge) => {
-              const BadgeIcon = badge.icon;
-              return (
-                <div key={badge.name} className="flex flex-col items-center text-center p-2 bg-gray-50 rounded-lg w-20">
-                  <div className="p-2 bg-amber-100 text-amber-600 rounded-full">
-                    <BadgeIcon size={18} />
+          {/* Badges */}
+          <div>
+            <h3 className="font-semibold text-sm text-gray-700 mb-2">Badges Earned</h3>
+            <div className="flex justify-around gap-2">
+              {userStats.badges.map((badge) => {
+                const BadgeIcon = badge.icon;
+                return (
+                  <div key={badge.name} className="flex flex-col items-center text-center p-2 bg-gray-50 rounded-lg w-20">
+                    <div className="p-2 bg-amber-100 text-amber-600 rounded-full">
+                      <BadgeIcon size={18} />
+                    </div>
+                    <p className="text-xs font-semibold mt-1 text-gray-600">{badge.name}</p>
                   </div>
-                  <p className="text-xs font-semibold mt-1 text-gray-600">{badge.name}</p>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 };
 
 
 const ProfessionalPersona = () => {
   return (
-    <div className="bg-white rounded-2xl shadow-lg p-6 flex flex-col">
-      <h2 className="text-xl font-bold text-gray-800 mb-4">Your Professional Persona</h2>
-      <div className="flex-grow h-64 mb-4">
-        <RadarChart data={usageData} />
-      </div>
-      <div className="text-center bg-gray-50 p-4 rounded-lg">
-        <h3 className="font-bold text-indigo-600 text-lg">{userStats.persona}</h3>
-        <p className="text-xs text-gray-600 mt-1">{userStats.personaDescription}</p>
-      </div>
-    </div>
+    <Card>
+        <CardHeader>
+            <h2 className="text-xl font-bold text-gray-800">Your Professional Persona</h2>
+        </CardHeader>
+        <CardContent>
+            <div className="flex-grow h-64 mb-4">
+                <RadarChart data={usageData} />
+            </div>
+            <div className="text-center bg-gray-50 p-4 rounded-lg">
+                <h3 className="font-bold text-indigo-600 text-lg">{userStats.persona}</h3>
+                <p className="text-xs text-gray-600 mt-1">{userStats.personaDescription}</p>
+            </div>
+      </CardContent>
+    </Card>
   );
 };
 
@@ -244,36 +252,40 @@ const RecommendedTool: React.FC<RecommendedToolProps> = ({ icon, title, descript
 };
 
 const RecommendedToolsSection = () => (
-    <div className="bg-white p-6 rounded-xl shadow-md">
-        <h2 className="text-xl font-bold text-gray-800">Recommended AI Tools</h2>
-        <p className="text-gray-500 mb-6">Based on your profile and career goals</p>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <RecommendedTool 
-                icon={<Users />}
-                title="AI Mentor"
-                description="Work with an AI mentor specialized in UX to design and advance your career."
-                color="yellow"
-            />
-            <RecommendedTool 
-                icon={<Code />}
-                title="AI Coder"
-                description="Leverage the power of AI to complement your UX design skills and post your entries."
-                color="green"
-            />
-             <RecommendedTool
-                icon={<FileText />}
-                title="Content Generator"
-                description="Generate text content for your projects and career materials."
-                color="blue"
-            />
-            <RecommendedTool
-                icon={<Lightbulb />}
-                title="Idea Generator"
-                description="Brainstorm new ideas for projects and career opportunities."
-                color="purple"
-            />
-        </div>
-    </div>
+    <Card>
+        <CardHeader>
+            <h2 className="text-xl font-bold text-gray-800">Recommended AI Tools</h2>
+            <p className="text-gray-500 !mt-1">Based on your profile and career goals</p>
+        </CardHeader>
+        <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <RecommendedTool 
+                    icon={<Users />}
+                    title="AI Mentor"
+                    description="Work with an AI mentor specialized in UX to design and advance your career."
+                    color="yellow"
+                />
+                <RecommendedTool 
+                    icon={<Code />}
+                    title="AI Coder"
+                    description="Leverage the power of AI to complement your UX design skills and post your entries."
+                    color="green"
+                />
+                <RecommendedTool
+                    icon={<FileText />}
+                    title="Content Generator"
+                    description="Generate text content for your projects and career materials."
+                    color="blue"
+                />
+                <RecommendedTool
+                    icon={<Lightbulb />}
+                    title="Idea Generator"
+                    description="Brainstorm new ideas for projects and career opportunities."
+                    color="purple"
+                />
+            </div>
+        </CardContent>
+    </Card>
 );
 
 
@@ -736,17 +748,21 @@ export default function Home() {
 
           {/* Left Sidebar */}
           <aside className="lg:col-span-3 space-y-8">
-            <div className="bg-white p-4 rounded-xl shadow-sm">
-              <h2 className="text-lg font-bold text-gray-800 mb-4">AI Tools</h2>
-              <nav className="space-y-2">
-                <NavItem icon={<BookOpen className="h-5 w-5" />} label="AI Tutor" subtext="Personalized learning" active={activeView === 'tutor'} onClick={() => handleViewChange('tutor')} />
-                <NavItem icon={<Map className="h-5 w-5" />} label="AI Roadmap" subtext="Career pathing" active={activeView === 'roadmap'} onClick={() => handleViewChange('roadmap')} />
-                <NavItem icon={<Users className="h-5 w-5" />} label="AI Mentor" subtext="Guidance and behavior" active={activeView === 'mentor'} onClick={() => handleViewChange('mentor')} />
-                <NavItem icon={<FileText className="h-5 w-5" />} label="Content Generator" subtext="Generate text content" active={activeView === 'content-generator'} onClick={() => handleViewChange('content-generator')} />
-                <NavItem icon={<Lightbulb className="h-5 w-5" />} label="Idea Generator" subtext="Brainstorm new ideas" active={activeView === 'idea-generator'} onClick={() => handleViewChange('idea-generator')} />
-                <NavItem icon={<Code className="h-5 w-5" />} label="AI Coder" subtext="Coding Companion" active={activeView === 'coder'} onClick={() => handleViewChange('coder')} />
-              </nav>
-            </div>
+            <Card>
+                <CardHeader>
+                    <h2 className="text-lg font-bold text-gray-800">AI Tools</h2>
+                </CardHeader>
+                <CardContent>
+                    <nav className="space-y-2">
+                        <NavItem icon={<BookOpen className="h-5 w-5" />} label="AI Tutor" subtext="Personalized learning" active={activeView === 'tutor'} onClick={() => handleViewChange('tutor')} />
+                        <NavItem icon={<Map className="h-5 w-5" />} label="AI Roadmap" subtext="Career pathing" active={activeView === 'roadmap'} onClick={() => handleViewChange('roadmap')} />
+                        <NavItem icon={<Users className="h-5 w-5" />} label="AI Mentor" subtext="Guidance and behavior" active={activeView === 'mentor'} onClick={() => handleViewChange('mentor')} />
+                        <NavItem icon={<FileText className="h-5 w-5" />} label="Content Generator" subtext="Generate text content" active={activeView === 'content-generator'} onClick={() => handleViewChange('content-generator')} />
+                        <NavItem icon={<Lightbulb className="h-5 w-5" />} label="Idea Generator" subtext="Brainstorm new ideas" active={activeView === 'idea-generator'} onClick={() => handleViewChange('idea-generator')} />
+                        <NavItem icon={<Code className="h-5 w-5" />} label="AI Coder" subtext="Coding Companion" active={activeView === 'coder'} onClick={() => handleViewChange('coder')} />
+                    </nav>
+                </CardContent>
+            </Card>
 
             <GrowthProfile />
             
@@ -757,10 +773,10 @@ export default function Home() {
             <div className="space-y-8">
               {renderMainContent()}
               {activeView === null && (
-                <>
+                <div className="space-y-8">
                   <ProfessionalPersona />
                   <RecommendedToolsSection />
-                </>
+                </div>
               )}
             </div>
           </main>
