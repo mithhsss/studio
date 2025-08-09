@@ -78,6 +78,8 @@ const userStats = {
   currentXp: 236,
   xpToNextLevel: 500,
   interactions: 24,
+  persona: "The Creative Strategist",
+  personaDescription: "You excel at generating novel ideas and content. Your strength lies in creative and divergent thinking.",
   badges: [
     { name: 'AI Novice', icon: Plus },
     { name: 'Explorer', icon: BrainCircuit },
@@ -86,8 +88,8 @@ const userStats = {
 };
 
 const usageData = {
-  labels: ['Idea Gen', 'Content Gen', 'AI Coder', 'AI Mentor', 'AI Roadmap'],
-  values: [90, 65, 120, 30, 50],
+  labels: ['Ideation', 'Content', 'Coding', 'Mentorship', 'Strategy'],
+  values: [90, 65, 20, 30, 50],
 };
 
 const RadarChart = ({ data }: { data: { labels: string[]; values: number[] } }) => {
@@ -108,13 +110,10 @@ const RadarChart = ({ data }: { data: { labels: string[]; values: number[] } }) 
             datasets: [{
               label: 'Tool Mastery',
               data: data.values,
-              backgroundColor: 'rgba(99, 102, 241, 0.2)', // indigo-500
-              borderColor: 'rgba(99, 102, 241, 1)',
+              backgroundColor: 'rgba(79, 70, 229, 0.2)',
+              borderColor: 'rgba(79, 70, 229, 1)',
               borderWidth: 2,
-              pointBackgroundColor: 'rgba(99, 102, 241, 1)',
-              pointBorderColor: '#fff',
-              pointHoverBackgroundColor: '#fff',
-              pointHoverBorderColor: 'rgba(99, 102, 241, 1)'
+              pointBackgroundColor: 'rgba(79, 70, 229, 1)',
             }]
           },
           options: {
@@ -122,9 +121,9 @@ const RadarChart = ({ data }: { data: { labels: string[]; values: number[] } }) 
             maintainAspectRatio: false,
             scales: {
               r: {
-                angleLines: { color: 'rgba(0, 0, 0, 0.1)' },
-                grid: { color: 'rgba(0, 0, 0, 0.1)' },
-                pointLabels: { font: { size: 12, weight: '500' }, color: '#4b5563' }, // gray-600
+                angleLines: { color: 'rgba(0,0,0,0.1)' },
+                grid: { color: 'rgba(0,0,0,0.1)' },
+                pointLabels: { font: { size: 12, weight: 'bold' } },
                 ticks: { display: false }
               }
             },
@@ -186,20 +185,17 @@ const GrowthProfile = () => {
 };
 
 
-const ToolMastery = () => {
-  const powerToolIndex = usageData.values.indexOf(Math.max(...usageData.values));
-  const powerTool = usageData.labels[powerToolIndex];
-
+const ProfessionalPersona = () => {
   return (
-    <div className="bg-white rounded-xl shadow-md p-6">
-       <h2 className="text-xl font-bold text-gray-800 mb-2">Tool Mastery</h2>
-       <div className="text-center bg-indigo-50 border border-indigo-200 p-2 rounded-lg mb-4">
-         <p className="text-sm font-semibold text-gray-600">Your Power Tool is</p>
-         <p className="font-bold text-indigo-600">{powerTool}</p>
-       </div>
-       <div className="relative h-64">
-         <RadarChart data={usageData} />
-       </div>
+    <div className="bg-white rounded-2xl shadow-lg p-6 flex flex-col">
+      <h2 className="text-xl font-bold text-gray-800 mb-4">Your Professional Persona</h2>
+      <div className="flex-grow h-64 mb-4">
+        <RadarChart data={usageData} />
+      </div>
+      <div className="text-center bg-gray-50 p-4 rounded-lg">
+        <h3 className="font-bold text-indigo-600 text-lg">{userStats.persona}</h3>
+        <p className="text-xs text-gray-600 mt-1">{userStats.personaDescription}</p>
+      </div>
     </div>
   );
 };
@@ -762,7 +758,7 @@ export default function Home() {
               {renderMainContent()}
               {activeView === null && (
                 <>
-                  <ToolMastery />
+                  <ProfessionalPersona />
                   <RecommendedToolsSection />
                 </>
               )}
@@ -773,5 +769,3 @@ export default function Home() {
     </div>
   );
 };
-
-    
