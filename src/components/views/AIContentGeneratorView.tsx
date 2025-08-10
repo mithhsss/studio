@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Lightbulb, FileText, PenTool, Sparkles, ArrowRight, Plus, Hash, Wind, Loader } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -115,7 +116,7 @@ const Step3_Polish = ({ draft, setDraft, onStartOver, onRefine, isLoading }: { d
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="md:col-span-2">
-            <Textarea value={draft} onChange={e => setDraft(e.target.value)} className="w-full h-96 p-4 border border-gray-300 rounded-lg bg-gray-50 font-serif text-base leading-relaxed" />
+            <Textarea value={draft} onChange={e => setDraft(e.target.value)} className="w-full h-96 p-4 border border-gray-300 rounded-lg bg-gray-50 font-mono text-base leading-relaxed" />
           </div>
           <div className="md:col-span-1 space-y-4">
             <div>
@@ -205,3 +206,5 @@ const AIContentGeneratorView: React.FC<AIContentGeneratorViewProps> = ({
 }
 
 export default AIContentGeneratorView;
+
+    
