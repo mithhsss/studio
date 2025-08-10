@@ -15,7 +15,6 @@ const GenerateDraftInputSchema = z.object({
   title: z.string().describe('The title of the content.'),
   hook: z.string().describe('The introductory hook to grab the reader\'s attention.'),
   mainPoints: z.array(z.string()).describe('The main points to cover in the content.'),
-  cta: z.string().describe('The call to action for the end of the content.'),
 });
 export type GenerateDraftInput = z.infer<typeof GenerateDraftInputSchema>;
 
@@ -32,20 +31,25 @@ const prompt = ai.definePrompt({
   name: 'generateDraftPrompt',
   input: {schema: GenerateDraftInputSchema},
   output: {schema: GenerateDraftOutputSchema},
-  prompt: `You are an expert content creator. Your task is to generate a full draft for a blog post based on the provided outline. Write in a clear, engaging, and informative style. Format the output in Markdown.
+  prompt: `You are an expert content creator , blogs writer and storyteller.  
+Your task is to write a complete blog post in Markdown format based on the given title, hook, and main points.  
 
-Title: {{{title}}}
+**Requirements:**
+- Write in a clear, engaging, and informative tone.  
+- Start with a strong hook that draws readers in and sets the stage.  
+- Expand each main point into detailed, well-structured sections with examples, insights, or relevant explanations.  
+- Ensure smooth transitions between sections.  
+- End with a concise closing paragraph that leaves readers with a clear takeaway or lasting impression (no call to action).  
 
-Hook: {{{hook}}}
+**Input Structure:**
+Title: {{{title}}}  
+Hook: {{{hook}}}  
+Main Points:  
+{{#each mainPoints}}  
+- {{{this}}}  
+{{/each}}  
 
-Main Points:
-{{#each mainPoints}}
-- {{{this}}}
-{{/each}}
-
-Call to Action: {{{cta}}}
-
-Please generate a compelling draft based on this structure.`,
+Now, generate the full Markdown draft based on the provided inputs.`,
 });
 
 const generateDraftFlow = ai.defineFlow(

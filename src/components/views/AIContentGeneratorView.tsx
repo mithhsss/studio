@@ -206,5 +206,3 @@ const AIContentGeneratorView: React.FC<AIContentGeneratorViewProps> = ({
 }
 
 export default AIContentGeneratorView;
-
-    
