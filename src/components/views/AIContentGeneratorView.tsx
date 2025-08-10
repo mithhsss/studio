@@ -106,6 +106,10 @@ const Step3_Polish = ({ draft, setDraft, onStartOver, onRefine, isLoading }: { d
         setTone('');
     };
 
+    const handleHashtagClick = () => {
+        onRefine("Generate 5 relevant hashtags for social media, and append them to the end of the post.");
+    };
+
     return (
       <div>
         <div className="flex justify-between items-center">
@@ -130,7 +134,7 @@ const Step3_Polish = ({ draft, setDraft, onStartOver, onRefine, isLoading }: { d
             <Button onClick={handleRefineClick} disabled={isLoading} className="w-full flex items-center justify-center gap-2 p-2 bg-blue-600 text-white border rounded-lg hover:bg-blue-700 font-semibold disabled:bg-blue-300">
               {isLoading ? <Loader className="animate-spin" /> : <Sparkles size={16}/>} Refine Draft
             </Button>
-            <Button onClick={() => onRefine('Generate 5 relevant hashtags for social media.')} disabled={isLoading} className="w-full flex items-center justify-center gap-2 p-2 bg-gray-100 border border-gray-200 rounded-lg hover:bg-gray-200 font-semibold text-gray-700">
+            <Button onClick={handleHashtagClick} disabled={isLoading} className="w-full flex items-center justify-center gap-2 p-2 bg-gray-100 border border-gray-200 rounded-lg hover:bg-gray-200 font-semibold text-gray-700">
               <Hash size={16}/> Generate Hashtags
             </Button>
           </div>

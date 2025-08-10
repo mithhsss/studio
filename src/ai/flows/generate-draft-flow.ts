@@ -15,6 +15,7 @@ const GenerateDraftInputSchema = z.object({
   title: z.string().describe('The title of the content.'),
   hook: z.string().describe('The introductory hook to grab the reader\'s attention.'),
   mainPoints: z.array(z.string()).describe('The main points to cover in the content.'),
+  goal: z.string().describe("The user's original goal or key message for the content."),
 });
 export type GenerateDraftInput = z.infer<typeof GenerateDraftInputSchema>;
 
@@ -31,23 +32,26 @@ const prompt = ai.definePrompt({
   name: 'generateDraftPrompt',
   input: {schema: GenerateDraftInputSchema},
   output: {schema: GenerateDraftOutputSchema},
-  prompt: `You are an expert content creator , blogs writer and storyteller.  
-Your task is to write a complete blog post in Markdown format based on the given title, hook, and main points.  
+  prompt: `You are an expert content creator, blogs writer and storyteller.
+Your task is to write a complete blog post in Markdown format based on the given title, hook, and main points.
 
 **Requirements:**
-- Write in a clear, engaging, and informative tone.  
-- Start with a strong hook that draws readers in and sets the stage.  
-- Expand each main point into detailed, well-structured sections with examples, insights, or relevant explanations.  
-- Ensure smooth transitions between sections.  
-- End with a concise closing paragraph that leaves readers with a clear takeaway or lasting impression (no call to action).  
+- The total word count must be between 200 and 250 words.
+- Write in a clear, engaging, and informative tone.
+- Start with a strong hook that draws readers in and sets the stage.
+- Expand each main point into detailed, well-structured sections with examples, insights, or relevant explanations.
+- Ensure smooth transitions between sections.
+- Ensure the final output aligns with the user's original key message.
+- End with a concise closing paragraph that leaves readers with a clear takeaway or lasting impression (no call to action).
 
 **Input Structure:**
-Title: {{{title}}}  
-Hook: {{{hook}}}  
-Main Points:  
-{{#each mainPoints}}  
-- {{{this}}}  
-{{/each}}  
+Title: {{{title}}}
+Hook: {{{hook}}}
+User's Key Message: {{{goal}}}
+Main Points:
+{{#each mainPoints}}
+- {{{this}}}
+{{/each}}
 
 Now, generate the full Markdown draft based on the provided inputs.`,
 });

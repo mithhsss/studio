@@ -21,16 +21,22 @@ const prompt = ai.definePrompt({
   name: 'refineContentPrompt',
   input: { schema: RefineContentInputSchema },
   output: { schema: RefineContentOutputSchema },
-  prompt: `You are an expert editor. Your task is to refine the following text based on the user's command.
+  prompt: `You are an expert editor. Your task is to refine the following text based on the user's command, while ensuring the output remains consistent with the original key message and main points.
 
 User's Command: "{{{command}}}"
 
-Original Text:
+Original Key Message: {{{goal}}}
+Original Main Points:
+{{#each mainPoints}}
+- {{{this}}}
+{{/each}}
+
+Original Text to Refine:
 ---
 {{{text}}}
 ---
 
-Apply the command to the text and return the result in the 'refinedText' field. If the command is to generate hashtags, provide them as a single string.`,
+Apply the command to the text and return the result in the 'refinedText' field. If the command is to generate hashtags, provide them as a single string appended to the original text.`,
 });
 
 
