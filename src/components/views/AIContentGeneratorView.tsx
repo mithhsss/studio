@@ -6,15 +6,16 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { useToast } from "@/hooks/use-toast";
+import type { ContentGeneratorStep, ContentFormData } from '@/app/page';
 
-import { generateOutline, type GenerateOutlineOutput } from '@/ai/flows/generate-outline-flow';
+import { generateOutline } from '@/ai/flows/generate-outline-flow';
 import { generateDraft } from '@/ai/flows/generate-draft-flow';
 import { refineContent } from '@/ai/flows/refine-content-flow';
 
 
 // --- STEP COMPONENTS ---
 
-const Step1_Spark = ({ formData, setFormData, onNext, isLoading }: any) => (
+const Step1_Spark = ({ formData, setFormData, onNext, isLoading }: { formData: any, setFormData: any, onNext: any, isLoading: boolean}) => (
   <div>
     <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2"><Lightbulb className="text-blue-500"/> Step 1: The Spark</h3>
     <p className="text-gray-500 mb-6">Start with your core idea and the main message you want to convey.</p>
@@ -44,7 +45,7 @@ const Step1_Spark = ({ formData, setFormData, onNext, isLoading }: any) => (
   </div>
 );
 
-const Step2_Blueprint = ({ outline, setOutline, onNext, isLoading, onBack }: any) => {
+const Step2_Blueprint = ({ outline, setOutline, onNext, isLoading, onBack }: {outline: any, setOutline: any, onNext: any, isLoading: boolean, onBack: any}) => {
   const handlePointChange = (index: number, value: string) => {
     const newPoints = [...outline.mainPoints];
     newPoints[index] = value;
@@ -81,10 +82,6 @@ const Step2_Blueprint = ({ outline, setOutline, onNext, isLoading, onBack }: any
           </div>
           <button onClick={addPoint} className="text-sm font-semibold text-blue-600 hover:text-blue-800 mt-3 flex items-center gap-1"><Plus size={16}/> Add Point</button>
         </div>
-         <div className="bg-gray-50 p-4 rounded-lg">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Call to Action (CTA)</label>
-          <Input type="text" value={outline.cta} onChange={(e: any) => setOutline({...outline, cta: e.target.value})} />
-        </div>
       </div>
 
       <Button onClick={onNext} disabled={isLoading} className="w-full mt-8 bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 flex items-center justify-center gap-2 disabled:bg-blue-300">
@@ -94,7 +91,7 @@ const Step2_Blueprint = ({ outline, setOutline, onNext, isLoading, onBack }: any
   );
 };
 
-const Step3_Polish = ({ draft, setDraft, onStartOver, onRefine }: any) => {
+const Step3_Polish = ({ draft, setDraft, onStartOver, onRefine, isLoading }: { draft: string, setDraft: any, onStartOver: any, onRefine: any, isLoading: boolean }) => {
     const [refineCommand, setRefineCommand] = useState('');
     const [tone, setTone] = useState('');
 
@@ -129,10 +126,10 @@ const Step3_Polish = ({ draft, setDraft, onStartOver, onRefine }: any) => {
               <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1"><Sparkles size={14}/> Other Specific Changes</label>
               <Textarea value={refineCommand} onChange={e => setRefineCommand(e.target.value)} placeholder="e.g., 'Add a paragraph about the impact on junior designers'" className="w-full p-2 border border-gray-300 rounded-lg text-sm" rows="4"/>
             </div>
-            <Button onClick={handleRefineClick} className="w-full flex items-center justify-center gap-2 p-2 bg-blue-600 text-white border rounded-lg hover:bg-blue-700 font-semibold">
-              <Sparkles size={16}/> Refine Draft
+            <Button onClick={handleRefineClick} disabled={isLoading} className="w-full flex items-center justify-center gap-2 p-2 bg-blue-600 text-white border rounded-lg hover:bg-blue-700 font-semibold disabled:bg-blue-300">
+              {isLoading ? <Loader className="animate-spin" /> : <Sparkles size={16}/>} Refine Draft
             </Button>
-            <Button onClick={() => onRefine('Generate 5 relevant hashtags for social media.')} className="w-full flex items-center justify-center gap-2 p-2 bg-gray-100 border border-gray-200 rounded-lg hover:bg-gray-200 font-semibold text-gray-700">
+            <Button onClick={() => onRefine('Generate 5 relevant hashtags for social media.')} disabled={isLoading} className="w-full flex items-center justify-center gap-2 p-2 bg-gray-100 border border-gray-200 rounded-lg hover:bg-gray-200 font-semibold text-gray-700">
               <Hash size={16}/> Generate Hashtags
             </Button>
           </div>
@@ -141,90 +138,39 @@ const Step3_Polish = ({ draft, setDraft, onStartOver, onRefine }: any) => {
     );
 }
 
-// --- MAIN VIEW COMPONENT ---
-const AIContentGeneratorView = () => {
-  const { toast } = useToast();
-  const [step, setStep] = useState('spark'); // spark, blueprint, polish
-  const [isLoading, setIsLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    topic: 'The future of AI in UX Design',
-    goal: 'I believe AI will augment, not replace, designers by handling data analysis and repetitive tasks, allowing humans to focus on empathy and strategy.'
-  });
-  const [outline, setOutline] = useState<GenerateOutlineOutput | null>(null);
-  const [draft, setDraft] = useState('');
+interface AIContentGeneratorViewProps {
+    step: ContentGeneratorStep;
+    setStep: (step: ContentGeneratorStep) => void;
+    formData: ContentFormData;
+    setFormData: (data: ContentFormData) => void;
+    isLoading: boolean;
+    handleGenerateOutline: () => void;
+    handleGenerateDraft: () => void;
+    handleRefineContent: (command: string) => void;
+    handleStartOver: () => void;
+}
 
-  const handleGenerateOutline = async () => {
-    setIsLoading(true);
-    try {
-        const result = await generateOutline({ 
-            topic: formData.topic, 
-            goal: formData.goal 
-        });
-        setOutline(result);
-        setStep('blueprint');
-    } catch (err) {
-        toast({
-            variant: "destructive",
-            title: "Outline Generation Failed",
-            description: "There was a problem generating the outline. Please try again.",
-        });
-    } finally {
-        setIsLoading(false);
-    }
-  };
 
-  const handleGenerateDraft = async () => {
-    if (!outline) return;
-    setIsLoading(true);
-    try {
-        const result = await generateDraft(outline);
-        setDraft(result.draft);
-        setStep('polish');
-    } catch (err) {
-        toast({
-            variant: "destructive",
-            title: "Draft Generation Failed",
-            description: "There was a problem generating the draft. Please try again.",
-        });
-    } finally {
-        setIsLoading(false);
-    }
-  };
-  
-  const handleRefineContent = async (command: string) => {
-    setIsLoading(true);
-    try {
-        const result = await refineContent({ text: draft, command });
-        setDraft(result.refinedText);
-        toast({
-            title: "Content Refined!",
-            description: "The draft has been updated.",
-        });
-    } catch (err) {
-        toast({
-            variant: "destructive",
-            title: "Refinement Failed",
-            description: "The AI could not refine the content. Please try again.",
-        });
-    } finally {
-        setIsLoading(false);
-    }
-  };
-  
-  const handleStartOver = () => {
-      setStep('spark');
-      setOutline(null);
-      setDraft('');
-  };
+const AIContentGeneratorView: React.FC<AIContentGeneratorViewProps> = ({
+  step,
+  setStep,
+  formData,
+  setFormData,
+  isLoading,
+  handleGenerateOutline,
+  handleGenerateDraft,
+  handleRefineContent,
+  handleStartOver,
+}) => {
 
   const renderStep = () => {
     switch (step) {
-      case 'spark':
+      case 'idea':
         return <Step1_Spark formData={formData} setFormData={setFormData} onNext={handleGenerateOutline} isLoading={isLoading} />;
-      case 'blueprint':
-        return <Step2_Blueprint outline={outline} setOutline={setOutline} onNext={handleGenerateDraft} isLoading={isLoading} onBack={() => setStep('spark')} />;
-      case 'polish':
-        return <Step3_Polish draft={draft} setDraft={setDraft} onStartOver={handleStartOver} onRefine={handleRefineContent} />;
+      case 'outline':
+        return <Step2_Blueprint outline={formData.outline} setOutline={(newOutline: any) => setFormData({...formData, outline: newOutline})} onNext={handleGenerateDraft} isLoading={isLoading} onBack={() => setStep('idea')} />;
+      case 'draft':
+        return <Step3_Polish draft={formData.draft} setDraft={(newDraft: string) => setFormData({...formData, draft: newDraft})} onStartOver={handleStartOver} onRefine={handleRefineContent} isLoading={isLoading} />;
       default:
         return null;
     }

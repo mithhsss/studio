@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { BookOpen, Map, Users, Code, Plus, Sparkles, BrainCircuit, FileText, Lightbulb, Bot, Package, WandSparkles, Wind, Hash, TrendingUp, Award, BarChart, Rocket } from 'lucide-react';
 import { Chart } from 'chart.js/auto';
-
 import { useToast } from "@/hooks/use-toast";
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
@@ -468,7 +467,7 @@ export default function Home() {
         if (!contentFormData.outline) return;
         setIsLoading(true);
         try {
-            const result = await generateDraft(contentFormData.outline);
+            const result = await generateDraft({ ...contentFormData.outline, cta: '' }); // Pass empty CTA
             setContentFormData(prev => ({ ...prev, draft: result.draft }));
             setContentGeneratorStep('draft');
         } catch (err) {
@@ -786,4 +785,3 @@ export default function Home() {
 };
 
     
-

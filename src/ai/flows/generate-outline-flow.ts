@@ -20,8 +20,7 @@ export type GenerateOutlineInput = z.infer<typeof GenerateOutlineInputSchema>;
 const GenerateOutlineOutputSchema = z.object({
   title: z.string().describe('A compelling title suggestion for the content.'),
   hook: z.string().describe('An engaging introductory hook to capture the reader\'s attention.'),
-  mainPoints: z.array(z.string()).describe('A list of 3-5 main points or sections for the content body.'),
-  cta: z.string().describe('A relevant call to action for the end of the piece.'),
+  mainPoints: z.array(z.string()).describe('A list of 3-5 main points for the content body. Each point should be a concise phrase of 8-9 words.'),
 });
 export type GenerateOutlineOutput = z.infer<typeof GenerateOutlineOutputSchema>;
 
@@ -38,7 +37,7 @@ const prompt = ai.definePrompt({
 Topic: {{{topic}}}
 Goal: {{{goal}}}
 
-Please generate a compelling outline that includes a title, an engaging hook, 3 to 5 main points, and a concluding call to action.`,
+Please generate a compelling outline that includes a title, an engaging hook, and 3 to 5 main points. Each main point should be a concise phrase of about 8-9 words. Do not include a call to action.`,
 });
 
 const generateOutlineFlow = ai.defineFlow(
