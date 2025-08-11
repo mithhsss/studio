@@ -52,7 +52,7 @@ Now, expand this idea into a full strategic plan. For each section, provide clea
 - **growthOpportunities**:
   - **points**: An array of bullet points brainstorming how the idea could evolve (future features, partnerships, etc.).
 
-Return the entire plan in the specified structured JSON format.`,
+Return the entire plan in the specified structured JSON format. Ensure all fields are populated.`,
 });
 
 
