@@ -15,6 +15,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { expandIdea } from '@/ai/flows/expand-idea-flow';
 import type { ExpandIdeaOutput } from '@/ai/schemas/idea-generation-schemas';
 import { useToast } from "@/hooks/use-toast";
@@ -45,7 +46,56 @@ interface AIIdeaGeneratorViewProps {
 
 // --- NEW UI COMPONENTS ---
 
-const IdeaCardNew = ({ idea, onAction, onSelectCombine, isSelectedForCombine, isCombineDisabled, onExpand }: { idea: any, onAction: any, onSelectCombine: () => void, isSelectedForCombine: boolean, isCombineDisabled: boolean, onExpand: (idea: any) => void }) => (
+const RefinePopover = ({ idea, onAction, isLoading }: { idea: any, onAction: any, isLoading: boolean }) => {
+    const [message, setMessage] = useState('');
+    const chatContainerRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (chatContainerRef.current) {
+            chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+        }
+    }, [idea.chatHistory]);
+
+    const handleSend = () => {
+        if (!message.trim()) return;
+        onAction('message', idea.id, message);
+        setMessage('');
+    };
+
+    return (
+        <Popover>
+            <PopoverTrigger asChild>
+                <Button variant="outline" className="w-full">Refine</Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80 p-4">
+                <div className="space-y-4">
+                    <h4 className="font-medium leading-none">Refine Idea</h4>
+                    <div ref={chatContainerRef} className="flex-grow bg-gray-50 h-60 rounded-lg p-2 overflow-y-auto text-sm space-y-3">
+                        {idea.chatHistory.map((chat: any, i: number) => (
+                            <div key={i} className={`flex items-start gap-2 ${chat.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                {chat.sender === 'ai' && <div className="bg-indigo-500 text-white rounded-full h-6 w-6 flex items-center justify-center flex-shrink-0"><Lightbulb size={14}/></div> }
+                                <div className={`p-2 rounded-lg max-w-[80%] ${chat.sender === 'user' ? 'bg-indigo-100 text-indigo-800' : 'bg-gray-200 text-gray-800'}`}>{chat.text}</div>
+                            </div>
+                        ))}
+                         {isLoading && idea.chatHistory.length > 0 && idea.chatHistory[idea.chatHistory.length - 1].sender === 'user' && (
+                            <div className="flex items-start gap-2 justify-start">
+                                <div className="bg-indigo-500 text-white rounded-full h-6 w-6 flex items-center justify-center flex-shrink-0"><Loader size={14} className="animate-spin" /></div>
+                                <div className="p-2 rounded-lg bg-gray-200 text-gray-400">Thinking...</div>
+                            </div>
+                        )}
+                    </div>
+                    <div className="flex gap-2">
+                        <Input value={message} onChange={e => setMessage(e.target.value)} onKeyPress={e => e.key === 'Enter' && handleSend()} placeholder="Ask a question..." disabled={isLoading} />
+                        <Button onClick={handleSend} size="icon" disabled={isLoading}><Send size={16} /></Button>
+                    </div>
+                </div>
+            </PopoverContent>
+        </Popover>
+    );
+};
+
+
+const IdeaCardNew = ({ idea, onAction, onSelectCombine, isSelectedForCombine, isCombineDisabled, onExpand, onFinalize, isLoading }: { idea: any, onAction: any, onSelectCombine: () => void, isSelectedForCombine: boolean, isCombineDisabled: boolean, onExpand: (idea: any) => void, onFinalize: (idea: any) => void, isLoading: boolean }) => (
     <div className={`bg-white border rounded-xl p-4 flex flex-col justify-between transition-all duration-300 shadow-sm hover:shadow-lg hover:-translate-y-1 ${isSelectedForCombine ? 'ring-2 ring-indigo-500' : ''}`}>
         <div>
             <div className="flex justify-between items-start mb-2">
@@ -68,11 +118,14 @@ const IdeaCardNew = ({ idea, onAction, onSelectCombine, isSelectedForCombine, is
                     <ThumbsUp size={14} className={idea.likes > 0 ? 'text-indigo-600' : ''} /> {idea.likes}
                 </button>
             </div>
-            <div className="flex gap-2">
-                <Button onClick={() => onAction('chat', idea.id)} variant="outline" className="w-full">Refine</Button>
+            <div className="grid grid-cols-2 gap-2">
+                <RefinePopover idea={idea} onAction={onAction} isLoading={isLoading} />
                 <Button onClick={() => onExpand(idea)} variant="outline" className="w-full">Expand</Button>
-                <Button onClick={onSelectCombine} variant="outline" size="icon" disabled={isCombineDisabled && !isSelectedForCombine}>
-                    {isSelectedForCombine ? <Check size={16} className="text-green-500" /> : <Combine size={16} />}
+                <Button onClick={onSelectCombine} variant="outline" disabled={isCombineDisabled && !isSelectedForCombine}>
+                    {isSelectedForCombine ? <Check size={16} className="text-green-500" /> : <Combine size={16} />} Combine
+                </Button>
+                 <Button onClick={() => onFinalize(idea)} variant="outline" className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100 hover:text-green-800">
+                    <Trophy size={16} /> Finalize
                 </Button>
             </div>
         </div>
@@ -128,60 +181,6 @@ const ExpandedIdeaView = ({ result, onOpenChange }: { result: ExpandIdeaOutput, 
                  <DialogFooter>
                     <Button onClick={() => onOpenChange(false)}>Close</Button>
                 </DialogFooter>
-            </DialogContent>
-        </Dialog>
-    );
-};
-
-
-const RefinementHub = ({ idea, onAction, onOpenChange, onFinalize }: { idea: any, onAction: any, onOpenChange: (open: boolean) => void, onFinalize: (idea: any) => void }) => {
-    const [message, setMessage] = useState('');
-    const chatContainerRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        if (chatContainerRef.current) {
-            chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
-        }
-    }, [idea.chatHistory]);
-
-    const handleSend = () => {
-        if (!message.trim()) return;
-        onAction('message', idea.id, message);
-        setMessage('');
-    };
-
-    return (
-        <Dialog open={true} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-3xl p-0">
-                <div className="grid grid-cols-1 md:grid-cols-2">
-                    <div className="p-6 border-r">
-                        <DialogHeader>
-                            <DialogTitle className="text-2xl font-bold">{idea.title}</DialogTitle>
-                            <DialogDescription>{idea.shortDesc}</DialogDescription>
-                        </DialogHeader>
-                        <div className="mt-4">
-                            <p className="text-gray-700 text-sm">{idea.longDesc}</p>
-                        </div>
-                        <Button onClick={() => { onFinalize(idea); onOpenChange(false); }} className="w-full mt-6 bg-green-500 hover:bg-green-600 flex items-center gap-2">
-                            <Trophy size={16} /> Finalize This Idea
-                        </Button>
-                    </div>
-                    <div className="p-6 flex flex-col">
-                        <h4 className="font-semibold mb-2">Refinement Chat</h4>
-                        <div ref={chatContainerRef} className="flex-grow bg-gray-50 h-80 rounded-lg p-3 overflow-y-auto text-sm space-y-3 mb-4">
-                             {idea.chatHistory.map((chat: any, i: number) => (
-                                <div key={i} className={`flex items-end gap-2 ${chat.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-                                    {chat.sender === 'ai' && <div className="bg-indigo-500 text-white rounded-full h-6 w-6 flex items-center justify-center flex-shrink-0"><Lightbulb size={14}/></div> }
-                                    <div className={`p-2 rounded-lg max-w-xs ${chat.sender === 'user' ? 'bg-indigo-100 text-indigo-800' : 'bg-gray-200 text-gray-800'}`}>{chat.text}</div>
-                                </div>
-                            ))}
-                        </div>
-                        <div className="flex gap-2">
-                            <Input value={message} onChange={e => setMessage(e.target.value)} onKeyPress={e => e.key === 'Enter' && handleSend()} placeholder="Ask a question..." />
-                            <Button onClick={handleSend} size="icon"><Send size={16} /></Button>
-                        </div>
-                    </div>
-                </div>
             </DialogContent>
         </Dialog>
     );
@@ -375,20 +374,11 @@ const AIIdeaGeneratorView: React.FC<AIIdeaGeneratorViewProps> = ({
                                     onSelectCombine={() => handleSelectCombine(idea.id)}
                                     isSelectedForCombine={selectedToCombine.includes(idea.id)}
                                     isCombineDisabled={selectedToCombine.length >= 2}
+                                    onFinalize={handleFinalize}
+                                    isLoading={isLoading && activeChatIdea?.id === idea.id}
                                 />
                             ))}
                         </div>
-
-                        <AnimatePresence>
-                          {activeChatIdea && (
-                              <RefinementHub 
-                                  idea={activeChatIdea}
-                                  onAction={handleAction}
-                                  onOpenChange={(open) => { if (!open) handleAction('closeChat', activeChatIdea.id); }}
-                                  onFinalize={handleFinalize}
-                              />
-                          )}
-                        </AnimatePresence>
                         
                         <AnimatePresence>
                             {expandedIdeaResult && (
@@ -437,5 +427,7 @@ const AIIdeaGeneratorView: React.FC<AIIdeaGeneratorViewProps> = ({
 };
 
 export default AIIdeaGeneratorView;
+
+    
 
     
