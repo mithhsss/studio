@@ -45,12 +45,21 @@ interface AIIdeaGeneratorViewProps {
 }
 
 // --- NEW UI COMPONENTS ---
+const ExpandedDetailCard = ({ icon, title, children }: { icon: React.ReactNode, title: string, children: React.ReactNode }) => (
+    <div className="bg-gray-50/50 p-4 rounded-lg border">
+        <h4 className="font-semibold text-md flex items-center gap-3 mb-2">{icon} {title}</h4>
+        <div className="text-sm text-gray-600 space-y-2">
+            {children}
+        </div>
+    </div>
+);
 
-const RefinePopover = ({ idea, onAction, isLoading }: { idea: any, onAction: any, isLoading: boolean }) => {
+const RefinementHub = ({ idea, expandedData, onOpenChange, onSendMessage, isLoading }: { idea: IdeaWithState, expandedData: ExpandIdeaOutput, onOpenChange: (open: boolean) => void, onSendMessage: (message: string) => void, isLoading: boolean }) => {
     const [message, setMessage] = useState('');
     const chatContainerRef = useRef<HTMLDivElement>(null);
+    const { expandedIdea } = expandedData;
 
-    useEffect(() => {
+     useEffect(() => {
         if (chatContainerRef.current) {
             chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
         }
@@ -58,39 +67,57 @@ const RefinePopover = ({ idea, onAction, isLoading }: { idea: any, onAction: any
 
     const handleSend = () => {
         if (!message.trim()) return;
-        onAction('message', idea.id, message);
+        onSendMessage(message);
         setMessage('');
     };
 
     return (
-        <Popover>
-            <PopoverTrigger asChild>
-                <Button variant="outline" className="w-full">Refine</Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-80 p-4">
-                <div className="space-y-4">
-                    <h4 className="font-medium leading-none">Refine Idea</h4>
-                    <div ref={chatContainerRef} className="flex-grow bg-gray-50 h-60 rounded-lg p-2 overflow-y-auto text-sm space-y-3">
-                        {idea.chatHistory.map((chat: any, i: number) => (
-                            <div key={i} className={`flex items-start gap-2 ${chat.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-                                {chat.sender === 'ai' && <div className="bg-indigo-500 text-white rounded-full h-6 w-6 flex items-center justify-center flex-shrink-0"><Lightbulb size={14}/></div> }
-                                <div className={`p-2 rounded-lg max-w-[80%] ${chat.sender === 'user' ? 'bg-indigo-100 text-indigo-800' : 'bg-gray-200 text-gray-800'}`}>{chat.text}</div>
-                            </div>
-                        ))}
-                         {isLoading && idea.chatHistory.length > 0 && idea.chatHistory[idea.chatHistory.length - 1].sender === 'user' && (
-                            <div className="flex items-start gap-2 justify-start">
-                                <div className="bg-indigo-500 text-white rounded-full h-6 w-6 flex items-center justify-center flex-shrink-0"><Loader size={14} className="animate-spin" /></div>
-                                <div className="p-2 rounded-lg bg-gray-200 text-gray-400">Thinking...</div>
-                            </div>
-                        )}
+        <Dialog open={true} onOpenChange={onOpenChange}>
+            <DialogContent className="max-w-6xl h-[80vh] flex flex-col">
+                <DialogHeader>
+                    <DialogTitle className="text-2xl font-bold text-indigo-700">Refine: {idea.title}</DialogTitle>
+                </DialogHeader>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 flex-grow overflow-hidden">
+                    {/* Left Panel: Expanded Idea */}
+                    <div className="h-full overflow-y-auto pr-4 space-y-4">
+                        <p className="text-base mb-4">{expandedIdea.mainDescription}</p>
+                        <ExpandedDetailCard icon={<Briefcase size={18} className="text-blue-500"/>} title="Core Features & Benefits">
+                            <ul className="list-disc pl-5 space-y-1">{expandedIdea.coreFeatures.points.map((point, i) => <li key={i}>{point}</li>)}</ul>
+                            <p className="pt-2">{expandedIdea.coreFeatures.summary}</p>
+                        </ExpandedDetailCard>
+                        <ExpandedDetailCard icon={<Target size={18} className="text-red-500"/>} title="Target Audience & Market Fit"><p className="whitespace-pre-wrap">{expandedIdea.targetAudience.description}</p></ExpandedDetailCard>
+                        <ExpandedDetailCard icon={<ListOrdered size={18} className="text-green-500"/>} title="Implementation Roadmap"><ul className="list-disc pl-5 space-y-1">{expandedIdea.implementationRoadmap.steps.map((step, i) => <li key={i}>{step}</li>)}</ul></ExpandedDetailCard>
+                        <ExpandedDetailCard icon={<HandCoins size={18} className="text-teal-500"/>} title="Monetization & Sustainability"><ul className="list-disc pl-5 space-y-1">{expandedIdea.monetization.points.map((point, i) => <li key={i}>{point}</li>)}</ul></ExpandedDetailCard>
+                        <ExpandedDetailCard icon={<ShieldQuestion size={18} className="text-amber-500"/>} title="Potential Challenges & Mitigation"><ul className="list-disc pl-5 space-y-1">{expandedIdea.challenges.points.map((point, i) => <li key={i}>{point}</li>)}</ul></ExpandedDetailCard>
+                        <ExpandedDetailCard icon={<TrendingUp size={18} className="text-purple-500"/>} title="Growth & Innovation Opportunities"><p className="whitespace-pre-wrap">{expandedIdea.growthOpportunities.description}</p></ExpandedDetailCard>
                     </div>
-                    <div className="flex gap-2">
-                        <Input value={message} onChange={e => setMessage(e.target.value)} onKeyPress={e => e.key === 'Enter' && handleSend()} placeholder="Ask a question..." disabled={isLoading} />
-                        <Button onClick={handleSend} size="icon" disabled={isLoading}><Send size={16} /></Button>
+
+                    {/* Right Panel: Chat */}
+                    <div className="h-full flex flex-col bg-gray-50 rounded-lg border">
+                        <div ref={chatContainerRef} className="flex-grow p-4 overflow-y-auto text-sm space-y-3">
+                             {idea.chatHistory.map((chat: any, i: number) => (
+                                <div key={i} className={`flex items-start gap-2 ${chat.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                    {chat.sender === 'ai' && <div className="bg-indigo-500 text-white rounded-full h-6 w-6 flex items-center justify-center flex-shrink-0"><Lightbulb size={14}/></div> }
+                                    <div className={`p-2 rounded-lg max-w-[80%] ${chat.sender === 'user' ? 'bg-indigo-100 text-indigo-800' : 'bg-gray-200 text-gray-800'}`}>{chat.text}</div>
+                                </div>
+                            ))}
+                             {isLoading && idea.chatHistory.length > 0 && idea.chatHistory[idea.chatHistory.length - 1].sender === 'user' && (
+                                <div className="flex items-start gap-2 justify-start">
+                                    <div className="bg-indigo-500 text-white rounded-full h-6 w-6 flex items-center justify-center flex-shrink-0"><Loader size={14} className="animate-spin" /></div>
+                                    <div className="p-2 rounded-lg bg-gray-200 text-gray-400">Thinking...</div>
+                                </div>
+                            )}
+                        </div>
+                         <div className="p-4 border-t bg-white">
+                            <div className="flex gap-2">
+                                <Input value={message} onChange={e => setMessage(e.target.value)} onKeyPress={e => e.key === 'Enter' && handleSend()} placeholder="Discuss this idea..." disabled={isLoading} />
+                                <Button onClick={handleSend} size="icon" disabled={isLoading}><Send size={16} /></Button>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </PopoverContent>
-        </Popover>
+            </DialogContent>
+        </Dialog>
     );
 };
 
@@ -119,7 +146,7 @@ const IdeaCardNew = ({ idea, onAction, onSelectCombine, isSelectedForCombine, is
                 </button>
             </div>
             <div className="grid grid-cols-2 gap-2">
-                <RefinePopover idea={idea} onAction={onAction} isLoading={isLoading} />
+                <Button onClick={() => onAction('refine', idea.id)} variant="outline" className="w-full">Refine with AI</Button>
                 <Button onClick={() => onExpand(idea)} variant="outline" className="w-full">Expand</Button>
                 <Button onClick={onSelectCombine} variant="outline" disabled={isCombineDisabled && !isSelectedForCombine}>
                     {isSelectedForCombine ? <Check size={16} className="text-green-500" /> : <Combine size={16} />} Combine
@@ -131,16 +158,6 @@ const IdeaCardNew = ({ idea, onAction, onSelectCombine, isSelectedForCombine, is
         </div>
     </div>
 );
-
-const ExpandedDetailCard = ({ icon, title, children }: { icon: React.ReactNode, title: string, children: React.ReactNode }) => (
-    <div className="bg-gray-50/50 p-4 rounded-lg border">
-        <h4 className="font-semibold text-md flex items-center gap-3 mb-2">{icon} {title}</h4>
-        <div className="text-sm text-gray-600 space-y-2">
-            {children}
-        </div>
-    </div>
-);
-
 
 const ExpandedIdeaView = ({ result, onOpenChange }: { result: ExpandIdeaOutput, onOpenChange: (open: boolean) => void }) => {
     const { title, expandedIdea } = result;
@@ -269,8 +286,13 @@ const AIIdeaGeneratorView: React.FC<AIIdeaGeneratorViewProps> = ({
 }) => {
     const { toast } = useToast();
     const [selectedToCombine, setSelectedToCombine] = useState<number[]>([]);
-    const [expandedIdeaResult, setExpandedIdeaResult] = useState<ExpandIdeaOutput | null>(null);
-    const [isExpanding, setIsExpanding] = useState(false);
+    
+    // State for new Refinement Hub
+    const [refinementHubOpen, setRefinementHubOpen] = useState(false);
+    const [activeRefineIdea, setActiveRefineIdea] = useState<IdeaWithState | null>(null);
+    const [refineHubData, setRefineHubData] = useState<ExpandIdeaOutput | null>(null);
+    const [isRefining, setIsRefining] = useState(false);
+
 
     useEffect(() => {
         if (selectedToCombine.length === 2) {
@@ -306,22 +328,35 @@ const AIIdeaGeneratorView: React.FC<AIIdeaGeneratorViewProps> = ({
         setSelectedToCombine([]);
     };
     
-    const handleExpand = async (idea: IdeaWithState) => {
-        setIsExpanding(true);
+     const handleExpand = async (idea: IdeaWithState) => {
+        handleAction('expand', idea.id); // This now sets the loading state in parent
+    };
+    
+    const handleRefineClick = async (idea: IdeaWithState) => {
+        setActiveRefineIdea(idea);
+        setRefinementHubOpen(true);
+        setIsRefining(true);
         try {
             const result = await expandIdea({ idea, brief: formData });
-            setExpandedIdeaResult({...result, title: idea.title});
+            setRefineHubData({...result, title: idea.title});
         } catch (err) {
-            toast({
+             toast({
                 variant: "destructive",
-                title: "Expansion Failed",
-                description: "There was a problem expanding the idea. Please try again.",
+                title: "Failed to load details",
+                description: "There was a problem preparing the refinement view.",
             });
+            setRefinementHubOpen(false);
         } finally {
-            setIsExpanding(false);
+            setIsRefining(false);
         }
     };
     
+     const handleSendMessageInHub = (message: string) => {
+        if(activeRefineIdea) {
+            handleAction('message', activeRefineIdea.id, message);
+        }
+    };
+
     const renderContent = () => {
         switch (step) {
             case 'input':
@@ -360,6 +395,7 @@ const AIIdeaGeneratorView: React.FC<AIIdeaGeneratorViewProps> = ({
                     </div>
                 );
             case 'results':
+                 const currentExpandedIdea = ideas.find(idea => idea.id === activeChatIdea?.id);
                 return (
                     <div className="animate-fade-in">
                         <div className="flex justify-between items-center mb-4">
@@ -368,7 +404,7 @@ const AIIdeaGeneratorView: React.FC<AIIdeaGeneratorViewProps> = ({
                                 <p className="text-gray-500 text-sm">Refine, combine, and finalize your new ideas.</p>
                             </div>
                              <div className="flex items-center gap-2">
-                                {isExpanding && <div className="flex items-center gap-2 text-sm text-gray-500"><Loader size={16} className="animate-spin"/> Expanding...</div>}
+                                {isLoading && activeChatIdea && <div className="flex items-center gap-2 text-sm text-gray-500"><Loader size={16} className="animate-spin"/> Expanding...</div>}
                                 <button onClick={handleRestart} className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900 font-medium"><ArrowLeft size={16} /> New Brainstorm</button>
                             </div>
                         </div>
@@ -378,7 +414,10 @@ const AIIdeaGeneratorView: React.FC<AIIdeaGeneratorViewProps> = ({
                                 <IdeaCardNew 
                                     key={idea.id}
                                     idea={idea}
-                                    onAction={handleAction}
+                                    onAction={(action, id, data) => {
+                                        if (action === 'refine') handleRefineClick(idea);
+                                        else handleAction(action, id, data);
+                                    }}
                                     onExpand={handleExpand}
                                     onSelectCombine={() => handleSelectCombine(idea.id)}
                                     isSelectedForCombine={selectedToCombine.includes(idea.id)}
@@ -390,8 +429,25 @@ const AIIdeaGeneratorView: React.FC<AIIdeaGeneratorViewProps> = ({
                         </div>
                         
                         <AnimatePresence>
-                            {expandedIdeaResult && (
-                                <ExpandedIdeaView result={expandedIdeaResult} onOpenChange={(open) => !open && setExpandedIdeaResult(null)} />
+                           {activeChatIdea && activeChatIdea.expandedData && (
+                                <ExpandedIdeaView result={activeChatIdea.expandedData} onOpenChange={(open) => !open && handleAction('closeExpand', activeChatIdea.id)} />
+                            )}
+                        </AnimatePresence>
+
+                        <AnimatePresence>
+                           {refinementHubOpen && activeRefineIdea && refineHubData && (
+                                <RefinementHub
+                                    idea={activeRefineIdea}
+                                    expandedData={refineHubData}
+                                    onOpenChange={(open) => {
+                                        if (!open) {
+                                            setRefinementHubOpen(false);
+                                            setActiveRefineIdea(null);
+                                        }
+                                    }}
+                                    onSendMessage={handleSendMessageInHub}
+                                    isLoading={isLoading && activeRefineIdea.chatHistory[activeRefineIdea.chatHistory.length - 1]?.sender === 'user'}
+                                />
                             )}
                         </AnimatePresence>
 

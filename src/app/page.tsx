@@ -16,8 +16,10 @@ import { generateIdeas } from '@/ai/flows/generate-ideas-flow';
 import { refineContent } from '@/ai/flows/refine-content-flow';
 import { chatWithIdea } from '@/ai/flows/chat-with-idea-flow';
 import { combineIdeas } from '@/ai/flows/combine-ideas-flow';
+import { expandIdea } from '@/ai/flows/expand-idea-flow';
 
-import type { GenerateIdeasInput, Idea } from '@/ai/schemas/idea-generation-schemas';
+
+import type { GenerateIdeasInput, Idea, ExpandIdeaOutput } from '@/ai/schemas/idea-generation-schemas';
 
 
 import AITutorView from '@/components/views/AITutorView';
@@ -53,6 +55,7 @@ export interface IdeaWithState extends Idea {
     likes: number;
     isFavorited: boolean;
     chatHistory: { sender: 'user' | 'ai'; text: string }[];
+    expandedData?: ExpandIdeaOutput;
 }
 
 interface NavItemProps {
@@ -467,7 +470,7 @@ export default function Home() {
         if (!contentFormData.outline) return;
         setIsLoading(true);
         try {
-            const result = await generateDraft({ ...contentFormData.outline, cta: '' }); // Pass empty CTA
+            const result = await generateDraft({ ...contentFormData.outline, goal: contentFormData.goal });
             setContentFormData(prev => ({ ...prev, draft: result.draft }));
             setContentGeneratorStep('draft');
         } catch (err) {
@@ -481,10 +484,15 @@ export default function Home() {
         }
     };
 
-    const handleRefineContent = async (command: string) => {
+   const handleRefineContent = async (command: string) => {
         setIsLoading(true);
         try {
-            const result = await refineContent({ text: contentFormData.draft, command });
+            const result = await refineContent({ 
+                text: contentFormData.draft, 
+                command: command,
+                goal: contentFormData.goal,
+                mainPoints: contentFormData.outline?.mainPoints || [],
+            });
             setContentFormData(prev => ({ ...prev, draft: result.refinedText }));
             toast({
                 title: "Content Refined!",
@@ -538,6 +546,12 @@ export default function Home() {
 
     const handleAction = async (action: string, id: number, data?: any) => {
         setIsLoading(true);
+        let ideaToUpdate = ideas.find(i => i.id === id);
+        if (!ideaToUpdate) {
+             setIsLoading(false);
+             return;
+        }
+
         try {
             switch (action) {
               case 'like':
@@ -546,31 +560,31 @@ export default function Home() {
               case 'favorite':
                 setIdeas(ideas.map(i => i.id === id ? { ...i, isFavorited: !i.isFavorited } : i));
                 break;
-              case 'chat':
-                const ideaToChat = ideas.find(i => i.id === id);
-                setActiveChatIdea(ideaToChat as IdeaWithState);
+              case 'expand':
+                setActiveChatIdea(ideaToUpdate); // Used to show loading state on the right card
+                const expandedResult = await expandIdea({ idea: ideaToUpdate, brief: ideaFormData });
+                const updatedIdeasWithExpansion = ideas.map(i => i.id === id ? { ...i, expandedData: { ...expandedResult, title: i.title } } : i);
+                setIdeas(updatedIdeasWithExpansion);
+                setActiveChatIdea(updatedIdeasWithExpansion.find(i => i.id === id) as IdeaWithState);
                 break;
-              case 'closeChat':
+             case 'closeExpand':
+                const clearedExpansion = ideas.map(i => i.id === id ? { ...i, expandedData: undefined } : i);
+                setIdeas(clearedExpansion);
                 setActiveChatIdea(null);
                 break;
               case 'message':
-                const currentIdea = ideas.find(i => i.id === id);
-                if (!currentIdea) return;
-                
                 const userMessage = { sender: 'user' as const, text: data };
-                const updatedChatHistory = [...currentIdea.chatHistory, userMessage];
+                const updatedChatHistory = [...ideaToUpdate.chatHistory, userMessage];
                 
                 const updatedIdeasWithMessage = ideas.map(i => i.id === id ? { ...i, chatHistory: updatedChatHistory } : i);
                 setIdeas(updatedIdeasWithMessage);
-                setActiveChatIdea(prev => prev ? {...prev, chatHistory: updatedChatHistory} : null);
 
-                const result = await chatWithIdea({ idea: currentIdea, message: data });
+                const result = await chatWithIdea({ idea: ideaToUpdate, message: data });
                 const aiResponse = { sender: 'ai' as const, text: result.response };
 
                 const finalChatHistory = [...updatedChatHistory, aiResponse];
                 const finalIdeas = ideas.map(i => i.id === id ? { ...i, chatHistory: finalChatHistory } : i);
                 setIdeas(finalIdeas);
-                setActiveChatIdea(prev => prev ? {...prev, chatHistory: finalChatHistory} : null);
                 break;
             }
         } catch (err) {
@@ -692,12 +706,13 @@ export default function Home() {
                 );
 
             case 'idea-generator':
+                const activeIdeaForExpansion = ideas.find(i => i.id === activeChatIdea?.id);
                 return (
                     <AIIdeaGeneratorView
                         step={ideaGeneratorStep}
                         isLoading={isLoading}
                         ideas={ideas}
-                        activeChatIdea={activeChatIdea}
+                        activeChatIdea={activeIdeaForExpansion || null}
                         combinePair={combinePair}
                         finalizedIdea={finalizedIdea}
                         dragOverId={dragOverId}
@@ -783,5 +798,3 @@ export default function Home() {
     </div>
   );
 };
-
-    
