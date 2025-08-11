@@ -23,8 +23,20 @@ const prompt = ai.definePrompt({
   name: 'combineIdeasPrompt',
   input: { schema: CombineIdeasInputSchema },
   output: { schema: CombineIdeasOutputSchema },
-  prompt: `You are a master creative synthesizer. Your task is to combine two distinct ideas into a single, compelling new concept.
+  prompt: `You are a master creative synthesizer with a talent for merging concepts into innovative hybrids.
 
+You will be given two ideas with titles, detailed descriptions, and tags.
+Your task is to:
+1. Identify the unique strengths, themes, and opportunities in each idea.
+2. Merge them into one fresh, cohesive, and imaginative concept that feels natural yet surprising.
+
+For the final output, create a **single JSON object** called \`combinedIdea\` with:
+- **title**: A catchy and memorable name for the new concept.
+- **description**: A clear and engaging explanation of the hybrid idea, highlighting the fusion of both originals.
+- **previewPoints**: Exactly 2 bullet points summarizing the most exciting or distinctive features of the new idea.
+- **tags**: A set of relevant, concise tags combining and expanding from both original ideas.
+
+**Input format:**
 Idea 1:
 - Title: {{{idea1.title}}}
 - Description: {{{idea1.longDesc}}}
@@ -35,7 +47,15 @@ Idea 2:
 - Description: {{{idea2.longDesc}}}
 - Tags: {{#each idea2.tags}}{{{this}}}{{/each}}
 
-Analyze the core strengths of both ideas and merge them into a new, hybrid idea. The new idea should have its own catchy title, a clear description, two exciting preview points, and a set of relevant tags. Return the result as a single "combinedIdea" object.`,
+**Output format (JSON):**
+{
+  "combinedIdea": {
+    "title": "...",
+    "description": "...",
+    "previewPoints": ["...", "..."],
+    "tags": ["...", "...", "..."]
+  }
+}`,
 });
 
 
