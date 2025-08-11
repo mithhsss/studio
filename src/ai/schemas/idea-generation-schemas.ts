@@ -63,14 +63,14 @@ export const ExpandIdeaInputSchema = z.object({
 export type ExpandIdeaInput = z.infer<typeof ExpandIdeaInputSchema>;
 
 export const ExpandIdeaOutputSchema = z.object({
+  title: z.string().describe("The original title of the idea."),
   expandedIdea: z.object({
-    title: z.string().describe("The original title of the idea."),
-    coreConcept: z.string().describe("A single, powerful sentence that captures the essence of the idea."),
-    keyFeatures: z.array(z.string()).describe("A bulleted list of 3-4 primary features or components of the idea."),
-    audienceAppeal: z.string().describe("A brief explanation of why this idea will resonate with the specified target audience."),
-    monetizationStrategy: z.string().describe("A high-level suggestion for how this idea could generate revenue."),
-    nextSteps: z.array(z.string()).describe("A list of 3 concrete, actionable next steps to start working on this idea."),
-    potentialRisks: z.array(z.string()).describe("A list of 3 potential risks or challenges to be aware of.")
-  }).describe("The expanded version of the idea.")
+    coreFeatures: z.string().describe("Explanation of what the idea does, how it works, and the value it provides to users."),
+    audienceFit: z.string().describe("Description of who the idea is for, their needs, and how it stands out for them."),
+    roadmap: z.string().describe("Step-by-step plan from MVP to full-scale launch, including tools or resources."),
+    monetization: z.string().describe("Revenue models, scaling possibilities, and long-term financial viability."),
+    challenges: z.string().describe("Anticipated risks plus proactive solutions or mitigation strategies."),
+    growthOpportunities: z.string().describe("How the idea can evolve over time, including future features, integrations, or partnerships."),
+  }).describe("The expanded version of the idea, broken into strategic categories.")
 });
 export type ExpandIdeaOutput = z.infer<typeof ExpandIdeaOutputSchema>;

@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Lightbulb, MessageSquare, Star, ThumbsUp, Combine, Send, Trophy, Download, Copy, Sparkles, Zap, Users, Box, PlusSquare, Filter, ArrowLeft, FileText, Check, X, ChevronsRight, AlertTriangle, ListOrdered, Loader, Target, HandCoins, Package } from 'lucide-react';
+import { Lightbulb, MessageSquare, Star, ThumbsUp, Combine, Send, Trophy, Download, Copy, Sparkles, Zap, Users, Box, PlusSquare, Filter, ArrowLeft, FileText, Check, X, ChevronsRight, AlertTriangle, ListOrdered, Loader, Target, HandCoins, Package, ShieldQuestion, Briefcase, TrendingUp } from 'lucide-react';
 import type { IdeaGeneratorStep, IdeaWithState } from '@/app/page';
 import {
   Dialog,
@@ -132,51 +132,31 @@ const IdeaCardNew = ({ idea, onAction, onSelectCombine, isSelectedForCombine, is
     </div>
 );
 
+const ExpandedDetailCard = ({ icon, title, content }: { icon: React.ReactNode, title: string, content: string }) => (
+    <div className="bg-gray-50/50 p-4 rounded-lg border">
+        <h4 className="font-semibold text-md flex items-center gap-3 mb-2">{icon} {title}</h4>
+        <p className="text-sm text-gray-600 whitespace-pre-wrap">{content}</p>
+    </div>
+);
+
+
 const ExpandedIdeaView = ({ result, onOpenChange }: { result: ExpandIdeaOutput, onOpenChange: (open: boolean) => void }) => {
-    const { title, coreConcept, keyFeatures, audienceAppeal, monetizationStrategy, nextSteps, potentialRisks } = result.expandedIdea;
+    const { title } = result;
+    const { coreFeatures, audienceFit, roadmap, monetization, challenges, growthOpportunities } = result.expandedIdea;
 
     return (
         <Dialog open={true} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-2xl">
+            <DialogContent className="max-w-3xl">
                 <DialogHeader>
                     <DialogTitle className="text-2xl font-bold text-indigo-700">{title}</DialogTitle>
-                    <DialogDescription className="text-lg text-gray-600 pt-1">{coreConcept}</DialogDescription>
                 </DialogHeader>
-                <div className="mt-4 text-gray-700 space-y-6 max-h-[70vh] overflow-y-auto pr-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <h4 className="font-semibold text-md flex items-center gap-2 mb-2"><Package size={18} className="text-blue-500" /> Key Features</h4>
-                            <ul className="list-disc list-inside space-y-1 text-sm text-gray-600 bg-blue-50 p-3 rounded-lg border border-blue-200">
-                                {keyFeatures.map((feature, i) => <li key={i}>{feature}</li>)}
-                            </ul>
-                        </div>
-                         <div>
-                            <h4 className="font-semibold text-md flex items-center gap-2 mb-2"><Target size={18} className="text-red-500" /> Target Audience Appeal</h4>
-                             <div className="text-sm text-gray-600 bg-red-50 p-3 rounded-lg border border-red-200">
-                                {audienceAppeal}
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div>
-                        <h4 className="font-semibold text-md flex items-center gap-2 mb-2"><HandCoins size={18} className="text-teal-500" /> Monetization Strategy</h4>
-                        <div className="text-sm text-gray-600 bg-teal-50 p-3 rounded-lg border border-teal-200">
-                            {monetizationStrategy}
-                        </div>
-                    </div>
-                    
-                    <div>
-                        <h4 className="font-semibold text-md flex items-center gap-2 mb-2"><ListOrdered size={18} className="text-green-500" /> Next Steps</h4>
-                        <ul className="list-disc list-inside space-y-1 text-sm text-gray-600 bg-green-50 p-3 rounded-lg border border-green-200">
-                            {nextSteps.map((step, i) => <li key={i}>{step}</li>)}
-                        </ul>
-                    </div>
-                     <div>
-                        <h4 className="font-semibold text-md flex items-center gap-2 mb-2"><AlertTriangle size={18} className="text-amber-500" /> Potential Risks</h4>
-                        <ul className="list-disc list-inside space-y-1 text-sm text-gray-600 bg-amber-50 p-3 rounded-lg border border-amber-200">
-                            {potentialRisks.map((risk, i) => <li key={i}>{risk}</li>)}
-                        </ul>
-                    </div>
+                <div className="mt-4 text-gray-700 space-y-4 max-h-[70vh] overflow-y-auto pr-4">
+                    <ExpandedDetailCard icon={<Briefcase size={18} className="text-blue-500"/>} title="Core Features & Benefits" content={coreFeatures} />
+                    <ExpandedDetailCard icon={<Target size={18} className="text-red-500"/>} title="Target Audience & Market Fit" content={audienceFit} />
+                    <ExpandedDetailCard icon={<ListOrdered size={18} className="text-green-500"/>} title="Implementation Roadmap" content={roadmap} />
+                    <ExpandedDetailCard icon={<HandCoins size={18} className="text-teal-500"/>} title="Monetization & Sustainability" content={monetization} />
+                    <ExpandedDetailCard icon={<ShieldQuestion size={18} className="text-amber-500"/>} title="Potential Challenges & Mitigation" content={challenges} />
+                    <ExpandedDetailCard icon={<TrendingUp size={18} className="text-purple-500"/>} title="Growth & Innovation Opportunities" content={growthOpportunities} />
                 </div>
                  <DialogFooter>
                     <Button onClick={() => onOpenChange(false)}>Close</Button>
@@ -301,7 +281,7 @@ const AIIdeaGeneratorView: React.FC<AIIdeaGeneratorViewProps> = ({
         setIsExpanding(true);
         try {
             const result = await expandIdea({ idea, brief: formData });
-            setExpandedIdeaResult(result);
+            setExpandedIdeaResult({...result, title: idea.title});
         } catch (err) {
             toast({
                 variant: "destructive",
@@ -427,7 +407,3 @@ const AIIdeaGeneratorView: React.FC<AIIdeaGeneratorViewProps> = ({
 };
 
 export default AIIdeaGeneratorView;
-
-    
-
-    

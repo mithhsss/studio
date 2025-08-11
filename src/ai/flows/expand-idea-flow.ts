@@ -19,7 +19,7 @@ const prompt = ai.definePrompt({
   name: 'expandIdeaPrompt',
   input: { schema: ExpandIdeaInputSchema },
   output: { schema: ExpandIdeaOutputSchema },
-  prompt: `You are a strategic planner and business consultant. Your task is to expand a given creative idea into a more concrete and actionable plan.
+  prompt: `You are a world-class venture strategist and product manager. Your task is to take a raw creative idea and expand it into a comprehensive, strategic plan.
 
 You were originally given the following creative brief:
 - Core Subject: {{{brief.subject}}}
@@ -33,13 +33,15 @@ Based on that brief, you generated the following idea:
 - Idea Title: {{{idea.title}}}
 - Idea Summary: {{{idea.longDesc}}}
 
-Now, expand this idea. Provide a more detailed, structured breakdown including:
-1.  **Core Concept**: A single, powerful sentence that captures the essence of the idea.
-2.  **Key Features**: A bulleted list of 3-4 primary features or components.
-3.  **Target Audience Appeal**: A brief explanation of why this idea will resonate with the specified audience.
-4.  **Monetization Strategy**: A high-level suggestion for how this idea could generate revenue.
-5.  **Next Steps**: 3 concrete, actionable next steps.
-6.  **Potential Risks**: 3 potential risks or challenges.
+Now, expand this idea into a full strategic plan. For each section, provide clear, actionable insights.
+
+The final output must be a JSON object with the following structure:
+- **Core Features & Benefits**: Explain what it does, how it works, and the core value it provides to users.
+- **Target Audience & Market Fit**: Define who it’s for, their needs, and how this idea uniquely serves them compared to alternatives.
+- **Implementation Roadmap**: Detail a step-by-step plan from MVP to full launch. Mention key tools, platforms, or resources needed.
+- **Monetization & Sustainability**: Describe potential revenue models, scaling opportunities, and how to ensure long-term financial viability.
+- **Potential Challenges & Mitigation**: List anticipated risks and propose proactive solutions or contingency plans.
+- **Growth & Innovation Opportunities**: Brainstorm how the idea could evolve, including future features, integrations, or partnerships.
 
 Return the entire plan in the specified structured format.`,
 });
