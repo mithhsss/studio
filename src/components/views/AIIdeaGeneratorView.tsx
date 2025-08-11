@@ -344,7 +344,7 @@ const AIIdeaGeneratorView: React.FC<AIIdeaGeneratorViewProps> = ({
         setSelectedToCombine([]);
     };
     
-     const handleExpand = (idea: IdeaWithState) => {
+    const handleExpand = (idea: IdeaWithState) => {
         if (!idea.expandedData) {
             handleAction('expand', idea.id);
         }
