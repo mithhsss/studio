@@ -59,6 +59,12 @@ const RefinementHub = ({ idea, onOpenChange, onSendMessage, onFinalize }: { idea
     const [message, setMessage] = useState('');
     const chatContainerRef = useRef<HTMLDivElement>(null);
     const [isLoading, setIsLoading] = useState(false);
+
+    useEffect(() => {
+        if (chatContainerRef.current) {
+            chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+        }
+    }, [idea.chatHistory]);
     
     if (!idea.expandedData) {
         return (
@@ -77,12 +83,6 @@ const RefinementHub = ({ idea, onOpenChange, onSendMessage, onFinalize }: { idea
     }
     
     const { expandedIdea } = idea.expandedData;
-
-     useEffect(() => {
-        if (chatContainerRef.current) {
-            chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
-        }
-    }, [idea.chatHistory]);
 
     const handleSend = () => {
         if (!message.trim()) return;
