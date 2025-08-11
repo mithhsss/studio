@@ -33,7 +33,15 @@ Based on that brief, you generated the following idea:
 - Idea Title: {{{idea.title}}}
 - Idea Summary: {{{idea.longDesc}}}
 
-Now, expand this idea. Provide a more detailed description, outline a few clear next steps to get started, and identify potential risks to be aware of.`,
+Now, expand this idea. Provide a more detailed, structured breakdown including:
+1.  **Core Concept**: A single, powerful sentence that captures the essence of the idea.
+2.  **Key Features**: A bulleted list of 3-4 primary features or components.
+3.  **Target Audience Appeal**: A brief explanation of why this idea will resonate with the specified audience.
+4.  **Monetization Strategy**: A high-level suggestion for how this idea could generate revenue.
+5.  **Next Steps**: 3 concrete, actionable next steps.
+6.  **Potential Risks**: 3 potential risks or challenges.
+
+Return the entire plan in the specified structured format.`,
 });
 
 

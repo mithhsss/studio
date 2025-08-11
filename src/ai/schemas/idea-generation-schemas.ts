@@ -65,9 +65,12 @@ export type ExpandIdeaInput = z.infer<typeof ExpandIdeaInputSchema>;
 export const ExpandIdeaOutputSchema = z.object({
   expandedIdea: z.object({
     title: z.string().describe("The original title of the idea."),
-    expandedDescription: z.string().describe("A much more detailed explanation of the concept, including potential execution strategies."),
-    nextSteps: z.array(z.string()).describe("A list of 3-5 concrete, actionable next steps to start working on this idea."),
-    potentialRisks: z.array(z.string()).describe("A list of potential risks or challenges to be aware of.")
+    coreConcept: z.string().describe("A single, powerful sentence that captures the essence of the idea."),
+    keyFeatures: z.array(z.string()).describe("A bulleted list of 3-4 primary features or components of the idea."),
+    audienceAppeal: z.string().describe("A brief explanation of why this idea will resonate with the specified target audience."),
+    monetizationStrategy: z.string().describe("A high-level suggestion for how this idea could generate revenue."),
+    nextSteps: z.array(z.string()).describe("A list of 3 concrete, actionable next steps to start working on this idea."),
+    potentialRisks: z.array(z.string()).describe("A list of 3 potential risks or challenges to be aware of.")
   }).describe("The expanded version of the idea.")
 });
 export type ExpandIdeaOutput = z.infer<typeof ExpandIdeaOutputSchema>;
