@@ -11,3 +11,4 @@ import '@/ai/flows/generate-ideas-flow.ts';
 import '@/ai/flows/refine-content-flow.ts';
 import '@/ai/flows/chat-with-idea-flow.ts';
 import '@/ai/flows/combine-ideas-flow.ts';
+import '@/ai/flows/expand-idea-flow.ts';

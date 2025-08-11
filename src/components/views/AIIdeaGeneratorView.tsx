@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Lightbulb, MessageSquare, Star, ThumbsUp, Combine, Send, Trophy, Download, Copy, Sparkles, Zap, Users, Box, PlusSquare, Filter, ArrowLeft, FileText, Check, X } from 'lucide-react';
+import { Lightbulb, MessageSquare, Star, ThumbsUp, Combine, Send, Trophy, Download, Copy, Sparkles, Zap, Users, Box, PlusSquare, Filter, ArrowLeft, FileText, Check, X, ChevronsRight, AlertTriangle, ListOrdered, Loader } from 'lucide-react';
 import type { IdeaGeneratorStep, IdeaWithState } from '@/app/page';
 import {
   Dialog,
@@ -15,6 +15,9 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { expandIdea } from '@/ai/flows/expand-idea-flow';
+import type { ExpandIdeaOutput } from '@/ai/schemas/idea-generation-schemas';
+import { useToast } from "@/hooks/use-toast";
 
 
 interface AIIdeaGeneratorViewProps {
@@ -42,7 +45,7 @@ interface AIIdeaGeneratorViewProps {
 
 // --- NEW UI COMPONENTS ---
 
-const IdeaCardNew = ({ idea, onAction, onSelectCombine, isSelectedForCombine, isCombineDisabled }: { idea: any, onAction: any, onSelectCombine: () => void, isSelectedForCombine: boolean, isCombineDisabled: boolean }) => (
+const IdeaCardNew = ({ idea, onAction, onSelectCombine, isSelectedForCombine, isCombineDisabled, onExpand }: { idea: any, onAction: any, onSelectCombine: () => void, isSelectedForCombine: boolean, isCombineDisabled: boolean, onExpand: (idea: any) => void }) => (
     <div className={`bg-white border rounded-xl p-4 flex flex-col justify-between transition-all duration-300 shadow-sm hover:shadow-lg hover:-translate-y-1 ${isSelectedForCombine ? 'ring-2 ring-indigo-500' : ''}`}>
         <div>
             <div className="flex justify-between items-start mb-2">
@@ -66,7 +69,8 @@ const IdeaCardNew = ({ idea, onAction, onSelectCombine, isSelectedForCombine, is
                 </button>
             </div>
             <div className="flex gap-2">
-                <Button onClick={() => onAction('chat', idea.id)} variant="outline" className="w-full">Refine with AI</Button>
+                <Button onClick={() => onAction('chat', idea.id)} variant="outline" className="w-full">Refine</Button>
+                <Button onClick={() => onExpand(idea)} variant="outline" className="w-full">Expand</Button>
                 <Button onClick={onSelectCombine} variant="outline" size="icon" disabled={isCombineDisabled && !isSelectedForCombine}>
                     {isSelectedForCombine ? <Check size={16} className="text-green-500" /> : <Combine size={16} />}
                 </Button>
@@ -74,6 +78,40 @@ const IdeaCardNew = ({ idea, onAction, onSelectCombine, isSelectedForCombine, is
         </div>
     </div>
 );
+
+const ExpandedIdeaView = ({ result, onOpenChange }: { result: ExpandIdeaOutput, onOpenChange: (open: boolean) => void }) => {
+    const { title, expandedDescription, nextSteps, potentialRisks } = result.expandedIdea;
+
+    return (
+        <Dialog open={true} onOpenChange={onOpenChange}>
+            <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                    <DialogTitle className="text-2xl font-bold text-indigo-700">{title}</DialogTitle>
+                </DialogHeader>
+                <div className="mt-4 text-gray-700 space-y-6 max-h-[70vh] overflow-y-auto pr-4">
+                    <p>{expandedDescription}</p>
+
+                    <div>
+                        <h4 className="font-semibold text-lg flex items-center gap-2 mb-2"><ListOrdered size={20} className="text-green-500" /> Next Steps</h4>
+                        <ul className="list-disc list-inside space-y-1 text-gray-600 bg-green-50 p-4 rounded-lg border border-green-200">
+                            {nextSteps.map((step, i) => <li key={i}>{step}</li>)}
+                        </ul>
+                    </div>
+                     <div>
+                        <h4 className="font-semibold text-lg flex items-center gap-2 mb-2"><AlertTriangle size={20} className="text-amber-500" /> Potential Risks</h4>
+                        <ul className="list-disc list-inside space-y-1 text-gray-600 bg-amber-50 p-4 rounded-lg border border-amber-200">
+                            {potentialRisks.map((risk, i) => <li key={i}>{risk}</li>)}
+                        </ul>
+                    </div>
+                </div>
+                 <DialogFooter>
+                    <Button onClick={() => onOpenChange(false)}>Close</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+};
+
 
 const RefinementHub = ({ idea, onAction, onOpenChange, onFinalize }: { idea: any, onAction: any, onOpenChange: (open: boolean) => void, onFinalize: (idea: any) => void }) => {
     const [message, setMessage] = useState('');
@@ -200,9 +238,10 @@ const AIIdeaGeneratorView: React.FC<AIIdeaGeneratorViewProps> = ({
     handleFinalize,
     handleRestart,
 }) => {
-    
-    // New state for the combine feature
+    const { toast } = useToast();
     const [selectedToCombine, setSelectedToCombine] = useState<number[]>([]);
+    const [expandedIdeaResult, setExpandedIdeaResult] = useState<ExpandIdeaOutput | null>(null);
+    const [isExpanding, setIsExpanding] = useState(false);
 
     useEffect(() => {
         if (selectedToCombine.length === 2) {
@@ -236,6 +275,22 @@ const AIIdeaGeneratorView: React.FC<AIIdeaGeneratorViewProps> = ({
     const handleCancelCombine = () => {
         setCombinePair([]);
         setSelectedToCombine([]);
+    };
+    
+    const handleExpand = async (idea: IdeaWithState) => {
+        setIsExpanding(true);
+        try {
+            const result = await expandIdea({ idea, brief: formData });
+            setExpandedIdeaResult(result);
+        } catch (err) {
+            toast({
+                variant: "destructive",
+                title: "Expansion Failed",
+                description: "There was a problem expanding the idea. Please try again.",
+            });
+        } finally {
+            setIsExpanding(false);
+        }
     };
     
     const renderContent = () => {
@@ -283,7 +338,10 @@ const AIIdeaGeneratorView: React.FC<AIIdeaGeneratorViewProps> = ({
                                 <h2 className="text-2xl font-bold text-gray-800">Ideation Workspace</h2>
                                 <p className="text-gray-500 text-sm">Refine, combine, and finalize your new ideas.</p>
                             </div>
-                            <button onClick={handleRestart} className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900 font-medium"><ArrowLeft size={16} /> New Brainstorm</button>
+                             <div className="flex items-center gap-2">
+                                {isExpanding && <div className="flex items-center gap-2 text-sm text-gray-500"><Loader size={16} className="animate-spin"/> Expanding...</div>}
+                                <button onClick={handleRestart} className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900 font-medium"><ArrowLeft size={16} /> New Brainstorm</button>
+                            </div>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -292,6 +350,7 @@ const AIIdeaGeneratorView: React.FC<AIIdeaGeneratorViewProps> = ({
                                     key={idea.id}
                                     idea={idea}
                                     onAction={handleAction}
+                                    onExpand={handleExpand}
                                     onSelectCombine={() => handleSelectCombine(idea.id)}
                                     isSelectedForCombine={selectedToCombine.includes(idea.id)}
                                     isCombineDisabled={selectedToCombine.length >= 2}
@@ -308,6 +367,12 @@ const AIIdeaGeneratorView: React.FC<AIIdeaGeneratorViewProps> = ({
                                   onFinalize={handleFinalize}
                               />
                           )}
+                        </AnimatePresence>
+                        
+                        <AnimatePresence>
+                            {expandedIdeaResult && (
+                                <ExpandedIdeaView result={expandedIdeaResult} onOpenChange={(open) => !open && setExpandedIdeaResult(null)} />
+                            )}
                         </AnimatePresence>
 
                         <AnimatePresence>

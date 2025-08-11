@@ -54,3 +54,20 @@ export const CombineIdeasOutputSchema = z.object({
     combinedIdea: IdeaSchema.describe("The new, hybrid idea resulting from the combination.")
 });
 export type CombineIdeasOutput = z.infer<typeof CombineIdeasOutputSchema>;
+
+// Schemas for expand-idea flow
+export const ExpandIdeaInputSchema = z.object({
+  idea: IdeaSchema.describe("The creative idea to be expanded."),
+  brief: GenerateIdeasInputSchema.describe("The original brainstorming brief that generated the idea.")
+});
+export type ExpandIdeaInput = z.infer<typeof ExpandIdeaInputSchema>;
+
+export const ExpandIdeaOutputSchema = z.object({
+  expandedIdea: z.object({
+    title: z.string().describe("The original title of the idea."),
+    expandedDescription: z.string().describe("A much more detailed explanation of the concept, including potential execution strategies."),
+    nextSteps: z.array(z.string()).describe("A list of 3-5 concrete, actionable next steps to start working on this idea."),
+    potentialRisks: z.array(z.string()).describe("A list of potential risks or challenges to be aware of.")
+  }).describe("The expanded version of the idea.")
+});
+export type ExpandIdeaOutput = z.infer<typeof ExpandIdeaOutputSchema>;
