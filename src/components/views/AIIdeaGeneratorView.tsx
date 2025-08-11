@@ -66,6 +66,12 @@ const RefinementHub = ({ idea, onOpenChange, onSendMessage, onFinalize }: { idea
         }
     }, [idea.chatHistory]);
     
+    const handleSend = () => {
+        if (!message.trim()) return;
+        onSendMessage(message);
+        setMessage('');
+    };
+
     if (!idea.expandedData) {
         return (
              <Dialog open={true} onOpenChange={onOpenChange}>
@@ -83,12 +89,6 @@ const RefinementHub = ({ idea, onOpenChange, onSendMessage, onFinalize }: { idea
     }
     
     const { expandedIdea } = idea.expandedData;
-
-    const handleSend = () => {
-        if (!message.trim()) return;
-        onSendMessage(message);
-        setMessage('');
-    };
 
     return (
         <Dialog open={true} onOpenChange={onOpenChange}>
