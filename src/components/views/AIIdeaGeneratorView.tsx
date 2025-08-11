@@ -58,7 +58,21 @@ const ExpandedDetailCard = ({ icon, title, children }: { icon: React.ReactNode, 
 const RefinementHub = ({ idea, onOpenChange, onSendMessage, onFinalize }: { idea: IdeaWithState, onOpenChange: (open: boolean) => void, onSendMessage: (message: string) => void, onFinalize: () => void }) => {
     const [message, setMessage] = useState('');
     const chatContainerRef = useRef<HTMLDivElement>(null);
-    const { expandedIdea } = idea.expandedData!;
+    
+    if (!idea.expandedData) {
+        return (
+             <Dialog open={true} onOpenChange={onOpenChange}>
+                <DialogContent>
+                    <div className="flex items-center justify-center h-48">
+                        <Loader className="animate-spin text-indigo-500" size={32} />
+                        <p className="ml-4 text-gray-500">Expanding idea details...</p>
+                    </div>
+                </DialogContent>
+            </Dialog>
+        );
+    }
+    
+    const { expandedIdea } = idea.expandedData;
     const [isLoading, setIsLoading] = useState(false);
 
      useEffect(() => {
@@ -87,25 +101,16 @@ const RefinementHub = ({ idea, onOpenChange, onSendMessage, onFinalize }: { idea
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 flex-grow overflow-hidden">
                     {/* Left Panel: Expanded Idea */}
                     <div className="h-full overflow-y-auto pr-4 space-y-4">
-                        {!expandedIdea ? (
-                            <div className="flex items-center justify-center h-full">
-                                <Loader className="animate-spin text-indigo-500" size={32} />
-                                <p className="ml-4 text-gray-500">Expanding idea details...</p>
-                            </div>
-                        ) : (
-                            <>
-                                <p className="text-base mb-4 whitespace-pre-wrap">{expandedIdea.mainDescription}</p>
-                                <ExpandedDetailCard icon={<Briefcase size={18} className="text-blue-500"/>} title="Core Features & Benefits">
-                                    <ul className="list-disc pl-5 space-y-1">{expandedIdea.coreFeatures.points.map((point, i) => <li key={i}>{point}</li>)}</ul>
-                                    <p className="pt-2">{expandedIdea.coreFeatures.summary}</p>
-                                </ExpandedDetailCard>
-                                <ExpandedDetailCard icon={<Target size={18} className="text-red-500"/>} title="Target Audience & Market Fit"><p className="whitespace-pre-wrap">{expandedIdea.targetAudience.description}</p></ExpandedDetailCard>
-                                <ExpandedDetailCard icon={<ListOrdered size={18} className="text-green-500"/>} title="Implementation Roadmap"><ul className="list-disc pl-5 space-y-1">{expandedIdea.implementationRoadmap.steps.map((step, i) => <li key={i}>{step}</li>)}</ul></ExpandedDetailCard>
-                                <ExpandedDetailCard icon={<HandCoins size={18} className="text-teal-500"/>} title="Monetization & Sustainability"><ul className="list-disc pl-5 space-y-1">{expandedIdea.monetization.points.map((point, i) => <li key={i}>{point}</li>)}</ul></ExpandedDetailCard>
-                                <ExpandedDetailCard icon={<ShieldQuestion size={18} className="text-amber-500"/>} title="Potential Challenges & Mitigation"><ul className="list-disc pl-5 space-y-1">{expandedIdea.challenges.points.map((point, i) => <li key={i}>{point}</li>)}</ul></ExpandedDetailCard>
-                                <ExpandedDetailCard icon={<TrendingUp size={18} className="text-purple-500"/>} title="Growth & Innovation Opportunities"><ul className="list-disc pl-5 space-y-1">{expandedIdea.growthOpportunities.points.map((point, i) => <li key={i}>{point}</li>)}</ul></ExpandedDetailCard>
-                            </>
-                        )}
+                        <p className="text-base mb-4 whitespace-pre-wrap">{expandedIdea.mainDescription}</p>
+                        <ExpandedDetailCard icon={<Briefcase size={18} className="text-blue-500"/>} title="Core Features & Benefits">
+                            <ul className="list-disc pl-5 space-y-1">{expandedIdea.coreFeatures.points.map((point, i) => <li key={i}>{point}</li>)}</ul>
+                            <p className="pt-2">{expandedIdea.coreFeatures.summary}</p>
+                        </ExpandedDetailCard>
+                        <ExpandedDetailCard icon={<Target size={18} className="text-red-500"/>} title="Target Audience & Market Fit"><p className="whitespace-pre-wrap">{expandedIdea.targetAudience.description}</p></ExpandedDetailCard>
+                        <ExpandedDetailCard icon={<ListOrdered size={18} className="text-green-500"/>} title="Implementation Roadmap"><ul className="list-disc pl-5 space-y-1">{expandedIdea.implementationRoadmap.steps.map((step, i) => <li key={i}>{step}</li>)}</ul></ExpandedDetailCard>
+                        <ExpandedDetailCard icon={<HandCoins size={18} className="text-teal-500"/>} title="Monetization & Sustainability"><ul className="list-disc pl-5 space-y-1">{expandedIdea.monetization.points.map((point, i) => <li key={i}>{point}</li>)}</ul></ExpandedDetailCard>
+                        <ExpandedDetailCard icon={<ShieldQuestion size={18} className="text-amber-500"/>} title="Potential Challenges & Mitigation"><ul className="list-disc pl-5 space-y-1">{expandedIdea.challenges.points.map((point, i) => <li key={i}>{point}</li>)}</ul></ExpandedDetailCard>
+                        <ExpandedDetailCard icon={<TrendingUp size={18} className="text-purple-500"/>} title="Growth & Innovation Opportunities"><ul className="list-disc pl-5 space-y-1">{expandedIdea.growthOpportunities.points.map((point, i) => <li key={i}>{point}</li>)}</ul></ExpandedDetailCard>
                     </div>
 
                     {/* Right Panel: Chat */}
@@ -305,6 +310,7 @@ const AIIdeaGeneratorView: React.FC<AIIdeaGeneratorViewProps> = ({
     const { toast } = useToast();
     const [selectedToCombine, setSelectedToCombine] = useState<number[]>([]);
     const [activeRefineIdea, setActiveRefineIdea] = useState<IdeaWithState | null>(null);
+    const [activeExpandIdea, setActiveExpandIdea] = useState<IdeaWithState | null>(null);
 
     useEffect(() => {
         if (selectedToCombine.length === 2) {
@@ -340,24 +346,30 @@ const AIIdeaGeneratorView: React.FC<AIIdeaGeneratorViewProps> = ({
         setSelectedToCombine([]);
     };
     
-     const handleExpand = async (idea: IdeaWithState) => {
-        handleAction('expand', idea.id); // This now sets the loading state in parent
+     const handleExpand = (idea: IdeaWithState) => {
+        if (!idea.expandedData) {
+            handleAction('expand', idea.id);
+        }
+        setActiveExpandIdea(idea);
     };
     
     const handleRefineClick = (idea: IdeaWithState) => {
         if (!idea.expandedData) {
-            handleAction('expand', idea.id, { openRefine: true });
-        } else {
-            setActiveRefineIdea(idea);
+            handleAction('expand', idea.id); // Also expand on refine
         }
+        setActiveRefineIdea(idea);
     };
 
     // This effect will open the refinement hub once the data is loaded
     useEffect(() => {
-        if (activeChatIdea?.expandedData && activeChatIdea.expandedData.title) {
+        if (activeChatIdea?.expandedData && activeRefineIdea && activeChatIdea.id === activeRefineIdea.id) {
             setActiveRefineIdea(activeChatIdea);
         }
-    }, [activeChatIdea]);
+        if (activeChatIdea?.expandedData && activeExpandIdea && activeChatIdea.id === activeExpandIdea.id) {
+            setActiveExpandIdea(activeChatIdea);
+        }
+    }, [activeChatIdea, activeRefineIdea, activeExpandIdea]);
+
 
     const handleSendMessageInHub = (message: string) => {
         if(activeRefineIdea) {
@@ -414,7 +426,6 @@ const AIIdeaGeneratorView: React.FC<AIIdeaGeneratorViewProps> = ({
                     </div>
                 );
             case 'results':
-                const currentExpandedIdea = ideas.find(idea => idea.id === activeChatIdea?.id);
                 return (
                     <div className="animate-fade-in">
                         <div className="flex justify-between items-center mb-4">
@@ -423,7 +434,7 @@ const AIIdeaGeneratorView: React.FC<AIIdeaGeneratorViewProps> = ({
                                 <p className="text-gray-500 text-sm">Refine, combine, and finalize your new ideas.</p>
                             </div>
                              <div className="flex items-center gap-2">
-                                {isLoading && activeChatIdea && !activeRefineIdea && <div className="flex items-center gap-2 text-sm text-gray-500"><Loader size={16} className="animate-spin"/> Expanding...</div>}
+                                {isLoading && activeChatIdea && <div className="flex items-center gap-2 text-sm text-gray-500"><Loader size={16} className="animate-spin"/> Expanding...</div>}
                                 <button onClick={handleRestart} className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900 font-medium"><ArrowLeft size={16} /> New Brainstorm</button>
                             </div>
                         </div>
@@ -448,8 +459,13 @@ const AIIdeaGeneratorView: React.FC<AIIdeaGeneratorViewProps> = ({
                         </div>
                         
                         <AnimatePresence>
-                           {currentExpandedIdea && currentExpandedIdea.expandedData && !activeRefineIdea && (
-                                <ExpandedIdeaView result={currentExpandedIdea.expandedData} onOpenChange={(open) => !open && handleAction('closeExpand', currentExpandedIdea.id)} />
+                           {activeExpandIdea && activeExpandIdea.expandedData && (
+                                <ExpandedIdeaView result={activeExpandIdea.expandedData} onOpenChange={(open) => {
+                                    if (!open) {
+                                        setActiveExpandIdea(null);
+                                        handleAction('closeExpand', activeExpandIdea.id)
+                                    }
+                                }} />
                             )}
                         </AnimatePresence>
 
