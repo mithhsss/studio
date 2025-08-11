@@ -35,6 +35,8 @@ Based on that brief, you generated the following idea:
 
 Now, expand this idea into a full strategic plan. For each section, provide clear, actionable insights.
 
+**IMPORTANT**: Do not use any Markdown formatting (e.g., no '**', no '#', no '-'). Use plain text with standard paragraph breaks.
+
 The final output must be a JSON object with the following structure:
 - **Core Features & Benefits**: Explain what it does, how it works, and the core value it provides to users.
 - **Target Audience & Market Fit**: Define who it’s for, their needs, and how this idea uniquely serves them compared to alternatives.
