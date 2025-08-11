@@ -49,15 +49,17 @@ interface AIIdeaGeneratorViewProps {
 const ExpandedDetailCard = ({ icon, title, children }: { icon: React.ReactNode, title: string, children: React.ReactNode }) => (
     <div className="bg-gray-50/50 p-4 rounded-lg border">
         <h4 className="font-semibold text-md flex items-center gap-3 mb-2">{icon} {title}</h4>
-        <div className="text-sm text-gray-600 space-y-2 whitespace-pre-wrap">
+        <div className="text-sm text-gray-600 space-y-2">
             {children}
         </div>
     </div>
 );
 
-const RefinementHub = ({ idea, expandedData, onOpenChange, onSendMessage, isLoading, onFinalize }: { idea: IdeaWithState, expandedData: ExpandIdeaOutput | null, onOpenChange: (open: boolean) => void, onSendMessage: (message: string) => void, isLoading: boolean, onFinalize: () => void }) => {
+const RefinementHub = ({ idea, onOpenChange, onSendMessage, onFinalize }: { idea: IdeaWithState, onOpenChange: (open: boolean) => void, onSendMessage: (message: string) => void, onFinalize: () => void }) => {
     const [message, setMessage] = useState('');
     const chatContainerRef = useRef<HTMLDivElement>(null);
+    const { expandedIdea } = idea.expandedData!;
+    const [isLoading, setIsLoading] = useState(false);
 
      useEffect(() => {
         if (chatContainerRef.current) {
@@ -85,23 +87,23 @@ const RefinementHub = ({ idea, expandedData, onOpenChange, onSendMessage, isLoad
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 flex-grow overflow-hidden">
                     {/* Left Panel: Expanded Idea */}
                     <div className="h-full overflow-y-auto pr-4 space-y-4">
-                        {!expandedData ? (
+                        {!expandedIdea ? (
                             <div className="flex items-center justify-center h-full">
                                 <Loader className="animate-spin text-indigo-500" size={32} />
                                 <p className="ml-4 text-gray-500">Expanding idea details...</p>
                             </div>
                         ) : (
                             <>
-                                <p className="text-base mb-4">{expandedData.expandedIdea.mainDescription}</p>
+                                <p className="text-base mb-4 whitespace-pre-wrap">{expandedIdea.mainDescription}</p>
                                 <ExpandedDetailCard icon={<Briefcase size={18} className="text-blue-500"/>} title="Core Features & Benefits">
-                                    <ul className="list-disc pl-5 space-y-1">{expandedData.expandedIdea.coreFeatures.points.map((point, i) => <li key={i}>{point}</li>)}</ul>
-                                    <p className="pt-2">{expandedData.expandedIdea.coreFeatures.summary}</p>
+                                    <ul className="list-disc pl-5 space-y-1">{expandedIdea.coreFeatures.points.map((point, i) => <li key={i}>{point}</li>)}</ul>
+                                    <p className="pt-2">{expandedIdea.coreFeatures.summary}</p>
                                 </ExpandedDetailCard>
-                                <ExpandedDetailCard icon={<Target size={18} className="text-red-500"/>} title="Target Audience & Market Fit"><p>{expandedData.expandedIdea.targetAudience.description}</p></ExpandedDetailCard>
-                                <ExpandedDetailCard icon={<ListOrdered size={18} className="text-green-500"/>} title="Implementation Roadmap"><ul className="list-disc pl-5 space-y-1">{expandedData.expandedIdea.implementationRoadmap.steps.map((step, i) => <li key={i}>{step}</li>)}</ul></ExpandedDetailCard>
-                                <ExpandedDetailCard icon={<HandCoins size={18} className="text-teal-500"/>} title="Monetization & Sustainability"><ul className="list-disc pl-5 space-y-1">{expandedData.expandedIdea.monetization.points.map((point, i) => <li key={i}>{point}</li>)}</ul></ExpandedDetailCard>
-                                <ExpandedDetailCard icon={<ShieldQuestion size={18} className="text-amber-500"/>} title="Potential Challenges & Mitigation"><ul className="list-disc pl-5 space-y-1">{expandedData.expandedIdea.challenges.points.map((point, i) => <li key={i}>{point}</li>)}</ul></ExpandedDetailCard>
-                                <ExpandedDetailCard icon={<TrendingUp size={18} className="text-purple-500"/>} title="Growth & Innovation Opportunities"><p>{expandedData.expandedIdea.growthOpportunities.description}</p></ExpandedDetailCard>
+                                <ExpandedDetailCard icon={<Target size={18} className="text-red-500"/>} title="Target Audience & Market Fit"><p className="whitespace-pre-wrap">{expandedIdea.targetAudience.description}</p></ExpandedDetailCard>
+                                <ExpandedDetailCard icon={<ListOrdered size={18} className="text-green-500"/>} title="Implementation Roadmap"><ul className="list-disc pl-5 space-y-1">{expandedIdea.implementationRoadmap.steps.map((step, i) => <li key={i}>{step}</li>)}</ul></ExpandedDetailCard>
+                                <ExpandedDetailCard icon={<HandCoins size={18} className="text-teal-500"/>} title="Monetization & Sustainability"><ul className="list-disc pl-5 space-y-1">{expandedIdea.monetization.points.map((point, i) => <li key={i}>{point}</li>)}</ul></ExpandedDetailCard>
+                                <ExpandedDetailCard icon={<ShieldQuestion size={18} className="text-amber-500"/>} title="Potential Challenges & Mitigation"><ul className="list-disc pl-5 space-y-1">{expandedIdea.challenges.points.map((point, i) => <li key={i}>{point}</li>)}</ul></ExpandedDetailCard>
+                                <ExpandedDetailCard icon={<TrendingUp size={18} className="text-purple-500"/>} title="Growth & Innovation Opportunities"><ul className="list-disc pl-5 space-y-1">{expandedIdea.growthOpportunities.points.map((point, i) => <li key={i}>{point}</li>)}</ul></ExpandedDetailCard>
                             </>
                         )}
                     </div>
@@ -215,7 +217,9 @@ const ExpandedIdeaView = ({ result, onOpenChange }: { result: ExpandIdeaOutput, 
                     </ExpandedDetailCard>
                     
                     <ExpandedDetailCard icon={<TrendingUp size={18} className="text-purple-500"/>} title="Growth & Innovation Opportunities">
-                        <p className="whitespace-pre-wrap">{expandedIdea.growthOpportunities.description}</p>
+                        <ul className="list-disc pl-5 space-y-1">
+                            {expandedIdea.growthOpportunities.points.map((point, i) => <li key={i}>{point}</li>)}
+                        </ul>
                     </ExpandedDetailCard>
                 </div>
                  <DialogFooter>
@@ -300,13 +304,7 @@ const AIIdeaGeneratorView: React.FC<AIIdeaGeneratorViewProps> = ({
 }) => {
     const { toast } = useToast();
     const [selectedToCombine, setSelectedToCombine] = useState<number[]>([]);
-    
-    // State for new Refinement Hub
-    const [refinementHubOpen, setRefinementHubOpen] = useState(false);
     const [activeRefineIdea, setActiveRefineIdea] = useState<IdeaWithState | null>(null);
-    const [refineHubData, setRefineHubData] = useState<ExpandIdeaOutput | null>(null);
-    const [isRefining, setIsRefining] = useState(false);
-
 
     useEffect(() => {
         if (selectedToCombine.length === 2) {
@@ -346,29 +344,22 @@ const AIIdeaGeneratorView: React.FC<AIIdeaGeneratorViewProps> = ({
         handleAction('expand', idea.id); // This now sets the loading state in parent
     };
     
-    const handleRefineClick = async (idea: IdeaWithState) => {
-        setActiveRefineIdea(idea);
-        setRefinementHubOpen(true);
-        setIsRefining(true);
-        try {
-            const result = await expandIdea({ idea, brief: formData });
-            const currentIdeaState = ideas.find(i => i.id === idea.id);
-            setRefineHubData({...result, title: idea.title});
-            // This logic seems incorrect. Let's fix it. We don't need to update ideas here.
-            // The chat history is already part of the `idea` object.
-        } catch (err) {
-             toast({
-                variant: "destructive",
-                title: "Failed to load details",
-                description: "There was a problem preparing the refinement view.",
-            });
-            setRefinementHubOpen(false);
-        } finally {
-            setIsRefining(false);
+    const handleRefineClick = (idea: IdeaWithState) => {
+        if (!idea.expandedData) {
+            handleAction('expand', idea.id, { openRefine: true });
+        } else {
+            setActiveRefineIdea(idea);
         }
     };
-    
-     const handleSendMessageInHub = (message: string) => {
+
+    // This effect will open the refinement hub once the data is loaded
+    useEffect(() => {
+        if (activeChatIdea?.expandedData && activeChatIdea.expandedData.title) {
+            setActiveRefineIdea(activeChatIdea);
+        }
+    }, [activeChatIdea]);
+
+    const handleSendMessageInHub = (message: string) => {
         if(activeRefineIdea) {
             handleAction('message', activeRefineIdea.id, message);
         }
@@ -423,7 +414,7 @@ const AIIdeaGeneratorView: React.FC<AIIdeaGeneratorViewProps> = ({
                     </div>
                 );
             case 'results':
-                 const currentExpandedIdea = ideas.find(idea => idea.id === activeChatIdea?.id);
+                const currentExpandedIdea = ideas.find(idea => idea.id === activeChatIdea?.id);
                 return (
                     <div className="animate-fade-in">
                         <div className="flex justify-between items-center mb-4">
@@ -432,7 +423,7 @@ const AIIdeaGeneratorView: React.FC<AIIdeaGeneratorViewProps> = ({
                                 <p className="text-gray-500 text-sm">Refine, combine, and finalize your new ideas.</p>
                             </div>
                              <div className="flex items-center gap-2">
-                                {isLoading && activeChatIdea && !refinementHubOpen && <div className="flex items-center gap-2 text-sm text-gray-500"><Loader size={16} className="animate-spin"/> Expanding...</div>}
+                                {isLoading && activeChatIdea && !activeRefineIdea && <div className="flex items-center gap-2 text-sm text-gray-500"><Loader size={16} className="animate-spin"/> Expanding...</div>}
                                 <button onClick={handleRestart} className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900 font-medium"><ArrowLeft size={16} /> New Brainstorm</button>
                             </div>
                         </div>
@@ -451,31 +442,28 @@ const AIIdeaGeneratorView: React.FC<AIIdeaGeneratorViewProps> = ({
                                     isSelectedForCombine={selectedToCombine.includes(idea.id)}
                                     isCombineDisabled={selectedToCombine.length >= 2}
                                     onFinalize={handleFinalize}
-                                    isLoading={isLoading && activeChatIdea?.id === idea.id && !refinementHubOpen}
+                                    isLoading={isLoading && activeChatIdea?.id === idea.id && !activeRefineIdea}
                                 />
                             ))}
                         </div>
                         
                         <AnimatePresence>
-                           {activeChatIdea && activeChatIdea.expandedData && !refinementHubOpen && (
-                                <ExpandedIdeaView result={activeChatIdea.expandedData} onOpenChange={(open) => !open && handleAction('closeExpand', activeChatIdea.id)} />
+                           {currentExpandedIdea && currentExpandedIdea.expandedData && !activeRefineIdea && (
+                                <ExpandedIdeaView result={currentExpandedIdea.expandedData} onOpenChange={(open) => !open && handleAction('closeExpand', currentExpandedIdea.id)} />
                             )}
                         </AnimatePresence>
 
                         <AnimatePresence>
-                           {refinementHubOpen && activeRefineIdea && (
+                           {activeRefineIdea && (
                                 <RefinementHub
                                     idea={activeRefineIdea}
-                                    expandedData={refineHubData}
                                     onOpenChange={(open) => {
                                         if (!open) {
-                                            setRefinementHubOpen(false);
                                             setActiveRefineIdea(null);
-                                            setRefineHubData(null);
+                                            handleAction('closeExpand', activeRefineIdea.id)
                                         }
                                     }}
                                     onSendMessage={handleSendMessageInHub}
-                                    isLoading={(isLoading && activeRefineIdea.chatHistory[activeRefineIdea.chatHistory.length - 1]?.sender === 'user') || isRefining}
                                     onFinalize={() => handleFinalize(activeRefineIdea)}
                                 />
                             )}

@@ -33,7 +33,7 @@ Based on that brief, you generated the following idea:
 - Idea Title: {{{idea.title}}}
 - Idea Summary: {{{idea.longDesc}}}
 
-Now, expand this idea into a full strategic plan. For each section, provide clear, actionable insights in the requested format.
+Now, expand this idea into a full strategic plan. For each section, provide clear, actionable insights in the requested format. Avoid using any Markdown formatting in your response.
 
 **Output Structure (JSON):**
 
@@ -50,7 +50,7 @@ Now, expand this idea into a full strategic plan. For each section, provide clea
 - **challenges**:
   - **points**: An array of bullet points detailing anticipated risks and proactive solutions.
 - **growthOpportunities**:
-  - **description**: A paragraph brainstorming how the idea could evolve (future features, partnerships, etc.).
+  - **points**: An array of bullet points brainstorming how the idea could evolve (future features, partnerships, etc.).
 
 Return the entire plan in the specified structured JSON format.`,
 });
