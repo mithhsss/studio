@@ -63,6 +63,9 @@ const RefinementHub = ({ idea, onOpenChange, onSendMessage, onFinalize }: { idea
         return (
              <Dialog open={true} onOpenChange={onOpenChange}>
                 <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Loading...</DialogTitle>
+                    </DialogHeader>
                     <div className="flex items-center justify-center h-48">
                         <Loader className="animate-spin text-indigo-500" size={32} />
                         <p className="ml-4 text-gray-500">Expanding idea details...</p>
@@ -91,12 +94,7 @@ const RefinementHub = ({ idea, onOpenChange, onSendMessage, onFinalize }: { idea
         <Dialog open={true} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-6xl h-[80vh] flex flex-col">
                 <DialogHeader>
-                    <div className="flex justify-between items-center">
-                        <DialogTitle className="text-2xl font-bold text-indigo-700">Refine: {idea.title}</DialogTitle>
-                         <Button onClick={onFinalize} variant="default" className="bg-green-600 hover:bg-green-700">
-                            <Trophy size={16} /> Finalize Idea
-                        </Button>
-                    </div>
+                    <DialogTitle className="text-2xl font-bold text-indigo-700">Refine: {idea.title}</DialogTitle>
                 </DialogHeader>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 flex-grow overflow-hidden">
                     {/* Left Panel: Expanded Idea */}
