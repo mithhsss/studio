@@ -19,9 +19,9 @@ const prompt = ai.definePrompt({
   name: 'expandIdeaPrompt',
   input: { schema: ExpandIdeaInputSchema },
   output: { schema: ExpandIdeaOutputSchema },
-  prompt: `You are a world-class venture strategist and product manager. Your task is to take a raw creative idea and expand it into a comprehensive, strategic plan.
+  prompt: `You are a world-class venture strategist and product manager. Your task is to take a raw creative idea and expand it into a comprehensive, strategic plan based on the original brief.
 
-You were originally given the following creative brief:
+Original Brief:
 - Core Subject: {{{brief.subject}}}
 - Target Audience: {{{brief.audience}}}
 - Creativity Lens: {{{brief.lens}}}
@@ -33,19 +33,26 @@ Based on that brief, you generated the following idea:
 - Idea Title: {{{idea.title}}}
 - Idea Summary: {{{idea.longDesc}}}
 
-Now, expand this idea into a full strategic plan. For each section, provide clear, actionable insights.
+Now, expand this idea into a full strategic plan. For each section, provide clear, actionable insights in the requested format.
 
-**IMPORTANT**: Do not use any Markdown formatting (e.g., no '**', no '#', no '-'). Use plain text with standard paragraph breaks.
+**Output Structure (JSON):**
 
-The final output must be a JSON object with the following structure:
-- **Core Features & Benefits**: Explain what it does, how it works, and the core value it provides to users.
-- **Target Audience & Market Fit**: Define who it’s for, their needs, and how this idea uniquely serves them compared to alternatives.
-- **Implementation Roadmap**: Detail a step-by-step plan from MVP to full launch. Mention key tools, platforms, or resources needed.
-- **Monetization & Sustainability**: Describe potential revenue models, scaling opportunities, and how to ensure long-term financial viability.
-- **Potential Challenges & Mitigation**: List anticipated risks and propose proactive solutions or contingency plans.
-- **Growth & Innovation Opportunities**: Brainstorm how the idea could evolve, including future features, integrations, or partnerships.
+- **mainDescription**: A compelling 2-3 line description of the expanded idea.
+- **coreFeatures**:
+  - **points**: An array of 3-4 bullet points detailing the core features and benefits.
+  - **summary**: A concise 3-line summary of the feature set.
+- **targetAudience**:
+  - **description**: A 6-7 line paragraph describing who it's for, their needs, and how the idea stands out.
+- **implementationRoadmap**:
+  - **steps**: An array of bullet points for the step-by-step plan from MVP to full launch. Include key tools or platforms.
+- **monetization**:
+  - **points**: An array of bullet points describing potential revenue models, scaling, and financial viability.
+- **challenges**:
+  - **points**: An array of bullet points detailing anticipated risks and proactive solutions.
+- **growthOpportunities**:
+  - **description**: A paragraph brainstorming how the idea could evolve (future features, partnerships, etc.).
 
-Return the entire plan in the specified structured format.`,
+Return the entire plan in the specified structured JSON format.`,
 });
 
 

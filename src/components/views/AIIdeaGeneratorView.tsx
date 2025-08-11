@@ -132,17 +132,18 @@ const IdeaCardNew = ({ idea, onAction, onSelectCombine, isSelectedForCombine, is
     </div>
 );
 
-const ExpandedDetailCard = ({ icon, title, content }: { icon: React.ReactNode, title: string, content: string }) => (
+const ExpandedDetailCard = ({ icon, title, children }: { icon: React.ReactNode, title: string, children: React.ReactNode }) => (
     <div className="bg-gray-50/50 p-4 rounded-lg border">
         <h4 className="font-semibold text-md flex items-center gap-3 mb-2">{icon} {title}</h4>
-        <p className="text-sm text-gray-600 whitespace-pre-wrap">{content}</p>
+        <div className="text-sm text-gray-600 space-y-2">
+            {children}
+        </div>
     </div>
 );
 
 
 const ExpandedIdeaView = ({ result, onOpenChange }: { result: ExpandIdeaOutput, onOpenChange: (open: boolean) => void }) => {
-    const { title } = result;
-    const { coreFeatures, audienceFit, roadmap, monetization, challenges, growthOpportunities } = result.expandedIdea;
+    const { title, expandedIdea } = result;
 
     return (
         <Dialog open={true} onOpenChange={onOpenChange}>
@@ -151,12 +152,40 @@ const ExpandedIdeaView = ({ result, onOpenChange }: { result: ExpandIdeaOutput, 
                     <DialogTitle className="text-2xl font-bold text-indigo-700">{title}</DialogTitle>
                 </DialogHeader>
                 <div className="mt-4 text-gray-700 space-y-4 max-h-[70vh] overflow-y-auto pr-4">
-                    <ExpandedDetailCard icon={<Briefcase size={18} className="text-blue-500"/>} title="Core Features & Benefits" content={coreFeatures} />
-                    <ExpandedDetailCard icon={<Target size={18} className="text-red-500"/>} title="Target Audience & Market Fit" content={audienceFit} />
-                    <ExpandedDetailCard icon={<ListOrdered size={18} className="text-green-500"/>} title="Implementation Roadmap" content={roadmap} />
-                    <ExpandedDetailCard icon={<HandCoins size={18} className="text-teal-500"/>} title="Monetization & Sustainability" content={monetization} />
-                    <ExpandedDetailCard icon={<ShieldQuestion size={18} className="text-amber-500"/>} title="Potential Challenges & Mitigation" content={challenges} />
-                    <ExpandedDetailCard icon={<TrendingUp size={18} className="text-purple-500"/>} title="Growth & Innovation Opportunities" content={growthOpportunities} />
+                    {expandedIdea.mainDescription && <p className="text-base mb-4">{expandedIdea.mainDescription}</p>}
+
+                    <ExpandedDetailCard icon={<Briefcase size={18} className="text-blue-500"/>} title="Core Features & Benefits">
+                        <ul className="list-disc pl-5 space-y-1">
+                            {expandedIdea.coreFeatures.points.map((point, i) => <li key={i}>{point}</li>)}
+                        </ul>
+                        <p className="pt-2">{expandedIdea.coreFeatures.summary}</p>
+                    </ExpandedDetailCard>
+                    
+                    <ExpandedDetailCard icon={<Target size={18} className="text-red-500"/>} title="Target Audience & Market Fit">
+                        <p className="whitespace-pre-wrap">{expandedIdea.targetAudience.description}</p>
+                    </ExpandedDetailCard>
+
+                    <ExpandedDetailCard icon={<ListOrdered size={18} className="text-green-500"/>} title="Implementation Roadmap">
+                        <ul className="list-disc pl-5 space-y-1">
+                            {expandedIdea.implementationRoadmap.steps.map((step, i) => <li key={i}>{step}</li>)}
+                        </ul>
+                    </ExpandedDetailCard>
+
+                    <ExpandedDetailCard icon={<HandCoins size={18} className="text-teal-500"/>} title="Monetization & Sustainability">
+                         <ul className="list-disc pl-5 space-y-1">
+                            {expandedIdea.monetization.points.map((point, i) => <li key={i}>{point}</li>)}
+                        </ul>
+                    </ExpandedDetailCard>
+
+                    <ExpandedDetailCard icon={<ShieldQuestion size={18} className="text-amber-500"/>} title="Potential Challenges & Mitigation">
+                         <ul className="list-disc pl-5 space-y-1">
+                            {expandedIdea.challenges.points.map((point, i) => <li key={i}>{point}</li>)}
+                        </ul>
+                    </ExpandedDetailCard>
+                    
+                    <ExpandedDetailCard icon={<TrendingUp size={18} className="text-purple-500"/>} title="Growth & Innovation Opportunities">
+                        <p className="whitespace-pre-wrap">{expandedIdea.growthOpportunities.description}</p>
+                    </ExpandedDetailCard>
                 </div>
                  <DialogFooter>
                     <Button onClick={() => onOpenChange(false)}>Close</Button>

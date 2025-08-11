@@ -65,12 +65,26 @@ export type ExpandIdeaInput = z.infer<typeof ExpandIdeaInputSchema>;
 export const ExpandIdeaOutputSchema = z.object({
   title: z.string().describe("The original title of the idea."),
   expandedIdea: z.object({
-    coreFeatures: z.string().describe("Explanation of what the idea does, how it works, and the value it provides to users."),
-    audienceFit: z.string().describe("Description of who the idea is for, their needs, and how it stands out for them."),
-    roadmap: z.string().describe("Step-by-step plan from MVP to full-scale launch, including tools or resources."),
-    monetization: z.string().describe("Revenue models, scaling possibilities, and long-term financial viability."),
-    challenges: z.string().describe("Anticipated risks plus proactive solutions or mitigation strategies."),
-    growthOpportunities: z.string().describe("How the idea can evolve over time, including future features, integrations, or partnerships."),
+    mainDescription: z.string().describe("A 2-3 line summary of the expanded idea."),
+    coreFeatures: z.object({
+      points: z.array(z.string()).describe("A list of 3-4 bullet points outlining the core features and benefits."),
+      summary: z.string().describe("A 3-line summary that follows the bullet points."),
+    }).describe("What it does, how it works, and the value it provides."),
+    targetAudience: z.object({
+      description: z.string().describe("A 6-7 line paragraph or bullet points describing the target audience and market fit."),
+    }).describe("Who it’s for, their needs, and how the idea stands out."),
+    implementationRoadmap: z.object({
+      steps: z.array(z.string()).describe("A list of bullet points for the step-by-step implementation plan from MVP to full launch."),
+    }).describe("Step-by-step plan from MVP to full-scale launch."),
+    monetization: z.object({
+      points: z.array(z.string()).describe("A list of bullet points detailing potential revenue models and scaling opportunities."),
+    }).describe("Revenue models, scaling possibilities, and long-term financial viability."),
+    challenges: z.object({
+      points: z.array(z.string()).describe("A list of bullet points for anticipated risks and proactive solutions."),
+    }).describe("Anticipated risks plus proactive solutions or mitigation strategies."),
+    growthOpportunities: z.object({
+      description: z.string().describe("A paragraph describing how the idea can evolve over time."),
+    }).describe("How the idea can evolve over time, including future features, integrations, or partnerships."),
   }).describe("The expanded version of the idea, broken into strategic categories.")
 });
 export type ExpandIdeaOutput = z.infer<typeof ExpandIdeaOutputSchema>;
