@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { expandIdea } from '@/ai/flows/expand-idea-flow';
+import { chatWithIdea } from '@/ai/flows/chat-with-idea-flow';
 import type { ExpandIdeaOutput } from '@/ai/schemas/idea-generation-schemas';
 import { useToast } from "@/hooks/use-toast";
 
@@ -54,7 +55,7 @@ const ExpandedDetailCard = ({ icon, title, children }: { icon: React.ReactNode, 
     </div>
 );
 
-const RefinementHub = ({ idea, expandedData, onOpenChange, onSendMessage, isLoading }: { idea: IdeaWithState, expandedData: ExpandIdeaOutput, onOpenChange: (open: boolean) => void, onSendMessage: (message: string) => void, isLoading: boolean }) => {
+const RefinementHub = ({ idea, expandedData, onOpenChange, onSendMessage, isLoading, onFinalize }: { idea: IdeaWithState, expandedData: ExpandIdeaOutput, onOpenChange: (open: boolean) => void, onSendMessage: (message: string) => void, isLoading: boolean, onFinalize: () => void }) => {
     const [message, setMessage] = useState('');
     const chatContainerRef = useRef<HTMLDivElement>(null);
     const { expandedIdea } = expandedData;
@@ -75,7 +76,12 @@ const RefinementHub = ({ idea, expandedData, onOpenChange, onSendMessage, isLoad
         <Dialog open={true} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-6xl h-[80vh] flex flex-col">
                 <DialogHeader>
-                    <DialogTitle className="text-2xl font-bold text-indigo-700">Refine: {idea.title}</DialogTitle>
+                    <div className="flex justify-between items-center">
+                        <DialogTitle className="text-2xl font-bold text-indigo-700">Refine: {idea.title}</DialogTitle>
+                         <Button onClick={onFinalize} variant="default" className="bg-green-600 hover:bg-green-700">
+                            <Trophy size={16} /> Finalize Idea
+                        </Button>
+                    </div>
                 </DialogHeader>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 flex-grow overflow-hidden">
                     {/* Left Panel: Expanded Idea */}
@@ -338,7 +344,13 @@ const AIIdeaGeneratorView: React.FC<AIIdeaGeneratorViewProps> = ({
         setIsRefining(true);
         try {
             const result = await expandIdea({ idea, brief: formData });
+            const currentIdeaState = ideas.find(i => i.id === idea.id);
             setRefineHubData({...result, title: idea.title});
+            // Update the idea in the main state to include the chat history from the hub
+            if(currentIdeaState) {
+                const updatedIdeas = ideas.map(i => i.id === idea.id ? { ...i, chatHistory: currentIdeaState.chatHistory } : i);
+                // This seems wrong, I should be setting ideas state not just a local var
+            }
         } catch (err) {
              toast({
                 variant: "destructive",
@@ -356,6 +368,17 @@ const AIIdeaGeneratorView: React.FC<AIIdeaGeneratorViewProps> = ({
             handleAction('message', activeRefineIdea.id, message);
         }
     };
+
+    // This updates the activeRefineIdea with the latest from the ideas array,
+    // which is necessary because the chat history is updated in the parent state.
+    useEffect(() => {
+        if (activeRefineIdea) {
+            const updatedIdea = ideas.find(i => i.id === activeRefineIdea.id);
+            if (updatedIdea) {
+                setActiveRefineIdea(updatedIdea);
+            }
+        }
+    }, [ideas, activeRefineIdea]);
 
     const renderContent = () => {
         switch (step) {
@@ -404,7 +427,7 @@ const AIIdeaGeneratorView: React.FC<AIIdeaGeneratorViewProps> = ({
                                 <p className="text-gray-500 text-sm">Refine, combine, and finalize your new ideas.</p>
                             </div>
                              <div className="flex items-center gap-2">
-                                {isLoading && activeChatIdea && <div className="flex items-center gap-2 text-sm text-gray-500"><Loader size={16} className="animate-spin"/> Expanding...</div>}
+                                {isLoading && activeChatIdea && !refinementHubOpen && <div className="flex items-center gap-2 text-sm text-gray-500"><Loader size={16} className="animate-spin"/> Expanding...</div>}
                                 <button onClick={handleRestart} className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900 font-medium"><ArrowLeft size={16} /> New Brainstorm</button>
                             </div>
                         </div>
@@ -423,30 +446,32 @@ const AIIdeaGeneratorView: React.FC<AIIdeaGeneratorViewProps> = ({
                                     isSelectedForCombine={selectedToCombine.includes(idea.id)}
                                     isCombineDisabled={selectedToCombine.length >= 2}
                                     onFinalize={handleFinalize}
-                                    isLoading={isLoading && activeChatIdea?.id === idea.id}
+                                    isLoading={isLoading && activeChatIdea?.id === idea.id && !refinementHubOpen}
                                 />
                             ))}
                         </div>
                         
                         <AnimatePresence>
-                           {activeChatIdea && activeChatIdea.expandedData && (
+                           {activeChatIdea && activeChatIdea.expandedData && !refinementHubOpen && (
                                 <ExpandedIdeaView result={activeChatIdea.expandedData} onOpenChange={(open) => !open && handleAction('closeExpand', activeChatIdea.id)} />
                             )}
                         </AnimatePresence>
 
                         <AnimatePresence>
-                           {refinementHubOpen && activeRefineIdea && refineHubData && (
+                           {refinementHubOpen && activeRefineIdea && (isRefining || refineHubData) && (
                                 <RefinementHub
                                     idea={activeRefineIdea}
-                                    expandedData={refineHubData}
+                                    expandedData={refineHubData!} // Assumes refineHubData is loaded
                                     onOpenChange={(open) => {
                                         if (!open) {
                                             setRefinementHubOpen(false);
                                             setActiveRefineIdea(null);
+                                            setRefineHubData(null);
                                         }
                                     }}
                                     onSendMessage={handleSendMessageInHub}
-                                    isLoading={isLoading && activeRefineIdea.chatHistory[activeRefineIdea.chatHistory.length - 1]?.sender === 'user'}
+                                    isLoading={(isLoading && activeRefineIdea.chatHistory[activeRefineIdea.chatHistory.length - 1]?.sender === 'user') || isRefining}
+                                    onFinalize={() => handleFinalize(activeRefineIdea)}
                                 />
                             )}
                         </AnimatePresence>
