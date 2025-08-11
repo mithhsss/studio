@@ -58,6 +58,7 @@ const ExpandedDetailCard = ({ icon, title, children }: { icon: React.ReactNode, 
 const RefinementHub = ({ idea, onOpenChange, onSendMessage, onFinalize }: { idea: IdeaWithState, onOpenChange: (open: boolean) => void, onSendMessage: (message: string) => void, onFinalize: () => void }) => {
     const [message, setMessage] = useState('');
     const chatContainerRef = useRef<HTMLDivElement>(null);
+    const [isLoading, setIsLoading] = useState(false);
     
     if (!idea.expandedData) {
         return (
@@ -76,7 +77,6 @@ const RefinementHub = ({ idea, onOpenChange, onSendMessage, onFinalize }: { idea
     }
     
     const { expandedIdea } = idea.expandedData;
-    const [isLoading, setIsLoading] = useState(false);
 
      useEffect(() => {
         if (chatContainerRef.current) {
@@ -432,7 +432,7 @@ const AIIdeaGeneratorView: React.FC<AIIdeaGeneratorViewProps> = ({
                                 <p className="text-gray-500 text-sm">Refine, combine, and finalize your new ideas.</p>
                             </div>
                              <div className="flex items-center gap-2">
-                                {isLoading && activeChatIdea && <div className="flex items-center gap-2 text-sm text-gray-500"><Loader size={16} className="animate-spin"/> Expanding...</div>}
+                                {isLoading && activeChatIdea && !activeRefineIdea && !activeExpandIdea && <div className="flex items-center gap-2 text-sm text-gray-500"><Loader size={16} className="animate-spin"/> Expanding...</div>}
                                 <button onClick={handleRestart} className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900 font-medium"><ArrowLeft size={16} /> New Brainstorm</button>
                             </div>
                         </div>
@@ -446,7 +446,7 @@ const AIIdeaGeneratorView: React.FC<AIIdeaGeneratorViewProps> = ({
                                         if (action === 'refine') handleRefineClick(idea);
                                         else handleAction(action, id, data);
                                     }}
-                                    onExpand={handleExpand}
+                                    onExpand={() => handleExpand(idea)}
                                     onSelectCombine={() => handleSelectCombine(idea.id)}
                                     isSelectedForCombine={selectedToCombine.includes(idea.id)}
                                     isCombineDisabled={selectedToCombine.length >= 2}
