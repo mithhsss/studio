@@ -5,25 +5,8 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'zod';
-
-export const InteractiveLearnInputSchema = z.object({
-  topic: z.string().describe('The topic the user wants to learn.'),
-  chatHistory: z
-    .array(
-      z.object({
-        role: z.enum(['user', 'model']),
-        content: z.string(),
-      })
-    )
-    .describe('The history of the conversation so far.'),
-});
-export type InteractiveLearnInput = z.infer<typeof InteractiveLearnInputSchema>;
-
-export const InteractiveLearnOutputSchema = z.object({
-  response: z.string().describe('The AI tutor\'s next response in the conversation.'),
-});
-export type InteractiveLearnOutput = z.infer<typeof InteractiveLearnOutputSchema>;
+import type { InteractiveLearnInput, InteractiveLearnOutput } from '@/ai/schemas/tutor-schemas';
+import { InteractiveLearnInputSchema, InteractiveLearnOutputSchema } from '@/ai/schemas/tutor-schemas';
 
 export async function interactiveLearn(input: InteractiveLearnInput): Promise<InteractiveLearnOutput> {
   return interactiveLearnFlow(input);

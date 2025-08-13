@@ -20,7 +20,7 @@ import { expandIdea } from '@/ai/flows/expand-idea-flow';
 
 
 import type { GenerateIdeasInput, Idea, ExpandIdeaOutput } from '@/ai/schemas/idea-generation-schemas';
-import type { QuizQuestion, EvaluateQuizOutput } from '@/ai/flows/tutor-quiz-flow';
+import type { QuizQuestion, EvaluateQuizOutput } from '@/ai/schemas/tutor-schemas';
 
 
 import AITutorView from '@/components/views/AITutorView';

@@ -1,0 +1,67 @@
+/**
+ * @fileOverview Zod schemas and TypeScript types for the AI Tutor flows.
+ */
+import { z } from 'zod';
+
+// Schemas for Interactive Learn Flow
+export const InteractiveLearnInputSchema = z.object({
+  topic: z.string().describe('The topic the user wants to learn.'),
+  chatHistory: z
+    .array(
+      z.object({
+        role: z.enum(['user', 'model']),
+        content: z.string(),
+      })
+    )
+    .describe('The history of the conversation so far.'),
+});
+export type InteractiveLearnInput = z.infer<typeof InteractiveLearnInputSchema>;
+
+export const InteractiveLearnOutputSchema = z.object({
+  response: z.string().describe("The AI tutor's next response in the conversation."),
+});
+export type InteractiveLearnOutput = z.infer<typeof InteractiveLearnOutputSchema>;
+
+
+// Schemas for Quiz Flow
+export const QuizQuestionSchema = z.object({
+  questionText: z.string().describe('The full text of the quiz question.'),
+  questionType: z.enum(['multiple-choice', 'short-answer', 'true-false']).describe('The type of question.'),
+  options: z.array(z.string()).optional().describe('A list of options for multiple-choice questions.'),
+  correctAnswer: z.string().describe('The correct answer for the question. For multiple-choice, this should be one of the options.'),
+  explanation: z.string().describe('A detailed explanation for why the correct answer is right.'),
+});
+export type QuizQuestion = z.infer<typeof QuizQuestionSchema>;
+
+export const GenerateQuizInputSchema = z.object({
+  topic: z.string().describe('The topic of the quiz.'),
+  numQuestions: z.number().int().min(1).max(10).describe('The number of questions to generate.'),
+  difficulty: z.enum(['Easy', 'Medium', 'Hard']).describe('The difficulty level of the quiz.'),
+});
+export type GenerateQuizInput = z.infer<typeof GenerateQuizInputSchema>;
+
+export const GenerateQuizOutputSchema = z.object({
+  questions: z.array(QuizQuestionSchema).describe('The array of generated quiz questions.'),
+});
+export type GenerateQuizOutput = z.infer<typeof GenerateQuizOutputSchema>;
+
+export const EvaluateQuizInputSchema = z.object({
+  questions: z.array(QuizQuestionSchema).describe('The original questions that were asked.'),
+  userAnswers: z.array(z.string()).describe('The answers provided by the user, in the same order as the questions.'),
+});
+export type EvaluateQuizInput = z.infer<typeof EvaluateQuizInputSchema>;
+
+export const EvaluateQuizOutputSchema = z.object({
+  score: z.number().min(0).max(100).describe('The final score as a percentage.'),
+  results: z.array(
+    z.object({
+      question: z.string(),
+      userAnswer: z.string(),
+      correctAnswer: z.string(),
+      isCorrect: z.boolean(),
+      explanation: z.string(),
+    })
+  ).describe('A detailed breakdown of each answer.'),
+  feedback: z.string().describe('Overall feedback for the user, highlighting strong and weak areas.'),
+});
+export type EvaluateQuizOutput = z.infer<typeof EvaluateQuizOutputSchema>;

@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { BookOpen, Award, BarChart2, CheckSquare, Clock, User, DownloadCloud, Activity, Zap, BrainCircuit, MessageSquare, Loader, Send, FileQuestion, Star, BarChart, BookCopy } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import type { TutorMode, QuizState, QuizConfig, TutorChatHistory } from '@/app/page';
-import type { QuizQuestion, EvaluateQuizOutput } from '@/ai/flows/tutor-quiz-flow';
+import type { QuizQuestion, EvaluateQuizOutput } from '@/ai/schemas/tutor-schemas';
 import { useToast } from "@/hooks/use-toast";
 import { interactiveLearn } from '@/ai/flows/tutor-interactive-learn-flow';
 import { generateQuiz, evaluateQuiz } from '@/ai/flows/tutor-quiz-flow';
@@ -264,7 +264,7 @@ const AITutorView: React.FC<AITutorViewProps> = (props) => {
         switch (props.tutorMode) {
             case 'dashboard': return <DashboardView />;
             case 'learn': return <InteractiveLearnView topic={props.learnTopic} setTopic={props.setLearnTopic} chatHistory={props.chatHistory} setChatHistory={props.setChatHistory} isLoading={props.isLoading} setIsLoading={props.setIsLoading} />;
-            case 'quiz': return <QuizView quizState={props.quizState} setQuizState={props.setQuizState} config={props.quizConfig} setConfig={props.setQuizConfig} questions={props.quizQuestions} setQuestions={props.setQuizQuestions} answers={props.quizAnswers} setAnswers={props.setQuizAnswers} result={props.quizResult} setResult={props.setQuizResult} isLoading={props.isLoading} setIsLoading={props.setIsLoading} />;
+            case 'quiz': return <QuizView quizState={props.quizState} setQuizState={props.setQuizState} config={props.quizConfig} setConfig={props.setQuizConfig} questions={props.quizQuestions} setQuestions={props.setQuizQuestions} answers={props.quizAnswers} setAnswers={props.setAnswers} result={props.quizResult} setResult={props.setQuizResult} isLoading={props.isLoading} setIsLoading={props.setIsLoading} />;
             default: return <DashboardView />;
         }
     };
