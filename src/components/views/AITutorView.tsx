@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -187,7 +188,19 @@ const QuizView = ({ quizState, setQuizState, config, setConfig, questions, setQu
             <div className="mt-4 max-w-md mx-auto">
                 <div className="space-y-4">
                     <div><Label>Topic</Label><Input value={config.topic} onChange={(e) => setConfig({ ...config, topic: e.target.value })} /></div>
-                    <div><Label>Number of Questions</Label><Input type="number" value={config.numQuestions} onChange={(e) => setConfig({ ...config, numQuestions: parseInt(e.target.value) })} min="1" max="10" /></div>
+                    <div>
+                        <Label>Number of Questions</Label>
+                        <Input 
+                            type="number" 
+                            value={config.numQuestions} 
+                            onChange={(e) => {
+                                const num = parseInt(e.target.value);
+                                setConfig({ ...config, numQuestions: isNaN(num) ? 0 : num });
+                            }} 
+                            min="1" 
+                            max="10" 
+                        />
+                    </div>
                     <div><Label>Difficulty</Label><RadioGroup value={config.difficulty} onValueChange={(v) => setConfig({ ...config, difficulty: v })} className="flex gap-4"><div className="flex items-center space-x-2"><RadioGroupItem value="Easy" id="r1" /><Label htmlFor="r1">Easy</Label></div><div className="flex items-center space-x-2"><RadioGroupItem value="Medium" id="r2" /><Label htmlFor="r2">Medium</Label></div><div className="flex items-center space-x-2"><RadioGroupItem value="Hard" id="r3" /><Label htmlFor="r3">Hard</Label></div></RadioGroup></div>
                     <Button onClick={handleGenerateQuiz} disabled={isLoading} className="w-full">{isLoading ? <Loader className="animate-spin" /> : 'Start Quiz'}</Button>
                 </div>
