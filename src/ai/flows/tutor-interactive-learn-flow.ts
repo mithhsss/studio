@@ -12,11 +12,18 @@ export async function interactiveLearn(input: InteractiveLearnInput): Promise<In
   return interactiveLearnFlow(input);
 }
 
-const prompt = ai.definePrompt({
-  name: 'interactiveLearnPrompt',
-  input: { schema: InteractiveLearnInputSchema },
-  output: { schema: InteractiveLearnOutputSchema },
-  prompt: `You are an AI Tutor engaging in an interactive learning session.
+const interactiveLearnFlow = ai.defineFlow(
+  {
+    name: 'interactiveLearnFlow',
+    inputSchema: InteractiveLearnInputSchema,
+    outputSchema: InteractiveLearnOutputSchema,
+  },
+  async (input) => {
+    const prompt = ai.definePrompt({
+        name: 'interactiveLearnPrompt',
+        input: { schema: InteractiveLearnInputSchema },
+        output: { schema: InteractiveLearnOutputSchema },
+        prompt: `You are an AI Tutor engaging in an interactive learning session.
 Your goal is to teach the user about the specified topic in a conversational, adaptive way.
 
 Topic: {{{topic}}}
@@ -40,15 +47,8 @@ Tutor: {{{this.content}}}
 {{/each}}
 
 Based on the conversation history, provide the next response as the Tutor.`,
-});
-
-const interactiveLearnFlow = ai.defineFlow(
-  {
-    name: 'interactiveLearnFlow',
-    inputSchema: InteractiveLearnInputSchema,
-    outputSchema: InteractiveLearnOutputSchema,
-  },
-  async (input) => {
+    });
+    
     const { output } = await prompt(input);
     return output!;
   }
