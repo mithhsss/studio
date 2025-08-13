@@ -10,7 +10,7 @@ interface AIMentorViewProps {
     isLoading: boolean;
     userInput: string;
     setUserInput: (input: string) => void;
-    handleTutorSubmit: (prompt: string) => void;
+    handleMentorSubmit: (prompt: string) => void;
     handleResumeUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
     resumeFileName: string | null;
     setResumeText: (text: string | null) => void;
@@ -36,7 +36,7 @@ const AIMentorView: React.FC<AIMentorViewProps> = ({
     isLoading,
     userInput,
     setUserInput,
-    handleTutorSubmit,
+    handleMentorSubmit,
     handleResumeUpload,
     resumeFileName,
     setResumeText,
@@ -64,10 +64,10 @@ const AIMentorView: React.FC<AIMentorViewProps> = ({
                             <h1 className="text-3xl font-bold text-gray-900 mb-4">What's on your mind?</h1>
                             <p className="text-gray-600 mb-6">Ask for advice or use a suggestion below. For best results, upload your resume!</p>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-                                <Suggestion icon={<BookCopy size={24} />} text="How do I prepare for a promotion?" onClick={handleTutorSubmit} />
-                                <Suggestion icon={<Search size={24} />} text="Review my resume for a UX role" onClick={handleTutorSubmit} />
-                                <Suggestion icon={<MessageSquareQuote size={24} />} text="Give me feedback on a project idea" onClick={handleTutorSubmit} />
-                                <Suggestion icon={<FileSignature size={24} />} text="Help me negotiate a job offer" onClick={handleTutorSubmit} />
+                                <Suggestion icon={<BookCopy size={24} />} text="How do I prepare for a promotion?" onClick={handleMentorSubmit} />
+                                <Suggestion icon={<Search size={24} />} text="Review my resume for a UX role" onClick={handleMentorSubmit} />
+                                <Suggestion icon={<MessageSquareQuote size={24} />} text="Give me feedback on a project idea" onClick={handleMentorSubmit} />
+                                <Suggestion icon={<FileSignature size={24} />} text="Help me negotiate a job offer" onClick={handleMentorSubmit} />
                             </div>
                         </>
                     ) : (
@@ -97,7 +97,7 @@ const AIMentorView: React.FC<AIMentorViewProps> = ({
                                 type="text"
                                 value={userInput}
                                 onChange={(e) => setUserInput(e.target.value)}
-                                onKeyPress={(e) => e.key === 'Enter' && handleTutorSubmit(userInput)}
+                                onKeyPress={(e) => e.key === 'Enter' && handleMentorSubmit(userInput)}
                                 placeholder={resumeFileName ? `Asking about ${resumeFileName}...` : "💬 Ask for career advice..."}
                                 className="w-full border-gray-300 border rounded-lg p-3 focus:ring-yellow-500 focus:border-yellow-500"
                                 disabled={isLoading}
@@ -105,13 +105,13 @@ const AIMentorView: React.FC<AIMentorViewProps> = ({
                             {resumeFileName && (
                                 <button
                                     onClick={() => { setResumeText(null); setResumeFileName(null); }}
-                                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                    className="absolute right-10 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                                 >
                                     &times;
                                 </button>
                             )}
                         </div>
-                        <Button onClick={() => handleTutorSubmit(userInput)} className="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-3 px-4 rounded-lg" disabled={isLoading}>
+                        <Button onClick={() => handleMentorSubmit(userInput)} className="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-3 px-4 rounded-lg" disabled={isLoading}>
                             <Send size={18} />
                         </Button>
                     </div>

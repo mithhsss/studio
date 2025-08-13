@@ -20,6 +20,7 @@ import { expandIdea } from '@/ai/flows/expand-idea-flow';
 
 
 import type { GenerateIdeasInput, Idea, ExpandIdeaOutput } from '@/ai/schemas/idea-generation-schemas';
+import type { QuizQuestion, EvaluateQuizOutput } from '@/ai/flows/tutor-quiz-flow';
 
 
 import AITutorView from '@/components/views/AITutorView';
@@ -36,6 +37,8 @@ export type ActiveView = 'tutor' | 'roadmap' | 'mentor' | 'coder' | 'content-gen
 export type ContentGeneratorStep = 'idea' | 'outline' | 'draft';
 export type IdeaGeneratorStep = 'input' | 'results' | 'finalized';
 export type CoderStep = 'blueprint' | 'workbench';
+export type TutorMode = 'dashboard' | 'learn' | 'quiz';
+export type QuizState = 'config' | 'taking' | 'result';
 
 
 export interface ChatMessage {
@@ -56,6 +59,17 @@ export interface IdeaWithState extends Idea {
     isFavorited: boolean;
     chatHistory: { sender: 'user' | 'ai'; text: string }[];
     expandedData?: ExpandIdeaOutput;
+}
+
+export interface TutorChatHistory {
+    role: 'user' | 'model';
+    content: string;
+}
+
+export interface QuizConfig {
+    topic: string;
+    numQuestions: number;
+    difficulty: 'Easy' | 'Medium' | 'Hard';
 }
 
 interface NavItemProps {
@@ -346,6 +360,21 @@ export default function Home() {
 }]`
     });
 
+    // State for AI Tutor
+    const [tutorMode, setTutorMode] = useState<TutorMode>('dashboard');
+    const [tutorChatHistory, setTutorChatHistory] = useState<TutorChatHistory[]>([]);
+    const [learnTopic, setLearnTopic] = useState('');
+    const [quizState, setQuizState] = useState<QuizState>('config');
+    const [quizConfig, setQuizConfig] = useState<QuizConfig>({
+      topic: 'JavaScript Fundamentals',
+      numQuestions: 5,
+      difficulty: 'Medium',
+    });
+    const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([]);
+    const [quizAnswers, setQuizAnswers] = useState<string[]>([]);
+    const [quizResult, setQuizResult] = useState<EvaluateQuizOutput | null>(null);
+
+
     const handleViewChange = (view: ActiveView) => {
         setActiveView(view);
         setChatHistory([]);
@@ -392,7 +421,7 @@ export default function Home() {
         }
     };
 
-    const handleTutorSubmit = async (prompt: string) => {
+    const handleMentorSubmit = async (prompt: string) => {
         if (!prompt.trim()) return;
 
         const newHistory: ChatMessage[] = [...chatHistory, { role: 'user', text: prompt }];
@@ -578,6 +607,8 @@ export default function Home() {
                 
                 const updatedIdeasWithMessage = ideas.map(i => i.id === id ? { ...i, chatHistory: updatedChatHistory } : i);
                 setIdeas(updatedIdeasWithMessage);
+                setActiveChatIdea(updatedIdeasWithMessage.find(i => i.id === id) as IdeaWithState);
+
 
                 const result = await chatWithIdea({ idea: ideaToUpdate, message: data });
                 const aiResponse = { sender: 'ai' as const, text: result.response };
@@ -585,6 +616,7 @@ export default function Home() {
                 const finalChatHistory = [...updatedChatHistory, aiResponse];
                 const finalIdeas = ideas.map(i => i.id === id ? { ...i, chatHistory: finalChatHistory } : i);
                 setIdeas(finalIdeas);
+                setActiveChatIdea(finalIdeas.find(i => i.id === id) as IdeaWithState);
                 break;
             }
         } catch (err) {
@@ -658,12 +690,24 @@ export default function Home() {
             case 'tutor':
                 return (
                     <AITutorView
-                        chatHistory={chatHistory}
+                        tutorMode={tutorMode}
+                        setTutorMode={setTutorMode}
+                        chatHistory={tutorChatHistory}
+                        setChatHistory={setTutorChatHistory}
+                        learnTopic={learnTopic}
+                        setLearnTopic={setLearnTopic}
+                        quizState={quizState}
+                        setQuizState={setQuizState}
+                        quizConfig={quizConfig}
+                        setQuizConfig={setQuizConfig}
+                        quizQuestions={quizQuestions}
+                        setQuizQuestions={setQuizQuestions}
+                        quizAnswers={quizAnswers}
+                        setQuizAnswers={setQuizAnswers}
+                        quizResult={quizResult}
+                        setQuizResult={setQuizResult}
                         isLoading={isLoading}
-                        userInput={userInput}
-                        setUserInput={setUserInput}
-                        handleTutorSubmit={handleTutorSubmit}
-                        error={error}
+                        setIsLoading={setIsLoading}
                     />
                 );
             case 'roadmap':
@@ -682,7 +726,7 @@ export default function Home() {
                         isLoading={isLoading}
                         userInput={userInput}
                         setUserInput={setUserInput}
-                        handleTutorSubmit={handleTutorSubmit}
+                        handleMentorSubmit={handleMentorSubmit}
                         handleResumeUpload={handleResumeUpload}
                         resumeFileName={resumeFileName}
                         setResumeText={setResumeText}
@@ -712,7 +756,7 @@ export default function Home() {
                         step={ideaGeneratorStep}
                         isLoading={isLoading}
                         ideas={ideas}
-                        activeChatIdea={activeIdeaForExpansion || null}
+                        activeChatIdea={activeChatIdea || null}
                         combinePair={combinePair}
                         finalizedIdea={finalizedIdea}
                         dragOverId={dragOverId}
@@ -720,10 +764,11 @@ export default function Home() {
                         setFormData={setIdeaFormData}
                         handleGenerateIdeas={handleGenerateIdeas}
                         handleAction={handleAction}
-                        handleDragStart={() => {}} // Deprecated
-                        handleDragEnd={() => {}} // Deprecated
-                        handleDrop={() => {}} // Deprecated
-                        setDragOverId={() => {}} // Deprecated
+                        // Drag and drop is being replaced, but we'll keep the props for now
+                        handleDragStart={(e: React.DragEvent, id: number) => {}}
+                        handleDragEnd={() => {}}
+                        handleDrop={(e: React.DragEvent, targetId: number) => {}}
+                        setDragOverId={(id: number | null) => {}}
                         handleCombine={handleCombine}
                         setCombinePair={setCombinePair}
                         handleFinalize={handleFinalize}
