@@ -65,3 +65,23 @@ export const EvaluateQuizOutputSchema = z.object({
   feedback: z.string().describe('Overall feedback for the user, highlighting strong and weak areas.'),
 });
 export type EvaluateQuizOutput = z.infer<typeof EvaluateQuizOutputSchema>;
+
+
+// Schemas for Scenario Sandbox Flow
+export const ScenarioSandboxInputSchema = z.object({
+  topic: z.string().describe('The topic for which to generate a scenario.'),
+  chatHistory: z
+    .array(
+      z.object({
+        role: z.enum(['user', 'model']),
+        content: z.string(),
+      })
+    )
+    .describe('The history of the conversation so far.'),
+});
+export type ScenarioSandboxInput = z.infer<typeof ScenarioSandboxInputSchema>;
+
+export const ScenarioSandboxOutputSchema = z.object({
+  response: z.string().describe("The AI tutor's next response in the scenario conversation."),
+});
+export type ScenarioSandboxOutput = z.infer<typeof ScenarioSandboxOutputSchema>;

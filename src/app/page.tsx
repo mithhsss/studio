@@ -37,7 +37,7 @@ export type ActiveView = 'tutor' | 'roadmap' | 'mentor' | 'coder' | 'content-gen
 export type ContentGeneratorStep = 'idea' | 'outline' | 'draft';
 export type IdeaGeneratorStep = 'input' | 'results' | 'finalized';
 export type CoderStep = 'blueprint' | 'workbench';
-export type TutorMode = 'dashboard' | 'learn' | 'quiz';
+export type TutorMode = 'dashboard' | 'learn' | 'quiz' | 'sandbox';
 export type QuizState = 'config' | 'taking' | 'result';
 
 
@@ -373,6 +373,8 @@ export default function Home() {
     const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([]);
     const [quizAnswers, setQuizAnswers] = useState<string[]>([]);
     const [quizResult, setQuizResult] = useState<EvaluateQuizOutput | null>(null);
+    const [sandboxTopic, setSandboxTopic] = useState('');
+    const [sandboxChatHistory, setSandboxChatHistory] = useState<TutorChatHistory[]>([]);
 
 
     const handleViewChange = (view: ActiveView) => {
@@ -706,6 +708,10 @@ export default function Home() {
                         setQuizAnswers={setQuizAnswers}
                         quizResult={quizResult}
                         setQuizResult={setQuizResult}
+                        sandboxTopic={sandboxTopic}
+                        setSandboxTopic={setSandboxTopic}
+                        sandboxChatHistory={sandboxChatHistory}
+                        setSandboxChatHistory={setSandboxChatHistory}
                         isLoading={isLoading}
                         setIsLoading={setIsLoading}
                     />
@@ -761,7 +767,7 @@ export default function Home() {
                         finalizedIdea={finalizedIdea}
                         dragOverId={dragOverId}
                         formData={ideaFormData}
-                        setFormData={setIdeaFormData}
+                        setFormData={setFormData}
                         handleGenerateIdeas={handleGenerateIdeas}
                         handleAction={handleAction}
                         // Drag and drop is being replaced, but we'll keep the props for now
@@ -772,7 +778,7 @@ export default function Home() {
                         handleCombine={handleCombine}
                         setCombinePair={setCombinePair}
                         handleFinalize={handleFinalize}
-                        handleRestart={handleIdeaRestart}
+                        handleRestart={handleRestart}
                     />
                 );
             case 'coder':

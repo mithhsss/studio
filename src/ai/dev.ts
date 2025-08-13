@@ -15,4 +15,5 @@ import '@/ai/flows/combine-ideas-flow.ts';
 import '@/ai/flows/expand-idea-flow.ts';
 import '@/ai/flows/tutor-interactive-learn-flow.ts';
 import '@/ai/flows/tutor-quiz-flow.ts';
+import '@/ai/flows/tutor-scenario-flow.ts';
 import '@/ai/schemas/tutor-schemas.ts';
