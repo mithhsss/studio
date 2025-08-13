@@ -17,6 +17,7 @@ import { refineContent } from '@/ai/flows/refine-content-flow';
 import { chatWithIdea } from '@/ai/flows/chat-with-idea-flow';
 import { combineIdeas } from '@/ai/flows/combine-ideas-flow';
 import { expandIdea } from '@/ai/flows/expand-idea-flow';
+import { generateRoadmap, type Roadmap, type GenerateRoadmapInput } from '@/ai/flows/generate-roadmap-flow';
 
 
 import type { GenerateIdeasInput, Idea, ExpandIdeaOutput } from '@/ai/schemas/idea-generation-schemas';
@@ -311,7 +312,7 @@ export default function Home() {
     const [activeView, setActiveView] = useState<ActiveView>(null);
     const [userInput, setUserInput] = useState('');
     const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
-    const [roadmapContent, setRoadmapContent] = useState<string>('');
+    const [roadmapContent, setRoadmapContent] = useState<Roadmap | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [resumeText, setResumeText] = useState<string | null>(null);
@@ -461,19 +462,22 @@ export default function Home() {
         }
     };
 
-    const handleGenerateRoadmap = async () => {
-        const prompt = `Generate a personalized career roadmap for a UX Designer. The user is a beginner. Structure the response in Markdown. Include:
-        1.  **Introduction:** A brief, motivating intro to the UX design field.
-        2.  **Phase 1: Foundational Skills (Months 1-3):** List core concepts (e.g., User Research, Wireframing, Prototyping) with a brief explanation and links to 1-2 high-quality free learning resources for each.
-        3.  **Phase 2: Tool Proficiency (Months 4-6):** Recommend essential tools (e.g., Figma, Sketch, Adobe XD) and suggest small projects to practice. Include resource links.
-        4.  **Phase 3: Building a Portfolio (Months 7-9):** Suggest 2-3 portfolio project ideas (e.g., redesign a local business website, create a new mobile app concept). Explain what to include in each case study.
-        5.  **Phase 4: Job Readiness (Months 10-12):** Give advice on resume building, networking on platforms like LinkedIn, and preparing for UX interviews.`;
-
-        const responseText = await callAIFlow(prompt);
-        if (responseText) {
-            setRoadmapContent(responseText);
-        } else {
-            setRoadmapContent("# Error\n\nCould not generate the roadmap. Please try again later.");
+    const handleGenerateRoadmap = async (formData: GenerateRoadmapInput) => {
+        setIsLoading(true);
+        setError(null);
+        try {
+            const result = await generateRoadmap(formData);
+            setRoadmapContent(result.roadmap);
+        } catch (err: any) {
+            console.error("AI flow failed:", err);
+            setError(err.message || "Failed to generate roadmap.");
+            toast({
+                variant: "destructive",
+                title: "Roadmap Generation Failed",
+                description: err.message || "There was a problem with the AI response.",
+            });
+        } finally {
+            setIsLoading(false);
         }
     };
 
