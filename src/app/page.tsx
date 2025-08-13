@@ -21,7 +21,7 @@ import { generateRoadmap } from '@/ai/flows/generate-roadmap-flow';
 
 
 import type { GenerateIdeasInput, Idea, ExpandIdeaOutput } from '@/ai/schemas/idea-generation-schemas';
-import type { QuizQuestion, EvaluateQuizOutput, Roadmap, GenerateRoadmapInput } from '@/ai/schemas/tutor-schemas';
+import type { QuizQuestion, EvaluateQuizOutput, GenerateRoadmapInput } from '@/ai/schemas/tutor-schemas';
 
 
 import AITutorView from '@/components/views/AITutorView';
@@ -312,7 +312,7 @@ export default function Home() {
     const [activeView, setActiveView] = useState<ActiveView>(null);
     const [userInput, setUserInput] = useState('');
     const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
-    const [roadmapContent, setRoadmapContent] = useState<Roadmap | null>(null);
+    const [roadmapMarkdown, setRoadmapMarkdown] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [resumeText, setResumeText] = useState<string | null>(null);
@@ -465,9 +465,10 @@ export default function Home() {
     const handleGenerateRoadmap = async (formData: GenerateRoadmapInput) => {
         setIsLoading(true);
         setError(null);
+        setRoadmapMarkdown(null);
         try {
             const result = await generateRoadmap(formData);
-            setRoadmapContent(result.roadmap);
+            setRoadmapMarkdown(result.roadmapMarkdown);
         } catch (err: any) {
             console.error("AI flow failed:", err);
             setError(err.message || "Failed to generate roadmap.");
@@ -724,8 +725,9 @@ export default function Home() {
                 return (
                     <AIRoadmapView
                         isLoading={isLoading}
-                        roadmapContent={roadmapContent}
+                        roadmapMarkdown={roadmapMarkdown}
                         handleGenerateRoadmap={handleGenerateRoadmap}
+                        setRoadmapMarkdown={setRoadmapMarkdown}
                         error={error}
                     />
                 );
