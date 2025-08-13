@@ -17,11 +17,11 @@ import { refineContent } from '@/ai/flows/refine-content-flow';
 import { chatWithIdea } from '@/ai/flows/chat-with-idea-flow';
 import { combineIdeas } from '@/ai/flows/combine-ideas-flow';
 import { expandIdea } from '@/ai/flows/expand-idea-flow';
-import { generateRoadmap, type Roadmap, type GenerateRoadmapInput } from '@/ai/flows/generate-roadmap-flow';
+import { generateRoadmap } from '@/ai/flows/generate-roadmap-flow';
 
 
 import type { GenerateIdeasInput, Idea, ExpandIdeaOutput } from '@/ai/schemas/idea-generation-schemas';
-import type { QuizQuestion, EvaluateQuizOutput } from '@/ai/schemas/tutor-schemas';
+import type { QuizQuestion, EvaluateQuizOutput, Roadmap, GenerateRoadmapInput } from '@/ai/schemas/tutor-schemas';
 
 
 import AITutorView from '@/components/views/AITutorView';
