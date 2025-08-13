@@ -96,7 +96,7 @@ export type GenerateRoadmapInput = z.infer<typeof GenerateRoadmapInputSchema>;
 
 const ResourceSchema = z.object({
   name: z.string().describe('The name of the resource.'),
-  url: z.string().url().describe('A direct URL to the resource.'),
+  url: z.string().describe('A direct URL to the resource.'),
 });
 
 const SubtopicSchema = z.object({
