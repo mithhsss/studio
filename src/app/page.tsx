@@ -1,4 +1,5 @@
 
+
 "use client";
 import React, { useState, useEffect, useRef } from 'react';
 import { BookOpen, Map, Users, Code, Plus, Sparkles, BrainCircuit, FileText, Lightbulb, Bot, Package, WandSparkles, Wind, Hash, TrendingUp, Award, BarChart, Rocket } from 'lucide-react';
@@ -17,11 +18,11 @@ import { refineContent } from '@/ai/flows/refine-content-flow';
 import { chatWithIdea } from '@/ai/flows/chat-with-idea-flow';
 import { combineIdeas } from '@/ai/flows/combine-ideas-flow';
 import { expandIdea } from '@/ai/flows/expand-idea-flow';
-import { generateRoadmap } from '@/ai/flows/generate-roadmap-flow';
+import { generateRoadmap, type GenerateRoadmapOutput } from '@/ai/flows/generate-roadmap-flow';
 
 
 import type { GenerateIdeasInput, Idea, ExpandIdeaOutput } from '@/ai/schemas/idea-generation-schemas';
-import type { QuizQuestion, EvaluateQuizOutput, GenerateRoadmapInput, Roadmap } from '@/ai/schemas/tutor-schemas';
+import type { QuizQuestion, EvaluateQuizOutput, GenerateRoadmapInput } from '@/ai/schemas/tutor-schemas';
 
 
 import AITutorView from '@/components/views/AITutorView';
@@ -312,7 +313,7 @@ export default function Home() {
     const [activeView, setActiveView] = useState<ActiveView>(null);
     const [userInput, setUserInput] = useState('');
     const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
-    const [roadmapData, setRoadmapData] = useState<Roadmap | null>(null);
+    const [roadmapData, setRoadmapData] = useState<GenerateRoadmapOutput | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [resumeText, setResumeText] = useState<string | null>(null);
@@ -468,7 +469,7 @@ export default function Home() {
         setRoadmapData(null);
         try {
             const result = await generateRoadmap(formData);
-            setRoadmapData(result.roadmap);
+            setRoadmapData(result);
         } catch (err: any) {
             console.error("AI flow failed:", err);
             setError(err.message || "Failed to generate roadmap.");
@@ -725,9 +726,9 @@ export default function Home() {
                 return (
                     <AIRoadmapView
                         isLoading={isLoading}
-                        roadmapMarkdown={roadmapData}
+                        roadmapData={roadmapData}
                         handleGenerateRoadmap={handleGenerateRoadmap}
-                        setRoadmapMarkdown={setRoadmapData}
+                        setRoadmapData={setRoadmapData}
                         error={error}
                     />
                 );
