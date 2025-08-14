@@ -31,26 +31,26 @@ const prompt = ai.definePrompt({
 **Instructions:**
 1.  **Analyze and Design Dynamic Stages:**
     - The number of stages is not fixed. Determine them dynamically based on the gap between current skills and the user's goal.
-    - Each stage should represent a logical progression from foundational to advanced concepts.
+    - Each stage should represent a logical progression from foundational to advanced concepts. A stage is typically a week.
     - If the user is advanced, skip beginner stages and focus on depth.
     - If the timeline is short, compress topics into fewer, more intensive stages.
 2.  **For Each Stage, Provide:**
-    - **Stage Name:** A clear, customized name for the stage.
+    - **Stage Number:** A number representing the week (e.g., 1, 2).
+    - **Stage Title:** A clear, customized name for the stage.
     - **Objective:** A concise statement of the learning goals for this stage.
-    - **Key Topics:** A bulleted list of essential topics to master.
-    - **Free Resources:** A list of free resources (articles, videos, tutorials). For each, provide the name, a valid URL, and a brief reason why it's useful.
-    - **Premium Resources:** A list of premium resources (courses, books), if the user allows. Include name, URL, and justification.
-    - **Hands-On Practice:** Suggest 1-2 practical projects or exercises to apply the knowledge.
+    - **Key Subtopics:** Generate a list of AT LEAST 3-4 detailed subtopics. For each subtopic:
+        - **Title & Description:** A clear title and a descriptive paragraph.
+        - **Free Resources:** A list of free resources (articles, videos, tutorials). For each, provide the name, a valid URL, and a brief reason why it's useful.
+        - **Premium Resources:** A list of premium resources (courses, books), if the user allows. Include name, URL, and justification.
+        - **Hands-On Project:** Suggest a practical project or exercise to apply the knowledge.
     - **Estimated Duration:** Provide a time estimate (e.g., in weeks or days) based on the user's weekly time commitment.
 3.  **Final Roadmap Output:**
-    - Present the entire roadmap in a clean, readable Markdown format with clear headings for each stage and section.
-    - Conclude the roadmap with the following sections:
+    - Conclude the roadmap with the following sections in the main roadmap object:
         - **Portfolio Project Ideas:** Suggest 2-3 project ideas to showcase their new skills.
-        - **Community & Networking:** Recommend 2-3 relevant online communities, forums, or networking platforms.
+        - **Community & Networking:** Recommend 2-3 relevant online communities, forums, or networking platforms with their URLs.
         - **Career & Certification Tips:** Offer advice on certifications or career steps to take after completing the roadmap.
-        - **Sample Weekly Schedule:** Provide an optional, sample weekly learning schedule based on their time commitment.
 
-Generate the comprehensive and personalized roadmap now.`,
+Return the entire plan in the specified structured JSON format.`,
 });
 
 const generateRoadmapFlow = ai.defineFlow(

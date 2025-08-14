@@ -98,7 +98,45 @@ export const GenerateRoadmapInputSchema = z.object({
 });
 export type GenerateRoadmapInput = z.infer<typeof GenerateRoadmapInputSchema>;
 
+const ResourceSchema = z.object({
+  name: z.string().describe('The name or title of the resource.'),
+  url: z.string().describe('A valid URL link to the resource.'),
+  reason: z.string().describe("A brief justification for why this resource is being recommended."),
+});
+
+const SubtopicSchema = z.object({
+  title: z.string().describe('The title of this specific subtopic.'),
+  description: z.string().describe('A paragraph explaining the subtopic.'),
+  freeResources: z.array(ResourceSchema).describe('A list of free resources for learning this subtopic.'),
+  premiumResources: z.array(ResourceSchema).optional().describe('A list of premium (paid) resources for this subtopic.'),
+  project: z.string().describe("A hands-on practice project or exercise to apply the knowledge from this subtopic."),
+});
+
+const RoadmapStageSchema = z.object({
+  stage: z.number().int().describe('The stage number or week in the roadmap (e.g., 1, 2, 3).'),
+  title: z.string().describe('A clear, customized name for the stage (e.g., "Week 1: Foundations of UX").'),
+  objective: z.string().describe('A concise statement of the learning goals for this stage.'),
+  subtopics: z.array(SubtopicSchema).min(3).describe('An array of at least 3-4 detailed subtopics to cover in this stage.'),
+  estimatedDuration: z.string().describe('A time estimate for this stage (e.g., "1 week", "10 days") based on the user\'s weekly time commitment.'),
+});
+
+export const RoadmapSchema = z.object({
+    stages: z.array(RoadmapStageSchema),
+    portfolioProjects: z.array(z.object({
+        name: z.string().describe("The name of the portfolio project."),
+        description: z.string().describe("A brief description of the project."),
+    })).describe("A list of 2-3 project ideas to showcase their new skills."),
+    communities: z.array(z.object({
+        name: z.string().describe("The name of the community or platform."),
+        url: z.string().describe("A valid URL to the community."),
+    })).describe("A list of 2-3 relevant online communities, forums, or networking platforms."),
+    careerTips: z.string().describe("Advice on certifications or career steps to take after completing the roadmap."),
+});
+
 export const GenerateRoadmapOutputSchema = z.object({
-    roadmapMarkdown: z.string().describe("The entire personalized roadmap formatted as a single Markdown string."),
+    roadmap: RoadmapSchema,
 });
 export type GenerateRoadmapOutput = z.infer<typeof GenerateRoadmapOutputSchema>;
+export type Roadmap = z.infer<typeof RoadmapSchema>;
+export type RoadmapStage = z.infer<typeof RoadmapStageSchema>;
+export type Subtopic = z.infer<typeof SubtopicSchema>;
