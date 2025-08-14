@@ -37,8 +37,8 @@ import AIBusinessSimulatorView from '@/components/views/AIBusinessSimulatorView'
 
 // --- TYPE DEFINITIONS --- //
 
-export type ActiveView = 'tutor' | 'roadmap' | 'mentor' | 'coder' | 'content-generator' | 'idea-generator' | 'mock-interview' | 'business-simulator' | null;
-export type MentorMode = 'chat' | 'interview_prep';
+export type ActiveView = 'tutor' | 'roadmap' | 'mentor' | 'coder' | 'content-generator' | 'idea-generator' | null;
+export type MentorMode = 'chat' | 'interview_prep' | 'business_simulator';
 export type ContentGeneratorStep = 'idea' | 'outline' | 'draft';
 export type IdeaGeneratorStep = 'input' | 'results' | 'finalized';
 export type CoderStep = 'blueprint' | 'workbench';
@@ -330,15 +330,17 @@ const RecommendedToolsSection = () => (
 export default function Home() {
     const { toast } = useToast();
     const [activeView, setActiveView] = useState<ActiveView>(null);
-    const [userInput, setUserInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    // AI Mentor State
-    const [mentorChatHistory, setMentorChatHistory] = useState<ChatMessage[]>([]);
-    const [mentorResumeText, setMentorResumeText] = useState<string | null>(null);
-    const [mentorResumeFileName, setMentorResumeFileName] = useState<string | null>(null);
+    // AI Mentor State (now a hub)
     const [mentorMode, setMentorMode] = useState<MentorMode>('chat');
+
+    // Chat mode state
+    const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
+    const [chatUserInput, setChatUserInput] = useState('');
+    const [chatResumeText, setChatResumeText] = useState<string | null>(null);
+    const [chatResumeFileName, setChatResumeFileName] = useState<string | null>(null);
     
     // Mock Interview State
     const [interviewChatHistory, setInterviewChatHistory] = useState<TutorChatHistory[]>([]);
@@ -689,44 +691,42 @@ export default function Home() {
             case 'mentor':
                  return (
                     <AIMentorView
-                        chatHistory={mentorChatHistory}
-                        setChatHistory={setMentorChatHistory}
+                        // State for all modes passed down
+                        mentorMode={mentorMode}
+                        setMentorMode={setMentorMode}
+                        
+                        // Chat Mode state
+                        chatHistory={chatHistory}
+                        setChatHistory={setChatHistory}
+                        userInput={chatUserInput}
+                        setUserInput={setChatUserInput}
+                        resumeText={chatResumeText}
+                        setResumeText={setChatResumeText}
+                        resumeFileName={chatResumeFileName}
+                        setResumeFileName={setChatResumeFileName}
+
+                        // Interview Mode state
+                        interviewChatHistory={interviewChatHistory}
+                        setInterviewChatHistory={setInterviewChatHistory}
+                        jobDescription={interviewJobDesc}
+                        setJobDescription={setInterviewJobDesc}
+                        interviewResumeText={interviewResumeText}
+                        setInterviewResumeText={setInterviewResumeText}
+                        interviewResumeFileName={interviewResumeFileName}
+                        setInterviewResumeFileName={setInterviewResumeFileName}
+                        
+                        // Business Sim state
+                        simHistory={simHistory}
+                        setSimHistory={setSimHistory}
+                        simulationOutput={simOutput}
+                        setSimulationOutput={setSimOutput}
+
+                        // General
                         isLoading={isLoading}
-                        userInput={userInput}
-                        setUserInput={setUserInput}
-                        resumeText={mentorResumeText}
-                        setResumeText={setMentorResumeText}
-                        resumeFileName={mentorResumeFileName}
-                        setResumeFileName={setMentorResumeFileName}
+                        setIsLoading={setIsLoading}
                         error={error}
                     />
                  );
-            case 'mock-interview':
-                return (
-                    <AIMockInterviewView
-                        chatHistory={interviewChatHistory}
-                        setChatHistory={setInterviewChatHistory}
-                        isLoading={isLoading}
-                        setIsLoading={setIsLoading}
-                        jobDescription={interviewJobDesc}
-                        setJobDescription={setInterviewJobDesc}
-                        resumeText={interviewResumeText}
-                        setResumeText={setInterviewResumeText}
-                        resumeFileName={interviewResumeFileName}
-                        setResumeFileName={setInterviewResumeFileName}
-                    />
-                );
-            case 'business-simulator':
-                return (
-                    <AIBusinessSimulatorView
-                        history={simHistory}
-                        setHistory={setSimHistory}
-                        simulationOutput={simOutput}
-                        setSimulationOutput={setSimOutput}
-                        isLoading={isLoading}
-                        setIsLoading={setIsLoading}
-                    />
-                );
             case 'content-generator':
                 return (
                     <AIContentGeneratorView
@@ -754,7 +754,7 @@ export default function Home() {
                         finalizedIdea={finalizedIdea}
                         dragOverId={dragOverId}
                         formData={ideaFormData}
-                        setFormData={setIdeaFormData}
+                        setFormData={setFormData}
                         handleGenerateIdeas={handleGenerateIdeas}
                         handleAction={handleAction}
                         // Drag and drop is being replaced, but we'll keep the props for now
@@ -805,9 +805,7 @@ export default function Home() {
                 </CardHeader>
                 <CardContent>
                     <nav className="space-y-2">
-                        <NavItem icon={<Users className="h-5 w-5" />} label="AI Mentor" subtext="Career guidance & chat" active={activeView === 'mentor'} onClick={() => handleViewChange('mentor')} />
-                        <NavItem icon={<Briefcase className="h-5 w-5" />} label="Mock Interview" subtext="Practice for interviews" active={activeView === 'mock-interview'} onClick={() => handleViewChange('mock-interview')} />
-                        <NavItem icon={<Building className="h-5 w-5" />} label="Business Simulator" subtext="Test your startup ideas" active={activeView === 'business-simulator'} onClick={() => handleViewChange('business-simulator')} />
+                        <NavItem icon={<Users className="h-5 w-5" />} label="AI Mentor" subtext="Guidance, interviews, startups" active={activeView === 'mentor'} onClick={() => handleViewChange('mentor')} />
                         <NavItem icon={<BookOpen className="h-5 w-5" />} label="AI Tutor" subtext="Personalized learning" active={activeView === 'tutor'} onClick={() => handleViewChange('tutor')} />
                         <NavItem icon={<Map className="h-5 w-5" />} label="AI Roadmap" subtext="Career pathing" active={activeView === 'roadmap'} onClick={() => handleViewChange('roadmap')} />
                         <NavItem icon={<FileText className="h-5 w-5" />} label="Content Generator" subtext="Generate text content" active={activeView === 'content-generator'} onClick={() => handleViewChange('content-generator')} />

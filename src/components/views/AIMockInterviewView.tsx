@@ -9,6 +9,7 @@ import { Briefcase, FileText, Loader, Paperclip, Send, User, Bot, Mic, Video } f
 import type { TutorChatHistory } from '@/app/page';
 import { useToast } from "@/hooks/use-toast";
 import { mockInterview } from '@/ai/flows/mock-interview-flow';
+import { Label } from '@/components/ui/label';
 
 const SetupView = ({ onStart, isLoading, jobDescription, setJobDescription, resumeText, setResumeText, resumeFileName, setResumeFileName }) => {
   const { toast } = useToast();
@@ -177,20 +178,7 @@ const AIMockInterviewView: React.FC<AIMockInterviewViewProps> = ({
 
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex justify-between items-start">
-            <div>
-                <h2 className="text-lg font-bold text-gray-800 flex items-center">
-                    <span className="p-2 bg-indigo-100 text-indigo-500 rounded-lg mr-3"><Briefcase className="h-5 w-5" /></span>
-                    Mock Interview
-                </h2>
-                <p className="text-sm text-gray-500 ml-10">Practice your interview skills with an AI hiring manager.</p>
-            </div>
-            <button className="bg-blue-100 text-blue-700 text-xs font-bold px-3 py-1 rounded-full">10 XP per interview</button>
-        </div>
-      </CardHeader>
-      <CardContent>
+    <div className="animate-in fade-in">
         {!isSessionActive ? (
             <SetupView
                 onStart={startInterview}
@@ -209,8 +197,7 @@ const AIMockInterviewView: React.FC<AIMockInterviewViewProps> = ({
                 isLoading={isLoading}
             />
         )}
-      </CardContent>
-    </Card>
+      </div>
   );
 };
 

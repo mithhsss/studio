@@ -148,27 +148,13 @@ const AIBusinessSimulatorView: React.FC<AIBusinessSimulatorViewProps> = ({
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex justify-between items-start">
-            <div>
-                <h2 className="text-lg font-bold text-gray-800 flex items-center">
-                    <span className="p-2 bg-red-100 text-red-500 rounded-lg mr-3"><Building className="h-5 w-5" /></span>
-                    Business Simulator
-                </h2>
-                <p className="text-sm text-gray-500 ml-10">Test your entrepreneurial spirit.</p>
-            </div>
-            <button className="bg-blue-100 text-blue-700 text-xs font-bold px-3 py-1 rounded-full">15 XP per simulation</button>
-        </div>
-      </CardHeader>
-      <CardContent>
+    <div className="animate-in fade-in">
         {!simulationOutput ? (
           <ConfigView onStart={handleStartSimulation} isLoading={isLoading} />
         ) : (
           <SimulationView simulationOutput={simulationOutput} onMakeChoice={handleMakeChoice} isLoading={isLoading} />
         )}
-      </CardContent>
-    </Card>
+    </div>
   );
 };
 
