@@ -1,7 +1,9 @@
 
 'use server';
 /**
- * @fileOverview A Genkit flow for generating a personalized learning roadmap as a graph.
+ * @fileOverview A Genkit flow for generating a personalized learning roadmap.
+ * This flow now focuses ONLY on generating the textual content of the roadmap.
+ * The visual graph is generated on the client-side from this data.
  */
 
 import {ai} from '@/ai/genkit';
@@ -17,11 +19,13 @@ const prompt = ai.definePrompt({
   name: 'generateRoadmapPrompt',
   input: {schema: GenerateRoadmapInputSchema},
   output: {schema: GenerateRoadmapOutputSchema},
-  prompt: `You are an expert AI Career Coach and Learning Strategist. Your task is to generate a comprehensive, personalized learning roadmap for a user, comprising both a visual graph and a detailed text plan.
+  prompt: `You are an expert AI Career Coach and Learning Strategist. Your task is to generate a comprehensive, personalized learning plan.
 
-The output must be a single, valid JSON object containing two main parts:
-1.  A visual graph representation ('nodes' and 'edges') for the react-flow library.
-2.  A detailed, stage-by-stage breakdown of the learning plan ('detailedStages').
+The output must be a single, valid JSON object containing:
+1.  A detailed, stage-by-stage breakdown of the learning plan ('detailedStages').
+2.  Final recommendations: 'portfolioProjects', 'communities', and 'careerTips'.
+
+**DO NOT** generate 'nodes' or 'edges' for a visual graph. The visual graph will be created from the 'detailedStages' you provide.
 
 **User Profile:**
 - **Goal:** {{{goal}}}
@@ -34,19 +38,7 @@ The output must be a single, valid JSON object containing two main parts:
 
 **Instructions for JSON Generation:**
 
-**Part 1: React Flow Graph ('nodes' and 'edges')**
-- Create a clear, hierarchical layout with ample spacing.
-- **Vertical Spine:** Design a central vertical spine with fixed phases. Start with 'Basics', move to 'Intermediate', then 'Advanced', and end with 'Future Scope'. These should not be renamed. Position them vertically with a consistent x-coordinate (e.g., x: 0) and significant vertical spacing (e.g., y: 0, y: 400, y: 800, y: 1200).
-- **Branching Topics:** From each phase on the spine, create branches for main topics. Position these with a large horizontal offset (e.g., x: -350 or x: 350).
-- **Sub-Topics:** From each main topic, create smaller branches for specific skills or technologies. These can also have sub-sub-topics if a concept is complex.
-- **Node IDs:** Use a clear and logical ID system (e.g., 'spine-1', 'topic-1-1', 'subtopic-1-1-1').
-- **Positioning:** Position nodes logically. The spine should be vertical. Branches should extend horizontally. Use generous spacing (e.g., 150-200 units) between sibling nodes.
-- **Node Data:**
-    - Every node must have an 'id', 'type' (set to 'roadmapNode'), 'data' (with a 'label'), and a 'position' ({x, y}).
-    - For sub-topic and sub-sub-topic nodes, you MUST add a short, two-line 'description' field inside the 'data' object that summarizes the concept.
-- **Edges:** Every edge must have an 'id' (e.g., 'e-spine-1-topic-1-1'), 'source', and 'target'.
-
-**Part 2: Detailed Stages ('detailedStages')**
+**Part 1: Detailed Stages ('detailedStages')**
 - Dynamically determine the number of stages based on the user's goal and timeline. A 3-month timeline should have more stages than a 1-month timeline.
 - For each stage:
     - **stage**: The stage number (e.g., 1).
@@ -58,7 +50,7 @@ The output must be a single, valid JSON object containing two main parts:
         - Each resource object must have a 'name', 'url', and a 'reason' it's recommended.
     - **estimatedDuration**: An estimate like "1 week" or "10 days".
 
-**Part 3: Final Recommendations (in the root of the JSON)**
+**Part 2: Final Recommendations (in the root of the JSON)**
 - **portfolioProjects**: Provide 2-3 project ideas that would be suitable for a portfolio.
 - **communities**: Suggest 2-3 online communities or forums.
 - **careerTips**: Give advice on next steps after completing the roadmap (e.g., certifications, job search strategies).

@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { Map, Zap, Target, Clock, ArrowRight, X, Loader, Radio, BookOpen, Briefcase, Users, Award, ExternalLink, Star } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -164,11 +164,69 @@ const BlueprintForm = ({ formData, setFormData, onGenerate, isLoading }: {
 
 // --- ROADMAP VIEW COMPONENT ---
 const RoadmapViewInternal = ({ roadmapData, onBack }: { roadmapData: GenerateRoadmapOutput, onBack: () => void }) => {
-    const [nodes, setNodes, onNodesChange] = useNodesState(roadmapData.nodes as Node[]);
-    const [edges, setEdges, onEdgesChange] = useEdgesState(roadmapData.edges as Edge[]);
+    const [nodes, setNodes, onNodesChange] = useNodesState([]);
+    const [edges, setEdges, onEdgesChange] = useEdgesState([]);
     const { toast } = useToast();
     const printRef = useRef<HTMLDivElement>(null);
 
+    useEffect(() => {
+        const generateFlowFromPlan = (plan: GenerateRoadmapOutput) => {
+            const newNodes: Node[] = [];
+            const newEdges: Edge[] = [];
+            let yPos = 0;
+
+            if (!plan.detailedStages) return;
+
+            plan.detailedStages.forEach((stage, stageIndex) => {
+                const stageId = `stage-${stage.stage}`;
+                newNodes.push({
+                    id: stageId,
+                    type: 'roadmapNode',
+                    data: { label: stage.title },
+                    position: { x: 400, y: yPos },
+                    style: { fontWeight: 'bold', width: 200 },
+                });
+
+                if (stageIndex > 0) {
+                    const prevStageId = `stage-${plan.detailedStages[stageIndex - 1].stage}`;
+                    newEdges.push({
+                        id: `e-${prevStageId}-${stageId}`,
+                        source: prevStageId,
+                        target: stageId,
+                        type: 'smoothstep',
+                    });
+                }
+
+                stage.subtopics.forEach((subtopic, subIndex) => {
+                    const subtopicId = `${stageId}-sub-${subIndex}`;
+                    const xPos = 200 + (subIndex * 250);
+                    newNodes.push({
+                        id: subtopicId,
+                        type: 'roadmapNode',
+                        data: { label: subtopic.title, description: subtopic.description },
+                        position: { x: xPos, y: yPos + 150 },
+                    });
+                    newEdges.push({
+                        id: `e-${stageId}-${subtopicId}`,
+                        source: stageId,
+                        target: subtopicId,
+                        type: 'smoothstep',
+                        animated: true,
+                    });
+                });
+
+                yPos += 350;
+            });
+
+            setNodes(newNodes);
+            setEdges(newEdges);
+        };
+
+        if (roadmapData) {
+            generateFlowFromPlan(roadmapData);
+        }
+    }, [roadmapData, setNodes, setEdges]);
+    
     const onConnect = useCallback(
         (params: Edge) => setEdges((eds) => addEdge(params, eds)),
         [setEdges],

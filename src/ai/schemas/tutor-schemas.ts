@@ -155,11 +155,12 @@ const CommunitySchema = z.object({
 
 
 export const GenerateRoadmapOutputSchema = z.object({
-    nodes: z.array(ReactFlowNodeSchema).describe("An array of nodes for the React Flow graph visualization."),
-    edges: z.array(ReactFlowEdgeSchema).describe("An array of edges connecting the nodes for the React Flow graph."),
     detailedStages: z.array(RoadmapStageSchema).describe("An array of detailed, stage-by-stage learning plans."),
     portfolioProjects: z.array(PortfolioProjectSchema).describe("A list of 2-3 project ideas to showcase their new skills."),
     communities: z.array(CommunitySchema).describe("A list of 2-3 relevant online communities, forums, or networking platforms."),
     careerTips: z.string().describe("Advice on certifications or career steps to take after completing the roadmap."),
+    // The 'nodes' and 'edges' are now optional as they will be generated on the client.
+    nodes: z.array(ReactFlowNodeSchema).optional().describe("An array of nodes for the React Flow graph visualization."),
+    edges: z.array(ReactFlowEdgeSchema).optional().describe("An array of edges connecting the nodes for the React Flow graph."),
 });
 export type GenerateRoadmapOutput = z.infer<typeof GenerateRoadmapOutputSchema>;
