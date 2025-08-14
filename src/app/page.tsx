@@ -2,7 +2,7 @@
 
 "use client";
 import React, { useState, useEffect, useRef } from 'react';
-import { BookOpen, Map, Users, Code, Plus, Sparkles, BrainCircuit, FileText, Lightbulb, Bot, Package, WandSparkles, Wind, Hash, TrendingUp, Award, BarChart, Rocket } from 'lucide-react';
+import { BookOpen, Map, Users, Code, Plus, Sparkles, BrainCircuit, FileText, Lightbulb, Bot, Package, WandSparkles, Wind, Hash, TrendingUp, Award, BarChart, Rocket, Briefcase, Building } from 'lucide-react';
 import { Chart } from 'chart.js/auto';
 import { useToast } from "@/hooks/use-toast";
 import { Button } from '@/components/ui/button';
@@ -18,11 +18,11 @@ import { refineContent } from '@/ai/flows/refine-content-flow';
 import { chatWithIdea } from '@/ai/flows/chat-with-idea-flow';
 import { combineIdeas } from '@/ai/flows/combine-ideas-flow';
 import { expandIdea } from '@/ai/flows/expand-idea-flow';
-import { generateRoadmap, type GenerateRoadmapOutput } from '@/ai/flows/generate-roadmap-flow';
-
+import { generateRoadmap } from '@/ai/flows/generate-roadmap-flow';
 
 import type { GenerateIdeasInput, Idea, ExpandIdeaOutput } from '@/ai/schemas/idea-generation-schemas';
-import type { QuizQuestion, EvaluateQuizOutput, GenerateRoadmapInput } from '@/ai/schemas/tutor-schemas';
+import type { GenerateRoadmapOutput, GenerateRoadmapInput, QuizQuestion, EvaluateQuizOutput } from '@/ai/schemas/tutor-schemas';
+import type { BusinessSimulationOutput } from '@/ai/schemas/business-simulation-schemas';
 
 
 import AITutorView from '@/components/views/AITutorView';
@@ -32,10 +32,13 @@ import AIContentGeneratorView from '@/components/views/AIContentGeneratorView';
 import AIIdeaGeneratorView from '@/components/views/AIIdeaGeneratorView';
 import AICoderView from '@/components/views/AICoderView';
 import DefaultView from '@/components/views/DefaultView';
+import AIMockInterviewView from '@/components/views/AIMockInterviewView';
+import AIBusinessSimulatorView from '@/components/views/AIBusinessSimulatorView';
 
 // --- TYPE DEFINITIONS --- //
 
-export type ActiveView = 'tutor' | 'roadmap' | 'mentor' | 'coder' | 'content-generator' | 'idea-generator' | null;
+export type ActiveView = 'tutor' | 'roadmap' | 'mentor' | 'coder' | 'content-generator' | 'idea-generator' | 'mock-interview' | 'business-simulator' | null;
+export type MentorMode = 'chat' | 'interview_prep';
 export type ContentGeneratorStep = 'idea' | 'outline' | 'draft';
 export type IdeaGeneratorStep = 'input' | 'results' | 'finalized';
 export type CoderStep = 'blueprint' | 'workbench';
@@ -87,7 +90,7 @@ interface RecommendedToolProps {
   icon: React.ReactNode;
   title: string;
   description: string;
-  color: 'yellow' | 'green' | 'blue' | 'purple';
+  color: 'yellow' | 'green' | 'blue' | 'purple' | 'red' | 'cyan';
 }
 
 const userStats = {
@@ -246,13 +249,17 @@ const RecommendedTool: React.FC<RecommendedToolProps> = ({ icon, title, descript
         yellow: 'border-yellow-400 bg-yellow-50',
         green: 'border-green-400 bg-green-50',
         blue: 'border-blue-400 bg-blue-50',
-        purple: 'border-purple-400 bg-purple-50'
+        purple: 'border-purple-400 bg-purple-50',
+        red: 'border-red-400 bg-red-50',
+        cyan: 'border-cyan-400 bg-cyan-50'
     };
     const iconColorClasses = {
         yellow: 'text-yellow-600',
         green: 'text-green-600',
         blue: 'text-blue-600',
-        purple: 'text-purple-600'
+        purple: 'text-purple-600',
+        red: 'text-red-600',
+        cyan: 'text-cyan-600'
     };
     
     return (
@@ -279,13 +286,19 @@ const RecommendedToolsSection = () => (
                 <RecommendedTool 
                     icon={<Users />}
                     title="AI Mentor"
-                    description="Work with an AI mentor specialized in UX to design and advance your career."
+                    description="Get career advice or practice for an interview with an AI expert."
                     color="yellow"
+                />
+                 <RecommendedTool
+                    icon={<Building />}
+                    title="Business Simulator"
+                    description="Test your entrepreneurial ideas in a dynamic market simulation."
+                    color="red"
                 />
                 <RecommendedTool 
                     icon={<Code />}
                     title="AI Coder"
-                    description="Leverage the power of AI to complement your UX design skills and post your entries."
+                    description="Leverage the power of AI to build and refine code components."
                     color="green"
                 />
                 <RecommendedTool
@@ -300,6 +313,12 @@ const RecommendedToolsSection = () => (
                     description="Brainstorm new ideas for projects and career opportunities."
                     color="purple"
                 />
+                <RecommendedTool
+                    icon={<Map />}
+                    title="AI Roadmap"
+                    description="Visualize your career path and learning journey with a custom roadmap."
+                    color="cyan"
+                />
             </div>
         </CardContent>
     </Card>
@@ -312,12 +331,27 @@ export default function Home() {
     const { toast } = useToast();
     const [activeView, setActiveView] = useState<ActiveView>(null);
     const [userInput, setUserInput] = useState('');
-    const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
-    const [roadmapData, setRoadmapData] = useState<GenerateRoadmapOutput | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [resumeText, setResumeText] = useState<string | null>(null);
-    const [resumeFileName, setResumeFileName] = useState<string | null>(null);
+
+    // AI Mentor State
+    const [mentorChatHistory, setMentorChatHistory] = useState<ChatMessage[]>([]);
+    const [mentorResumeText, setMentorResumeText] = useState<string | null>(null);
+    const [mentorResumeFileName, setMentorResumeFileName] = useState<string | null>(null);
+    const [mentorMode, setMentorMode] = useState<MentorMode>('chat');
+    
+    // Mock Interview State
+    const [interviewChatHistory, setInterviewChatHistory] = useState<TutorChatHistory[]>([]);
+    const [interviewJobDesc, setInterviewJobDesc] = useState('');
+    const [interviewResumeText, setInterviewResumeText] = useState('');
+    const [interviewResumeFileName, setInterviewResumeFileName] = useState('');
+
+    // Business Simulator State
+    const [simHistory, setSimHistory] = useState<TutorChatHistory[]>([]);
+    const [simOutput, setSimOutput] = useState<BusinessSimulationOutput | null>(null);
+
+    // AI Roadmap State
+    const [roadmapData, setRoadmapData] = useState<GenerateRoadmapOutput | null>(null);
 
     // State for Content Generator
     const [contentGeneratorStep, setContentGeneratorStep] = useState<ContentGeneratorStep>('idea');
@@ -381,86 +415,6 @@ export default function Home() {
 
     const handleViewChange = (view: ActiveView) => {
         setActiveView(view);
-        setChatHistory([]);
-        setUserInput('');
-        setError(null);
-        setResumeText(null);
-        setResumeFileName(null);
-    };
-
-    const handleResumeUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (file) {
-            setResumeFileName(file.name);
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const text = e.target?.result as string;
-                setResumeText(text);
-                toast({
-                  title: "Resume Uploaded",
-                  description: `${file.name} has been successfully uploaded and read.`,
-                })
-            };
-            reader.readAsText(file);
-        }
-    };
-
-    const callAIFlow = async (prompt: string): Promise<string | null> => {
-        setIsLoading(true);
-        setError(null);
-        try {
-            const result = await answerCareerQuestion({ question: prompt });
-            return result.answer;
-        } catch (err: any) {
-            console.error("AI flow failed:", err);
-            setError(err.message || "Failed to get a response from the AI. Please try again.");
-            toast({
-              variant: "destructive",
-              title: "Oh no! Something went wrong.",
-              description: "There was a problem with the AI response. Please try again.",
-            });
-            return null;
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const handleMentorSubmit = async (prompt: string) => {
-        if (!prompt.trim()) return;
-
-        const newHistory: ChatMessage[] = [...chatHistory, { role: 'user', text: prompt }];
-        setChatHistory(newHistory);
-        setUserInput('');
-
-        let responseText: string | null = null;
-
-        if (activeView === 'mentor' && resumeText) {
-             setIsLoading(true);
-             setError(null);
-             try {
-                const result = await analyzeResume({ question: prompt, resumeText });
-                responseText = result.analysis;
-             } catch (err: any) {
-                 console.error("AI flow failed:", err);
-                 setError(err.message || "Failed to get a response from the AI. Please try again.");
-                 toast({
-                   variant: "destructive",
-                   title: "Oh no! Something went wrong.",
-                   description: "There was a problem with the AI response. Please try again.",
-                 });
-             } finally {
-                setIsLoading(false);
-             }
-        } else {
-            responseText = await callAIFlow(prompt);
-        }
-
-
-        if (responseText) {
-            setChatHistory([...newHistory, { role: 'model', text: responseText }]);
-        } else {
-             setChatHistory([...newHistory, { role: 'model', text: "Sorry, I couldn't get a response. Please try again." }]);
-        }
     };
 
     const handleGenerateRoadmap = async (formData: GenerateRoadmapInput) => {
@@ -735,18 +689,44 @@ export default function Home() {
             case 'mentor':
                  return (
                     <AIMentorView
-                        chatHistory={chatHistory}
+                        chatHistory={mentorChatHistory}
+                        setChatHistory={setMentorChatHistory}
                         isLoading={isLoading}
                         userInput={userInput}
                         setUserInput={setUserInput}
-                        handleMentorSubmit={handleMentorSubmit}
-                        handleResumeUpload={handleResumeUpload}
-                        resumeFileName={resumeFileName}
-                        setResumeText={setResumeText}
-                        setResumeFileName={setResumeFileName}
+                        resumeText={mentorResumeText}
+                        setResumeText={setMentorResumeText}
+                        resumeFileName={mentorResumeFileName}
+                        setResumeFileName={setMentorResumeFileName}
                         error={error}
                     />
                  );
+            case 'mock-interview':
+                return (
+                    <AIMockInterviewView
+                        chatHistory={interviewChatHistory}
+                        setChatHistory={setInterviewChatHistory}
+                        isLoading={isLoading}
+                        setIsLoading={setIsLoading}
+                        jobDescription={interviewJobDesc}
+                        setJobDescription={setInterviewJobDesc}
+                        resumeText={interviewResumeText}
+                        setResumeText={setInterviewResumeText}
+                        resumeFileName={interviewResumeFileName}
+                        setResumeFileName={setInterviewResumeFileName}
+                    />
+                );
+            case 'business-simulator':
+                return (
+                    <AIBusinessSimulatorView
+                        history={simHistory}
+                        setHistory={setSimHistory}
+                        simulationOutput={simOutput}
+                        setSimulationOutput={setSimOutput}
+                        isLoading={isLoading}
+                        setIsLoading={setIsLoading}
+                    />
+                );
             case 'content-generator':
                 return (
                     <AIContentGeneratorView
@@ -774,7 +754,7 @@ export default function Home() {
                         finalizedIdea={finalizedIdea}
                         dragOverId={dragOverId}
                         formData={ideaFormData}
-                        setFormData={setFormData}
+                        setFormData={setIdeaFormData}
                         handleGenerateIdeas={handleGenerateIdeas}
                         handleAction={handleAction}
                         // Drag and drop is being replaced, but we'll keep the props for now
@@ -825,9 +805,11 @@ export default function Home() {
                 </CardHeader>
                 <CardContent>
                     <nav className="space-y-2">
+                        <NavItem icon={<Users className="h-5 w-5" />} label="AI Mentor" subtext="Career guidance & chat" active={activeView === 'mentor'} onClick={() => handleViewChange('mentor')} />
+                        <NavItem icon={<Briefcase className="h-5 w-5" />} label="Mock Interview" subtext="Practice for interviews" active={activeView === 'mock-interview'} onClick={() => handleViewChange('mock-interview')} />
+                        <NavItem icon={<Building className="h-5 w-5" />} label="Business Simulator" subtext="Test your startup ideas" active={activeView === 'business-simulator'} onClick={() => handleViewChange('business-simulator')} />
                         <NavItem icon={<BookOpen className="h-5 w-5" />} label="AI Tutor" subtext="Personalized learning" active={activeView === 'tutor'} onClick={() => handleViewChange('tutor')} />
                         <NavItem icon={<Map className="h-5 w-5" />} label="AI Roadmap" subtext="Career pathing" active={activeView === 'roadmap'} onClick={() => handleViewChange('roadmap')} />
-                        <NavItem icon={<Users className="h-5 w-5" />} label="AI Mentor" subtext="Guidance and behavior" active={activeView === 'mentor'} onClick={() => handleViewChange('mentor')} />
                         <NavItem icon={<FileText className="h-5 w-5" />} label="Content Generator" subtext="Generate text content" active={activeView === 'content-generator'} onClick={() => handleViewChange('content-generator')} />
                         <NavItem icon={<Lightbulb className="h-5 w-5" />} label="Idea Generator" subtext="Brainstorm new ideas" active={activeView === 'idea-generator'} onClick={() => handleViewChange('idea-generator')} />
                         <NavItem icon={<Code className="h-5 w-5" />} label="AI Coder" subtext="Coding Companion" active={activeView === 'coder'} onClick={() => handleViewChange('coder')} />
