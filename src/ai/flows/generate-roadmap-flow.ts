@@ -35,22 +35,24 @@ const prompt = ai.definePrompt({
     - If the user is advanced, skip beginner stages and focus on depth.
     - If the timeline is short, compress topics into fewer, more intensive stages.
 2.  **For Each Stage, Provide:**
-    - **Stage Number:** A number representing the week (e.g., 1, 2).
-    - **Stage Title:** A clear, customized name for the stage.
-    - **Objective:** A concise statement of the learning goals for this stage.
-    - **Key Subtopics:** Generate a list of AT LEAST 3-4 detailed subtopics. For each subtopic:
-        - **Title & Description:** A clear title and a descriptive paragraph.
-        - **Free Resources:** A list of free resources (articles, videos, tutorials). For each, provide the name, a valid URL, and a brief reason why it's useful.
-        - **Premium Resources:** A list of premium resources (courses, books), if the user allows. Include name, URL, and justification.
-        - **Hands-On Project:** Suggest a practical project or exercise to apply the knowledge.
-    - **Estimated Duration:** Provide a time estimate (e.g., in weeks or days) based on the user's weekly time commitment.
+    - **stage:** A number representing the week (e.g., 1, 2).
+    - **title:** A clear, customized name for the stage.
+    - **objective:** A concise statement of the learning goals for this stage.
+    - **subtopics:** Generate a list of AT LEAST 3-4 detailed subtopics. For each subtopic:
+        - **title & description:** A clear title and a descriptive paragraph.
+        - **freeResources:** A list of free resources (articles, videos, tutorials). For each, provide the name, a valid URL, and a brief reason why it's useful.
+        - **premiumResources:** A list of premium resources (courses, books), if the user allows. Include name, URL, and justification.
+        - **project:** Suggest a practical project or exercise to apply the knowledge.
+    - **estimatedDuration:** Provide a time estimate (e.g., in weeks or days) based on the user's weekly time commitment.
 3.  **Final Roadmap Output:**
-    - Conclude the roadmap with the following sections in the main roadmap object:
-        - **Portfolio Project Ideas:** Suggest 2-3 project ideas to showcase their new skills.
-        - **Community & Networking:** Recommend 2-3 relevant online communities, forums, or networking platforms with their URLs.
-        - **Career & Certification Tips:** Offer advice on certifications or career steps to take after completing the roadmap.
+    - The final JSON output must contain a single 'roadmap' object.
+    - This 'roadmap' object MUST contain four properties: 'stages', 'portfolioProjects', 'communities', and 'careerTips'.
+    - **stages**: This MUST be an array of stage objects, as described above. This is the most critical part.
+    - **portfolioProjects**: Suggest 2-3 project ideas to showcase their new skills.
+    - **communities**: Recommend 2-3 relevant online communities, forums, or networking platforms with their URLs.
+    - **careerTips**: Offer advice on certifications or career steps to take after completing the roadmap.
 
-Return the entire plan in the specified structured JSON format.`,
+Return the entire plan in the specified structured JSON format. Ensure all required fields, especially the 'stages' array, are populated correctly.`,
 });
 
 const generateRoadmapFlow = ai.defineFlow(
