@@ -103,6 +103,7 @@ const ReactFlowNodeSchema = z.object({
     type: z.string().default('roadmapNode'),
     data: z.object({
         label: z.string(),
+        description: z.string().optional().describe("A brief, two-line description for sub-topics."),
     }),
     position: z.object({
         x: z.number(),

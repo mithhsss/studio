@@ -26,11 +26,14 @@ import ReactFlow, {
 import 'reactflow/dist/style.css';
 
 // --- CUSTOM NODE COMPONENT ---
-const RoadmapNode = ({ data }: { data: { label: string } }) => {
+const RoadmapNode = ({ data }: { data: { label: string; description?: string } }) => {
     return (
-        <div className="bg-indigo-100 border-2 border-indigo-400 text-indigo-800 rounded-lg shadow-md px-4 py-2 text-center font-semibold">
+        <div className="bg-indigo-100 border-2 border-indigo-400 text-indigo-800 rounded-lg shadow-md px-4 py-2 text-center w-48">
             <Handle type="target" position={Position.Top} className="w-2 h-2 !bg-indigo-500" />
-            <div>{data.label}</div>
+            <div className="font-semibold text-sm">{data.label}</div>
+            {data.description && (
+                <div className="text-xs text-indigo-700/80 mt-1">{data.description}</div>
+            )}
             <Handle type="source" position={Position.Bottom} className="w-2 h-2 !bg-indigo-500" />
             <Handle type="source" position={Position.Left} className="w-2 h-2 !bg-indigo-500" />
             <Handle type="source" position={Position.Right} className="w-2 h-2 !bg-indigo-500" />
