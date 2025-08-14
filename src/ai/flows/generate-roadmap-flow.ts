@@ -35,13 +35,14 @@ The output must be a single, valid JSON object containing two main parts:
 **Instructions for JSON Generation:**
 
 **Part 1: React Flow Graph ('nodes' and 'edges')**
-- Design a visual roadmap with a main vertical spine of 4-6 core concept nodes.
-- For each core node, create 1-2 major topic branches that logically extend from it.
-- For each major topic branch, create 2-4 specific skill or technology sub-nodes.
-- Use a clear and logical ID system for nodes (e.g., '1', '1-1', '1-1-1').
-- Position nodes logically (e.g., main spine with a consistent x-coordinate, branches extending horizontally).
+- Create a clear, hierarchical layout.
+- **Vertical Spine:** Design a central vertical spine with fixed phases. Start with 'Basics', move to 'Intermediate', then 'Advanced', and end with 'Future Scope'. These should not be renamed. Position them vertically with a consistent x-coordinate (e.g., x: 0).
+- **Branching Topics:** From each phase on the spine, create branches for main topics.
+- **Sub-Topics:** From each main topic, create smaller branches for specific skills or technologies. These can also have sub-sub-topics if a concept is complex.
+- **Node IDs:** Use a clear and logical ID system (e.g., 'spine-1', 'topic-1-1', 'subtopic-1-1-1').
+- **Positioning:** Position nodes logically. The spine should be vertical. Branches should extend horizontally from the spine.
 - Every node must have an 'id' (string), 'type' (set to 'roadmapNode'), 'data' (with a 'label' string), and a 'position' ({x, y}).
-- Every edge must have an 'id' (e.g., 'e-1-2'), 'source', and 'target'.
+- Every edge must have an 'id' (e.g., 'e-spine-1-topic-1-1'), 'source', and 'target'.
 
 **Part 2: Detailed Stages ('detailedStages')**
 - Dynamically determine the number of stages based on the user's goal and timeline. A 3-month timeline should have more stages than a 1-month timeline.
