@@ -122,8 +122,43 @@ const ReactFlowEdgeSchema = z.object({
     }).optional(),
 });
 
+const ResourceSchema = z.object({
+  name: z.string().describe('The name or title of the resource.'),
+  url: z.string().describe('A valid URL link to the resource.'),
+  reason: z.string().describe('A brief justification for why this resource is being recommended.'),
+});
+
+const RoadmapStageSchema = z.object({
+  stage: z.number().describe('The stage number or week in the roadmap (e.g., 1, 2, 3).'),
+  title: z.string().describe('A clear, customized name for the stage (e.g., "Week 1: Foundations of UX").'),
+  objective: z.string().describe('A concise statement of the learning goals for this stage.'),
+  subtopics: z.array(z.object({
+      title: z.string().describe('The title of this specific subtopic.'),
+      description: z.string().describe('A paragraph explaining the subtopic.'),
+      freeResources: z.array(ResourceSchema).describe('A list of free resources for learning this subtopic.'),
+      premiumResources: z.array(ResourceSchema).optional().describe('A list of premium (paid) resources for this subtopic.'),
+      project: z.string().describe('A hands-on practice project or exercise to apply the knowledge from this subtopic.'),
+    })).min(3).describe('An array of at least 3-4 detailed subtopics to cover in this stage.'),
+  estimatedDuration: z.string().describe("A time estimate for this stage (e.g., \"1 week\", \"10 days\") based on the user's weekly time commitment."),
+});
+
+const PortfolioProjectSchema = z.object({
+    name: z.string().describe("The name of the portfolio project."),
+    description: z.string().describe("A brief description of the project."),
+});
+
+const CommunitySchema = z.object({
+    name: z.string().describe("The name of the community or platform."),
+    url: z.string().describe("A valid URL to the community."),
+});
+
+
 export const GenerateRoadmapOutputSchema = z.object({
-    nodes: z.array(ReactFlowNodeSchema),
-    edges: z.array(ReactFlowEdgeSchema),
+    nodes: z.array(ReactFlowNodeSchema).describe("An array of nodes for the React Flow graph visualization."),
+    edges: z.array(ReactFlowEdgeSchema).describe("An array of edges connecting the nodes for the React Flow graph."),
+    detailedStages: z.array(RoadmapStageSchema).describe("An array of detailed, stage-by-stage learning plans."),
+    portfolioProjects: z.array(PortfolioProjectSchema).describe("A list of 2-3 project ideas to showcase their new skills."),
+    communities: z.array(CommunitySchema).describe("A list of 2-3 relevant online communities, forums, or networking platforms."),
+    careerTips: z.string().describe("Advice on certifications or career steps to take after completing the roadmap."),
 });
 export type GenerateRoadmapOutput = z.infer<typeof GenerateRoadmapOutputSchema>;

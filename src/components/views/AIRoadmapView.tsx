@@ -1,10 +1,15 @@
 
-import React, { useState, useRef, useCallback } from 'react';
-import { Map, Zap, Target, Clock, ArrowRight, X, Loader, Radio } from 'lucide-react';
+import React, { useState, useCallback, useRef } from 'react';
+import { Map, Zap, Target, Clock, ArrowRight, X, Loader, Radio, BookOpen, Briefcase, Users, Award, ExternalLink, Star } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import type { GenerateRoadmapInput, GenerateRoadmapOutput } from '@/ai/schemas/tutor-schemas';
+import { useToast } from "@/hooks/use-toast";
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 import ReactFlow, {
     useNodesState,
@@ -23,12 +28,12 @@ import 'reactflow/dist/style.css';
 // --- CUSTOM NODE COMPONENT ---
 const RoadmapNode = ({ data }: { data: { label: string } }) => {
     return (
-        <div className="bg-yellow-200 border-2 border-black rounded-lg shadow-lg px-4 py-2 text-center font-sans">
-            <Handle type="target" position={Position.Top} className="w-2 h-2 !bg-blue-500" />
+        <div className="bg-indigo-100 border-2 border-indigo-400 text-indigo-800 rounded-lg shadow-md px-4 py-2 text-center font-semibold">
+            <Handle type="target" position={Position.Top} className="w-2 h-2 !bg-indigo-500" />
             <div>{data.label}</div>
-            <Handle type="source" position={Position.Bottom} className="w-2 h-2 !bg-blue-500" />
-            <Handle type="source" position={Position.Left} className="w-2 h-2 !bg-blue-500" />
-            <Handle type="source" position={Position.Right} className="w-2 h-2 !bg-blue-500" />
+            <Handle type="source" position={Position.Bottom} className="w-2 h-2 !bg-indigo-500" />
+            <Handle type="source" position={Position.Left} className="w-2 h-2 !bg-indigo-500" />
+            <Handle type="source" position={Position.Right} className="w-2 h-2 !bg-indigo-500" />
         </div>
     );
 };
@@ -75,7 +80,6 @@ const BlueprintForm = ({ formData, setFormData, onGenerate, isLoading }: {
       <p className="text-gray-500 mb-8">Provide the AI with a detailed profile for a truly personalized learning path.</p>
 
       <div className="space-y-6">
-        {/* Skills Input */}
         <div>
           <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2"><Zap size={16}/> Your Current Skills</label>
           <div className="border border-gray-300 rounded-lg">
@@ -104,13 +108,11 @@ const BlueprintForm = ({ formData, setFormData, onGenerate, isLoading }: {
           </div>
         </div>
 
-        {/* Goal Input */}
         <div>
           <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2"><Target size={16}/> Your Learning Goal or Desired Skills</label>
           <Input type="text" name="goal" value={formData.goal} onChange={handleInputChange} />
         </div>
 
-        {/* Learning Preferences */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
              <div>
                 <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2"><Clock size={16}/> Time Commitment</label>
@@ -161,31 +163,131 @@ const BlueprintForm = ({ formData, setFormData, onGenerate, isLoading }: {
 const RoadmapViewInternal = ({ roadmapData, onBack }: { roadmapData: GenerateRoadmapOutput, onBack: () => void }) => {
     const [nodes, setNodes, onNodesChange] = useNodesState(roadmapData.nodes as Node[]);
     const [edges, setEdges, onEdgesChange] = useEdgesState(roadmapData.edges as Edge[]);
+    const { toast } = useToast();
+    const printRef = useRef<HTMLDivElement>(null);
 
     const onConnect = useCallback(
         (params: Edge) => setEdges((eds) => addEdge(params, eds)),
         [setEdges],
     );
+    
+    const handleDownload = async () => {
+        const element = printRef.current;
+        if (!element) return;
+
+        toast({ title: 'Preparing Download', description: 'Generating PDF, this may take a moment...' });
+
+        const canvas = await html2canvas(element, { scale: 2, backgroundColor: '#ffffff' });
+        const data = canvas.toDataURL('image/png');
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        const imgProperties = pdf.getImageProperties(data);
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = (imgProperties.height * pdfWidth) / imgProperties.width;
+        
+        pdf.addImage(data, 'PNG', 0, 0, pdfWidth, pdfHeight);
+        pdf.save('ai-roadmap.pdf');
+    };
 
     return (
-        <div className="w-full h-[70vh]">
-            <div className="flex justify-end mb-4">
-                <Button onClick={onBack} variant="outline">Start Over</Button>
+        <div ref={printRef} className="bg-white p-4">
+            <div className="flex justify-between items-center mb-4">
+                <h2 className="text-2xl font-bold text-gray-800">Your Personalized Roadmap</h2>
+                 <div className="flex items-center gap-2">
+                    <Button onClick={handleDownload} variant="outline" size="sm">Download PDF</Button>
+                    <Button onClick={onBack} variant="outline" size="sm">Start Over</Button>
+                 </div>
             </div>
-            <ReactFlow
-                nodes={nodes}
-                edges={edges}
-                onNodesChange={onNodesChange}
-                onEdgesChange={onEdgesChange}
-                onConnect={onConnect}
-                nodeTypes={nodeTypes}
-                fitView
-                className="bg-gray-100 rounded-lg border"
-            >
-                <Controls />
-                <MiniMap nodeColor={(n) => '#FFD700'} />
-                <Background variant="dots" gap={12} size={1} />
-            </ReactFlow>
+            
+            {/* Graph View */}
+            <div className="w-full h-[60vh] border rounded-lg mb-8">
+                <ReactFlow
+                    nodes={nodes}
+                    edges={edges}
+                    onNodesChange={onNodesChange}
+                    onEdgesChange={onEdgesChange}
+                    onConnect={onConnect}
+                    nodeTypes={nodeTypes}
+                    fitView
+                    className="bg-gray-50/50"
+                >
+                    <Controls />
+                    <MiniMap nodeColor={(n) => '#a5b4fc'} />
+                    <Background variant="dots" gap={12} size={1} />
+                </ReactFlow>
+            </div>
+
+            {/* Detailed Stages View */}
+            <div>
+                 <h3 className="text-xl font-bold text-gray-800 mb-4">Detailed Learning Plan</h3>
+                 <Accordion type="single" collapsible className="w-full" defaultValue="item-0">
+                    {roadmapData.detailedStages.map((stage, index) => (
+                        <AccordionItem key={index} value={`item-${index}`}>
+                            <AccordionTrigger className="text-lg font-semibold hover:no-underline">
+                                <div className="flex items-center gap-4">
+                                    <span className="flex items-center justify-center w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 font-bold">{stage.stage}</span>
+                                    {stage.title}
+                                </div>
+                            </AccordionTrigger>
+                            <AccordionContent className="pl-12">
+                                <p className="font-semibold text-gray-700">Objective: <span className="font-normal text-gray-600">{stage.objective}</span></p>
+                                <p className="font-semibold text-gray-700 mt-1">Duration: <span className="font-normal text-gray-600">{stage.estimatedDuration}</span></p>
+
+                                <div className="mt-4 space-y-4">
+                                {stage.subtopics.map((sub, sIndex) => (
+                                    <div key={sIndex} className="p-4 bg-gray-50 rounded-lg border">
+                                        <h4 className="font-bold text-md">{sub.title}</h4>
+                                        <p className="text-sm text-gray-600 mt-1">{sub.description}</p>
+                                        
+                                        <h5 className="font-semibold text-sm mt-3 mb-1">Free Resources</h5>
+                                        {sub.freeResources.map((res, rIndex) => (
+                                            <a key={rIndex} href={res.url} target="_blank" rel="noopener noreferrer" className="text-sm text-indigo-600 hover:underline block truncate">{res.name}</a>
+                                        ))}
+
+                                        {sub.premiumResources && sub.premiumResources.length > 0 && (
+                                            <>
+                                                <h5 className="font-semibold text-sm mt-3 mb-1 flex items-center gap-1">Premium Resources <Star size={12} className="text-amber-400 fill-current" /></h5>
+                                                {sub.premiumResources.map((res, rIndex) => (
+                                                     <a key={rIndex} href={res.url} target="_blank" rel="noopener noreferrer" className="text-sm text-indigo-600 hover:underline block truncate">{res.name}</a>
+                                                ))}
+                                            </>
+                                        )}
+
+                                        <h5 className="font-semibold text-sm mt-3 mb-1">Practice Project</h5>
+                                        <p className="text-sm text-gray-600">{sub.project}</p>
+                                    </div>
+                                ))}
+                                </div>
+                            </AccordionContent>
+                        </AccordionItem>
+                    ))}
+                </Accordion>
+            </div>
+
+            {/* Final Sections */}
+            <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+                <Card>
+                    <CardHeader><CardContent className="flex items-center gap-3 p-0"><Briefcase className="text-green-500" /> <h3 className="font-bold">Portfolio Projects</h3></CardContent></CardHeader>
+                    <CardContent>
+                        <ul className="list-disc pl-5 text-sm space-y-1">
+                            {roadmapData.portfolioProjects.map((p, i) => <li key={i}><b>{p.name}:</b> {p.description}</li>)}
+                        </ul>
+                    </CardContent>
+                </Card>
+                 <Card>
+                    <CardHeader><CardContent className="flex items-center gap-3 p-0"><Users className="text-blue-500" /> <h3 className="font-bold">Communities</h3></CardContent></CardHeader>
+                    <CardContent>
+                         <ul className="list-disc pl-5 text-sm space-y-1">
+                            {roadmapData.communities.map((c, i) => <li key={i}><a href={c.url} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline">{c.name}</a></li>)}
+                        </ul>
+                    </CardContent>
+                </Card>
+                 <Card>
+                    <CardHeader><CardContent className="flex items-center gap-3 p-0"><Award className="text-yellow-500" /> <h3 className="font-bold">Career Tips</h3></CardContent></CardHeader>
+                    <CardContent>
+                        <p className="text-sm">{roadmapData.careerTips}</p>
+                    </CardContent>
+                </Card>
+            </div>
         </div>
     );
 };
@@ -224,23 +326,37 @@ export default function AIRoadmapView({
   }
 
   return (
-    <div className="w-full bg-white rounded-2xl p-6 sm:p-8">
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={roadmapData ? 'roadmap' : 'blueprint'}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -20 }}
-          transition={{ duration: 0.3 }}
-        >
-          {!roadmapData ? (
-            <BlueprintForm formData={formData} setFormData={setFormData} onGenerate={triggerAIGeneration} isLoading={isLoading} />
-          ) : (
-            <RoadmapViewInternal roadmapData={roadmapData} onBack={handleBackToBlueprint} />
-          )}
-        </motion.div>
-      </AnimatePresence>
-      {error && <p className="text-red-500 mt-4">{error}</p>}
-    </div>
+    <Card>
+      <CardHeader>
+        <div className="flex justify-between items-start">
+            <div>
+                <h2 className="text-lg font-bold text-gray-800 flex items-center">
+                    <span className="p-2 bg-indigo-100 text-indigo-500 rounded-lg mr-3"><Map className="h-5 w-5" /></span>
+                    AI Roadmap
+                </h2>
+                <p className="text-sm text-gray-500 ml-10">Your personalized career path, visualized.</p>
+            </div>
+             <button className="bg-blue-100 text-blue-700 text-xs font-bold px-3 py-1 rounded-full">20 XP per roadmap</button>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={roadmapData ? 'roadmap' : 'blueprint'}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+          >
+            {!roadmapData ? (
+              <BlueprintForm formData={formData} setFormData={setFormData} onGenerate={triggerAIGeneration} isLoading={isLoading} />
+            ) : (
+              <RoadmapViewInternal roadmapData={roadmapData} onBack={handleBackToBlueprint} />
+            )}
+          </motion.div>
+        </AnimatePresence>
+        {error && <p className="text-red-500 mt-4">{error}</p>}
+      </CardContent>
+    </Card>
   );
 }

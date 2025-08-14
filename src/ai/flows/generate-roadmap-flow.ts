@@ -17,54 +17,50 @@ const prompt = ai.definePrompt({
   name: 'generateRoadmapPrompt',
   input: {schema: GenerateRoadmapInputSchema},
   output: {schema: GenerateRoadmapOutputSchema},
-  prompt: `You are an expert AI Career Coach and Learning Strategist. Your task is to generate a visual learning roadmap as a graph for a user. The output must be a valid JSON object containing 'nodes' and 'edges' for the react-flow library.
+  prompt: `You are an expert AI Career Coach and Learning Strategist. Your task is to generate a comprehensive, personalized learning roadmap for a user.
+
+The output must be a single, valid JSON object containing two main parts:
+1.  A visual graph representation ('nodes' and 'edges') for the react-flow library.
+2.  A detailed, stage-by-stage breakdown of the learning plan ('detailedStages').
 
 **User Profile:**
 - **Goal:** {{{goal}}}
 - **Timeline:** {{{timeline}}}
-- **Current Skills:** {{#each technicalSkills}}{{{this}}}{{#unless @last}}, {{/unless}}{{/each}}
+- **Weekly Time Commitment:** {{{timePerWeek}}}
+- **Learning Style:** {{{learningStyle}}}
+- **Resource Preference:** {{{resourceType}}}
+- **Current Technical Skills:** {{#each technicalSkills}}{{{this}}}{{#unless @last}}, {{/unless}}{{/each}}
+- **Current Non-Technical Skills:** {{#each nonTechnicalSkills}}{{{this}}}{{#unless @last}}, {{/unless}}{{/each}}
 
-**Instructions:**
+**Instructions for JSON Generation:**
 
-1.  **Create a Core Path:**
-    - Design a main vertical spine of 4-6 core concept nodes. These are the major milestones (e.g., 'Foundations', 'Core Tools', 'Advanced Topics', 'Specialization').
-    - Assign sequential integer IDs (e.g., '1', '2', '3').
-    - Position them vertically with a consistent x-coordinate (e.g., x: 250) and increasing y-coordinates (e.g., y: 0, y: 200, y: 400).
-    - Create 'straight' edges to connect these core nodes sequentially.
+**Part 1: React Flow Graph ('nodes' and 'edges')**
+- Design a visual roadmap with a main vertical spine of 4-6 core concept nodes.
+- For each core node, create 1-2 major topic branches that logically extend from it.
+- For each major topic branch, create 2-4 specific skill or technology sub-nodes.
+- Use a clear and logical ID system for nodes (e.g., '1', '1-1', '1-1-1').
+- Position nodes logically (e.g., main spine with a consistent x-coordinate, branches extending horizontally).
+- Every node must have an 'id' (string), 'type' (set to 'roadmapNode'), 'data' (with a 'label' string), and a 'position' ({x, y}).
+- Every edge must have an 'id' (e.g., 'e-1-2'), 'source', and 'target'.
 
-2.  **Create Topic Branches:**
-    - For each core node, create 1-2 major topic branches that logically extend from it.
-    - These branch nodes should have IDs prefixed by their parent (e.g., '2-1', '2-2' for children of node '2').
-    - Position these branch nodes horizontally away from the main spine (e.g., x: 0 or x: 500).
-    - Connect the core node to its main branch nodes with an edge.
+**Part 2: Detailed Stages ('detailedStages')**
+- Dynamically determine the number of stages based on the user's goal and timeline. A 3-month timeline should have more stages than a 1-month timeline.
+- For each stage:
+    - **stage**: The stage number (e.g., 1).
+    - **title**: A descriptive title for the stage.
+    - **objective**: A clear goal for what the user will learn in this stage.
+    - **subtopics**: An array of AT LEAST 3-4 detailed subtopics.
+        - For each subtopic, provide: 'title', 'description', a 'project' idea, and 'freeResources' array.
+        - If the user allows premium resources, also include a 'premiumResources' array.
+        - Each resource object must have a 'name', 'url', and a 'reason' it's recommended.
+    - **estimatedDuration**: An estimate like "1 week" or "10 days".
 
-3.  **Create Skill Sub-nodes:**
-    - For each major topic branch, create 2-4 specific skill or technology sub-nodes.
-    - Prefix their IDs appropriately (e.g., '2-1-1', '2-1-2').
-    - Position them around their parent topic branch node.
-    - Connect the topic branch node to its skill sub-nodes.
+**Part 3: Final Recommendations**
+- **portfolioProjects**: Provide 2-3 project ideas that would be suitable for a portfolio.
+- **communities**: Suggest 2-3 online communities or forums.
+- **careerTips**: Give advice on next steps after completing the roadmap (e.g., certifications, job search strategies).
 
-4.  **Node and Edge Formatting:**
-    - **Nodes:** Every node must have an 'id' (string), 'type' (set to 'roadmapNode'), 'data' (with a 'label' string), and a 'position' (with 'x' and 'y' numbers).
-    - **Edges:** Every edge must have an 'id' (e.g., 'e-1-2'), 'source' (parent node id), and 'target' (child node id). Edges connecting the main spine can be styled differently.
-
-**Example Output Structure:**
-
-\`\`\`json
-{
-  "nodes": [
-    { "id": "1", "type": "roadmapNode", "data": { "label": "Core Concept 1" }, "position": { "x": 250, "y": 0 } },
-    { "id": "1-1", "type": "roadmapNode", "data": { "label": "Topic Branch A" }, "position": { "x": 500, "y": 0 } },
-    { "id": "1-1-1", "type": "roadmapNode", "data": { "label": "Specific Skill" }, "position": { "x": 700, "y": -50 } }
-  ],
-  "edges": [
-    { "id": "e-1-1-1", "source": "1", "target": "1-1" },
-    { "id": "e-1-1-1-1-1-1", "source": "1-1", "target": "1-1-1" }
-  ]
-}
-\`\`\`
-
-Generate a complete and valid JSON object for the user's roadmap based on their profile. Do not include any other text or explanation.`,
+Generate a complete and valid JSON object following all instructions. Ensure the content is tailored to the user's profile. Do not include any other text or explanation.`,
 });
 
 const generateRoadmapFlow = ai.defineFlow(
