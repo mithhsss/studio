@@ -174,49 +174,72 @@ const RoadmapViewInternal = ({ roadmapData, onBack }: { roadmapData: GenerateRoa
         const generateFlowFromPlan = (plan: GenerateRoadmapOutput) => {
             const newNodes: Node[] = [];
             const newEdges: Edge[] = [];
+            
+            if (!plan || !plan.detailedStages) return;
+
             let yPos = 0;
-
-            if (!plan.detailedStages) return;
-
+            const xSpacingMain = 350;
+            const xSpacingSub = 250;
+            const ySpacingMain = 200;
+            
+            // Create main spine nodes for each stage
             plan.detailedStages.forEach((stage, stageIndex) => {
                 const stageId = `stage-${stage.stage}`;
                 newNodes.push({
                     id: stageId,
-                    type: 'roadmapNode',
+                    type: 'default',
                     data: { label: stage.title },
                     position: { x: 400, y: yPos },
-                    style: { fontWeight: 'bold', width: 200, backgroundColor: '#e0e7ff', borderColor: '#a5b4fc' },
+                    style: { 
+                        fontWeight: 'bold', 
+                        width: 200, 
+                        textAlign: 'center', 
+                        background: '#eef2ff', 
+                        borderColor: '#818cf8',
+                        borderWidth: 2,
+                    },
                 });
 
+                // Connect main spine nodes
                 if (stageIndex > 0) {
                     const prevStageId = `stage-${plan.detailedStages[stageIndex - 1].stage}`;
                     newEdges.push({
-                        id: `e-${prevStageId}-${stageId}`,
+                        id: `e-spine-${prevStageId}-${stageId}`,
                         source: prevStageId,
                         target: stageId,
-                        type: 'smoothstep',
+                        type: 'straight',
+                        style: { stroke: '#4f46e5', strokeWidth: 2 },
                     });
                 }
 
+                // Create subtopic nodes branching off
                 stage.subtopics.forEach((subtopic, subIndex) => {
+                    const isLeft = subIndex % 2 === 0;
+                    const xPos = isLeft ? 400 - xSpacingMain : 400 + xSpacingMain;
                     const subtopicId = `${stageId}-sub-${subIndex}`;
-                    const xPos = 200 + (subIndex * 250);
+
                     newNodes.push({
                         id: subtopicId,
-                        type: 'roadmapNode',
+                        type: 'default',
                         data: { label: subtopic.title },
-                        position: { x: xPos, y: yPos + 150 },
+                        position: { x: xPos, y: yPos + (subIndex % 2 === 0 ? -50 : 50) },
+                        style: {
+                            width: 180,
+                            textAlign: 'center',
+                            fontSize: '12px'
+                        }
                     });
+
                     newEdges.push({
                         id: `e-${stageId}-${subtopicId}`,
                         source: stageId,
                         target: subtopicId,
                         type: 'smoothstep',
-                        animated: true,
+                        animated: true
                     });
                 });
 
-                yPos += 350;
+                yPos += ySpacingMain;
             });
 
             setNodes(newNodes);
@@ -282,7 +305,7 @@ const RoadmapViewInternal = ({ roadmapData, onBack }: { roadmapData: GenerateRoa
             <div>
                  <h3 className="text-xl font-bold text-gray-800 mb-4">Detailed Learning Plan</h3>
                  <Accordion type="single" collapsible className="w-full" defaultValue="item-0">
-                    {roadmapData.detailedStages && roadmapData.detailedStages.map((stage, index) => (
+                    {roadmapData.detailedStages?.map((stage, index) => (
                         <AccordionItem key={index} value={`item-${index}`}>
                             <AccordionTrigger className="text-lg font-semibold hover:no-underline">
                                 <div className="flex items-center gap-4">
@@ -331,7 +354,7 @@ const RoadmapViewInternal = ({ roadmapData, onBack }: { roadmapData: GenerateRoa
                     <CardHeader><CardContent className="flex items-center gap-3 p-0"><Briefcase className="text-green-500" /> <h3 className="font-bold">Portfolio Projects</h3></CardContent></CardHeader>
                     <CardContent>
                         <ul className="list-disc pl-5 text-sm space-y-1">
-                            {roadmapData.portfolioProjects && roadmapData.portfolioProjects.map((p, i) => <li key={i}><b>{p.name}:</b> {p.description}</li>)}
+                            {roadmapData.portfolioProjects?.map((p, i) => <li key={i}><b>{p.name}:</b> {p.description}</li>)}
                         </ul>
                     </CardContent>
                 </Card>
@@ -339,7 +362,7 @@ const RoadmapViewInternal = ({ roadmapData, onBack }: { roadmapData: GenerateRoa
                     <CardHeader><CardContent className="flex items-center gap-3 p-0"><Users className="text-blue-500" /> <h3 className="font-bold">Communities</h3></CardContent></CardHeader>
                     <CardContent>
                          <ul className="list-disc pl-5 text-sm space-y-1">
-                            {roadmapData.communities && roadmapData.communities.map((c, i) => <li key={i}><a href={c.url} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline">{c.name}</a></li>)}
+                            {roadmapData.communities?.map((c, i) => <li key={i}><a href={c.url} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline">{c.name}</a></li>)}
                         </ul>
                     </CardContent>
                 </Card>
