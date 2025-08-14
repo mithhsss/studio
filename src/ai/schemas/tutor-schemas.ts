@@ -116,7 +116,10 @@ const ReactFlowEdgeSchema = z.object({
     target: z.string(),
     type: z.string().optional(),
     animated: z.boolean().optional(),
-    style: z.record(z.union([z.string(), z.number()])).optional(),
+    style: z.object({
+        stroke: z.string().optional(),
+        strokeWidth: z.number().optional(),
+    }).optional(),
 });
 
 export const GenerateRoadmapOutputSchema = z.object({
