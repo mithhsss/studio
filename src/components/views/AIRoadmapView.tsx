@@ -170,6 +170,7 @@ const RoadmapViewInternal = ({ roadmapData, onBack }: { roadmapData: GenerateRoa
     const printRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
+        // Function to generate graph nodes and edges from the detailed plan
         const generateFlowFromPlan = (plan: GenerateRoadmapOutput) => {
             const newNodes: Node[] = [];
             const newEdges: Edge[] = [];
@@ -184,7 +185,7 @@ const RoadmapViewInternal = ({ roadmapData, onBack }: { roadmapData: GenerateRoa
                     type: 'roadmapNode',
                     data: { label: stage.title },
                     position: { x: 400, y: yPos },
-                    style: { fontWeight: 'bold', width: 200 },
+                    style: { fontWeight: 'bold', width: 200, backgroundColor: '#e0e7ff', borderColor: '#a5b4fc' },
                 });
 
                 if (stageIndex > 0) {
@@ -203,7 +204,7 @@ const RoadmapViewInternal = ({ roadmapData, onBack }: { roadmapData: GenerateRoa
                     newNodes.push({
                         id: subtopicId,
                         type: 'roadmapNode',
-                        data: { label: subtopic.title, description: subtopic.description },
+                        data: { label: subtopic.title },
                         position: { x: xPos, y: yPos + 150 },
                     });
                     newEdges.push({

@@ -19,13 +19,13 @@ const prompt = ai.definePrompt({
   name: 'generateRoadmapPrompt',
   input: {schema: GenerateRoadmapInputSchema},
   output: {schema: GenerateRoadmapOutputSchema},
-  prompt: `You are an expert AI Career Coach and Learning Strategist. Your task is to generate a comprehensive, personalized learning plan.
+  prompt: `You are an expert AI Career Coach and Learning Strategist. Your task is to generate a comprehensive, personalized learning plan based on the user's profile.
 
 The output must be a single, valid JSON object containing:
 1.  A detailed, stage-by-stage breakdown of the learning plan ('detailedStages').
 2.  Final recommendations: 'portfolioProjects', 'communities', and 'careerTips'.
 
-**DO NOT** generate 'nodes' or 'edges' for a visual graph. The visual graph will be created from the 'detailedStages' you provide.
+**DO NOT** generate 'nodes' or 'edges' for a visual graph. The visual graph will be created by the application from the 'detailedStages' you provide.
 
 **User Profile:**
 - **Goal:** {{{goal}}}
@@ -33,14 +33,15 @@ The output must be a single, valid JSON object containing:
 - **Weekly Time Commitment:** {{{timePerWeek}}}
 - **Learning Style:** {{{learningStyle}}}
 - **Resource Preference:** {{{resourceType}}}
-- **Current Technical Skills:** {{#each technicalSkills}}{{{this}}}{{#unless @last}}, {{/unless}}{{/each}}
-- **Current Non-Technical Skills:** {{#each nonTechnicalSkills}}{{{this}}}{{#unless @last}}, {{/unless}}{{/each}}
+- **Current Technical Skills:** {{#if technicalSkills}}{{#each technicalSkills}}{{{this}}}{{#unless @last}}, {{/unless}}{{/each}}{{else}}None listed{{/if}}
+- **Current Non-Technical Skills:** {{#if nonTechnicalSkills}}{{#each nonTechnicalSkills}}{{{this}}}{{#unless @last}}, {{/unless}}{{/each}}{{else}}None listed{{/if}}
 
 **Instructions for JSON Generation:**
 
 **Part 1: Detailed Stages ('detailedStages')**
+- Create a 'detailedStages' array.
 - Dynamically determine the number of stages based on the user's goal and timeline. A 3-month timeline should have more stages than a 1-month timeline.
-- For each stage:
+- For each stage in the array:
     - **stage**: The stage number (e.g., 1).
     - **title**: A descriptive title for the stage.
     - **objective**: A clear goal for what the user will learn in this stage.
@@ -51,11 +52,11 @@ The output must be a single, valid JSON object containing:
     - **estimatedDuration**: An estimate like "1 week" or "10 days".
 
 **Part 2: Final Recommendations (in the root of the JSON)**
-- **portfolioProjects**: Provide 2-3 project ideas that would be suitable for a portfolio.
-- **communities**: Suggest 2-3 online communities or forums.
-- **careerTips**: Give advice on next steps after completing the roadmap (e.g., certifications, job search strategies).
+- **portfolioProjects**: Provide an array of 2-3 project ideas that would be suitable for a portfolio. Each object in the array should have a 'name' and 'description'.
+- **communities**: Suggest an array of 2-3 online communities or forums. Each object should have a 'name' and 'url'.
+- **careerTips**: Give a string of advice on next steps after completing the roadmap (e.g., certifications, job search strategies).
 
-Generate a complete and valid JSON object following all instructions. Ensure the content is tailored to the user's profile. Do not include any other text or explanation.`,
+Generate a complete and valid JSON object following all instructions. Ensure the content is tailored to the user's profile. Do not include any other text, markdown, or explanation outside of the JSON object.`,
 });
 
 const generateRoadmapFlow = ai.defineFlow(
