@@ -223,7 +223,7 @@ const RoadmapViewInternal = ({ roadmapData, onBack }: { roadmapData: GenerateRoa
             <div>
                  <h3 className="text-xl font-bold text-gray-800 mb-4">Detailed Learning Plan</h3>
                  <Accordion type="single" collapsible className="w-full" defaultValue="item-0">
-                    {roadmapData.detailedStages.map((stage, index) => (
+                    {roadmapData.detailedStages && roadmapData.detailedStages.map((stage, index) => (
                         <AccordionItem key={index} value={`item-${index}`}>
                             <AccordionTrigger className="text-lg font-semibold hover:no-underline">
                                 <div className="flex items-center gap-4">
@@ -272,7 +272,7 @@ const RoadmapViewInternal = ({ roadmapData, onBack }: { roadmapData: GenerateRoa
                     <CardHeader><CardContent className="flex items-center gap-3 p-0"><Briefcase className="text-green-500" /> <h3 className="font-bold">Portfolio Projects</h3></CardContent></CardHeader>
                     <CardContent>
                         <ul className="list-disc pl-5 text-sm space-y-1">
-                            {roadmapData.portfolioProjects.map((p, i) => <li key={i}><b>{p.name}:</b> {p.description}</li>)}
+                            {roadmapData.portfolioProjects && roadmapData.portfolioProjects.map((p, i) => <li key={i}><b>{p.name}:</b> {p.description}</li>)}
                         </ul>
                     </CardContent>
                 </Card>
@@ -280,7 +280,7 @@ const RoadmapViewInternal = ({ roadmapData, onBack }: { roadmapData: GenerateRoa
                     <CardHeader><CardContent className="flex items-center gap-3 p-0"><Users className="text-blue-500" /> <h3 className="font-bold">Communities</h3></CardContent></CardHeader>
                     <CardContent>
                          <ul className="list-disc pl-5 text-sm space-y-1">
-                            {roadmapData.communities.map((c, i) => <li key={i}><a href={c.url} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline">{c.name}</a></li>)}
+                            {roadmapData.communities && roadmapData.communities.map((c, i) => <li key={i}><a href={c.url} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline">{c.name}</a></li>)}
                         </ul>
                     </CardContent>
                 </Card>
