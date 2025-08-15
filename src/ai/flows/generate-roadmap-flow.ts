@@ -1,5 +1,5 @@
-
 'use server';
+
 /**
  * @fileOverview A Genkit flow for generating a personalized learning roadmap.
  * This flow now focuses ONLY on generating the textual content of the roadmap.
@@ -21,11 +21,7 @@ const prompt = ai.definePrompt({
   output: {schema: GenerateRoadmapOutputSchema},
   prompt: `You are an expert AI Career Coach and Learning Strategist. Your task is to generate a comprehensive, personalized learning plan based on the user's profile.
 
-The output must be a single, valid JSON object containing:
-1.  A detailed, stage-by-stage breakdown of the learning plan ('detailedStages').
-2.  Final recommendations: 'portfolioProjects', 'communities', and 'careerTips'.
-
-**DO NOT** generate 'nodes' or 'edges' for a visual graph. The visual graph will be created by the application from the 'detailedStages' you provide.
+The output must be a single, valid JSON object.
 
 **User Profile:**
 - **Goal:** {{{goal}}}
@@ -38,9 +34,19 @@ The output must be a single, valid JSON object containing:
 
 **Instructions for JSON Generation:**
 
-**Part 1: Detailed Stages ('detailedStages')**
-- Create a 'detailedStages' array.
-- Dynamically determine the number of stages based on the user's goal and timeline. A 3-month timeline should have more stages than a 1-month timeline.
+**Part 1: Hierarchical Topics ('topics')**
+- Create a 'topics' array.
+- This array should contain a minimum of 5 main topic objects.
+- For each main topic object:
+    - **id**: A unique string identifier.
+    - **label**: A descriptive title for the main topic (e.g., "Data Engineering Fundamentals").
+    - **subtopics**: An array of subtopic objects.
+        - For each subtopic object:
+            - **label**: The title of the subtopic (e.g., "Databases").
+            - **subs**: An array of AT LEAST 2-3 sub-subtopic strings (e.g., "SQL Basics", "NoSQL Overview"). This is mandatory.
+
+**Part 2: Detailed Stages ('detailedStages')**
+- Create a 'detailedStages' array corresponding to the main topics.
 - For each stage in the array:
     - **stage**: The stage number (e.g., 1).
     - **title**: A descriptive title for the stage.
@@ -51,7 +57,7 @@ The output must be a single, valid JSON object containing:
         - Each resource object must have a 'name', 'url', and a 'reason' it's recommended.
     - **estimatedDuration**: An estimate like "1 week" or "10 days".
 
-**Part 2: Final Recommendations (in the root of the JSON)**
+**Part 3: Final Recommendations (in the root of the JSON)**
 - **portfolioProjects**: Provide an array of 2-3 project ideas that would be suitable for a portfolio. Each object in the array should have a 'name' and 'description'.
 - **communities**: Suggest an array of 2-3 online communities or forums. Each object should have a 'name' and 'url'.
 - **careerTips**: Give a string of advice on next steps after completing the roadmap (e.g., certifications, job search strategies).

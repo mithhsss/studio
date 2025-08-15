@@ -170,26 +170,28 @@ const RoadmapViewInternal = ({ roadmapData, onBack }: { roadmapData: GenerateRoa
     const printRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        // Function to generate graph nodes and edges from the detailed plan
         const generateFlowFromPlan = (plan: GenerateRoadmapOutput) => {
             const newNodes: Node[] = [];
             const newEdges: Edge[] = [];
             
-            if (!plan || !plan.detailedStages) return;
+            if (!plan || !plan.topics) return;
 
             let yPos = 0;
+            const xCenter = 600;
             const xSpacingMain = 350;
             const xSpacingSub = 250;
-            const ySpacingMain = 200;
-            
+            const ySpacingMain = 300;
+            const ySpacingSub = 100;
+
             // Create main spine nodes for each stage
-            plan.detailedStages.forEach((stage, stageIndex) => {
-                const stageId = `stage-${stage.stage}`;
+            plan.topics.forEach((topic, stageIndex) => {
+                const stageId = topic.id;
+                
                 newNodes.push({
                     id: stageId,
                     type: 'default',
-                    data: { label: stage.title },
-                    position: { x: 400, y: yPos },
+                    data: { label: topic.label },
+                    position: { x: xCenter, y: yPos },
                     style: { 
                         fontWeight: 'bold', 
                         width: 200, 
@@ -200,9 +202,8 @@ const RoadmapViewInternal = ({ roadmapData, onBack }: { roadmapData: GenerateRoa
                     },
                 });
 
-                // Connect main spine nodes
                 if (stageIndex > 0) {
-                    const prevStageId = `stage-${plan.detailedStages[stageIndex - 1].stage}`;
+                    const prevStageId = plan.topics[stageIndex - 1].id;
                     newEdges.push({
                         id: `e-spine-${prevStageId}-${stageId}`,
                         source: prevStageId,
@@ -212,31 +213,45 @@ const RoadmapViewInternal = ({ roadmapData, onBack }: { roadmapData: GenerateRoa
                     });
                 }
 
-                // Create subtopic nodes branching off
-                stage.subtopics.forEach((subtopic, subIndex) => {
+                topic.subtopics.forEach((sub, subIndex) => {
                     const isLeft = subIndex % 2 === 0;
-                    const xPos = isLeft ? 400 - xSpacingMain : 400 + xSpacingMain;
-                    const subtopicId = `${stageId}-sub-${subIndex}`;
-
+                    const subId = `${stageId}-sub-${subIndex}`;
+                    const xPos = isLeft ? xCenter - xSpacingMain : xCenter + xSpacingMain;
+                    
                     newNodes.push({
-                        id: subtopicId,
-                        type: 'default',
-                        data: { label: subtopic.title },
-                        position: { x: xPos, y: yPos + (subIndex % 2 === 0 ? -50 : 50) },
-                        style: {
-                            width: 180,
-                            textAlign: 'center',
-                            fontSize: '12px'
-                        }
+                        id: subId,
+                        data: { label: sub.label },
+                        position: { x: xPos, y: yPos },
+                        style: { width: 180, textAlign: 'center' }
                     });
 
                     newEdges.push({
-                        id: `e-${stageId}-${subtopicId}`,
+                        id: `e-stage-${subId}`,
                         source: stageId,
-                        target: subtopicId,
+                        target: subId,
                         type: 'smoothstep',
-                        animated: true
                     });
+
+                    if (sub.subs && sub.subs.length > 0) {
+                        sub.subs.forEach((subSub, subSubIndex) => {
+                            const subSubId = `${subId}-subsub-${subSubIndex}`;
+                            const subXPos = isLeft ? xPos - xSpacingSub : xPos + xSpacingSub;
+                            const yOffset = (subSubIndex - (sub.subs.length - 1) / 2) * ySpacingSub;
+
+                            newNodes.push({
+                                id: subSubId,
+                                data: { label: subSub },
+                                position: { x: subXPos, y: yPos + yOffset },
+                                style: { fontSize: '12px', width: 150, textAlign: 'center' }
+                            });
+                            newEdges.push({
+                                id: `e-sub-${subSubId}`,
+                                source: subId,
+                                target: subSubId,
+                                type: 'smoothstep',
+                            });
+                        });
+                    }
                 });
 
                 yPos += ySpacingMain;
