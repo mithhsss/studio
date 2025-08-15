@@ -35,8 +35,7 @@ The output must be a single, valid JSON object.
 **Instructions for JSON Generation:**
 
 **Part 1: Hierarchical Topics ('topics')**
-- Create a 'topics' array.
-- This array should contain a minimum of 5 main topic objects.
+- Create a 'topics' array. This array should contain a number of main topic objects appropriate for the user's goal and timeline, ensuring there are AT LEAST 5 main topics.
 - For each main topic object:
     - **id**: A unique string identifier.
     - **label**: A descriptive title for the main topic (e.g., "Data Engineering Fundamentals").
