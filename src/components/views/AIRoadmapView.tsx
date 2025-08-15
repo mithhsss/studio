@@ -180,10 +180,9 @@ const RoadmapViewInternal = ({ roadmapData, onBack }: { roadmapData: GenerateRoa
             const xCenter = 600;
             const xSpacingMain = 350;
             const xSpacingSub = 250;
-            const ySpacingMain = 300;
-            const ySpacingSub = 100;
+            const ySpacingSubSub = 80; // Increased spacing
+            const yPadding = 150; // Extra padding between main stages
 
-            // Create main spine nodes for each stage
             plan.topics.forEach((topic, stageIndex) => {
                 const stageId = topic.id;
                 
@@ -212,9 +211,17 @@ const RoadmapViewInternal = ({ roadmapData, onBack }: { roadmapData: GenerateRoa
                         style: { stroke: '#4f46e5', strokeWidth: 2 },
                     });
                 }
-
+                
+                let maxSubSubNodesOnSide = { left: 0, right: 0 };
+                
                 topic.subtopics.forEach((sub, subIndex) => {
                     const isLeft = subIndex % 2 === 0;
+                    if(isLeft) {
+                        maxSubSubNodesOnSide.left = Math.max(maxSubSubNodesOnSide.left, sub.subs.length);
+                    } else {
+                        maxSubSubNodesOnSide.right = Math.max(maxSubSubNodesOnSide.right, sub.subs.length);
+                    }
+
                     const subId = `${stageId}-sub-${subIndex}`;
                     const xPos = isLeft ? xCenter - xSpacingMain : xCenter + xSpacingMain;
                     
@@ -236,7 +243,7 @@ const RoadmapViewInternal = ({ roadmapData, onBack }: { roadmapData: GenerateRoa
                         sub.subs.forEach((subSub, subSubIndex) => {
                             const subSubId = `${subId}-subsub-${subSubIndex}`;
                             const subXPos = isLeft ? xPos - xSpacingSub : xPos + xSpacingSub;
-                            const yOffset = (subSubIndex - (sub.subs.length - 1) / 2) * ySpacingSub;
+                            const yOffset = (subSubIndex - (sub.subs.length - 1) / 2) * ySpacingSubSub;
 
                             newNodes.push({
                                 id: subSubId,
@@ -253,8 +260,9 @@ const RoadmapViewInternal = ({ roadmapData, onBack }: { roadmapData: GenerateRoa
                         });
                     }
                 });
-
-                yPos += ySpacingMain;
+                
+                const maxVerticalSpread = Math.max(maxSubSubNodesOnSide.left, maxSubSubNodesOnSide.right) * ySpacingSubSub;
+                yPos += maxVerticalSpread + yPadding;
             });
 
             setNodes(newNodes);
