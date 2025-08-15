@@ -130,6 +130,14 @@ const CommunitySchema = z.object({
 
 
 export const GenerateRoadmapOutputSchema = z.object({
+    topics: z.array(z.object({
+        id: z.string().describe("A unique string identifier for the main topic."),
+        label: z.string().describe("The descriptive title for the main topic."),
+        subtopics: z.array(z.object({
+            label: z.string().describe("The title of the subtopic."),
+            subs: z.array(z.string()).describe("An array of sub-subtopic strings.")
+        })).describe("An array of subtopic objects."),
+    })).describe("A hierarchical list of topics and subtopics for the roadmap graph."),
     detailedStages: z.array(RoadmapStageSchema).describe("An array of detailed, stage-by-stage learning plans."),
     portfolioProjects: z.array(PortfolioProjectSchema).describe("A list of 2-3 project ideas to showcase their new skills."),
     communities: z.array(CommunitySchema).describe("A list of 2-3 relevant online communities, forums, or networking platforms."),
