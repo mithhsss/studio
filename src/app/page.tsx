@@ -754,7 +754,7 @@ export default function Home() {
                         finalizedIdea={finalizedIdea}
                         dragOverId={dragOverId}
                         formData={ideaFormData}
-                        setFormData={setFormData}
+                        setFormData={setIdeaFormData}
                         handleGenerateIdeas={handleGenerateIdeas}
                         handleAction={handleAction}
                         // Drag and drop is being replaced, but we'll keep the props for now
