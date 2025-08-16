@@ -108,9 +108,26 @@ const InteractiveLearnView = ({ topic, setTopic, chatHistory, setChatHistory, is
             setIsLoading(false);
         }
     };
-
+    
     const handleStartSession = () => {
-      handleSendMessage("Let's start!");
+        if (!topic.trim()) {
+            toast({ variant: 'destructive', title: "Topic Required", description: "Please enter a topic to start learning." });
+            return;
+        }
+        const initialHistory: TutorChatHistory[] = [{ role: 'user', content: "Let's start!" }];
+        setChatHistory(initialHistory);
+        setIsLoading(true);
+
+        interactiveLearn({ topic, chatHistory: initialHistory })
+            .then(result => {
+                setChatHistory(prev => [...prev, { role: 'model', content: result.response }]);
+            })
+            .catch(err => {
+                toast({ variant: 'destructive', title: 'Error', description: 'Failed to get a response from the AI tutor.' });
+            })
+            .finally(() => {
+                setIsLoading(false);
+            });
     }
 
     return (
@@ -186,8 +203,8 @@ const QuizView = ({ quizState, setQuizState, config, setConfig, questions, setQu
 
     if (quizState === 'config') {
         return (
-            <div className="mt-4 max-w-md mx-auto">
-                <div className="space-y-4">
+            <div className="mt-4">
+                <div className="space-y-4 max-w-lg mx-auto">
                     <div><Label>Topic</Label><Input value={config.topic} onChange={(e) => setConfig({ ...config, topic: e.target.value })} /></div>
                     <div>
                         <Label>Number of Questions</Label>
@@ -283,7 +300,24 @@ const ScenarioSandboxView = ({ topic, setTopic, chatHistory, setChatHistory, isL
     };
 
     const handleStartSession = () => {
-      handleSendMessage("Let's start the scenario.");
+      if (!topic.trim()) {
+            toast({ variant: 'destructive', title: "Topic Required", description: "Please enter a topic for the scenario." });
+            return;
+        }
+        const initialHistory: TutorChatHistory[] = [{ role: 'user', content: "Let's start the scenario." }];
+        setChatHistory(initialHistory);
+        setIsLoading(true);
+
+        scenarioSandbox({ topic, chatHistory: initialHistory })
+            .then(result => {
+                setChatHistory(prev => [...prev, { role: 'model', content: result.response }]);
+            })
+            .catch(err => {
+                toast({ variant: 'destructive', title: 'Error', description: 'Failed to get a response from the AI tutor.' });
+            })
+            .finally(() => {
+                setIsLoading(false);
+            });
     }
 
     return (
@@ -351,7 +385,7 @@ const AITutorView: React.FC<AITutorViewProps> = (props) => {
         switch (props.tutorMode) {
             case 'dashboard': return <DashboardView />;
             case 'learn': return <InteractiveLearnView topic={props.learnTopic} setTopic={props.setLearnTopic} chatHistory={props.chatHistory} setChatHistory={props.setChatHistory} isLoading={props.isLoading} setIsLoading={props.setIsLoading} />;
-            case 'quiz': return <QuizView quizState={props.quizState} setQuizState={props.setQuizState} config={props.quizConfig} setConfig={props.setQuizConfig} questions={props.quizQuestions} setQuestions={props.setQuizQuestions} answers={props.answers} setAnswers={props.setQuizAnswers} result={props.quizResult} setResult={props.setQuizResult} isLoading={props.isLoading} setIsLoading={props.setIsLoading} />;
+            case 'quiz': return <QuizView quizState={props.quizState} setQuizState={props.setQuizState} config={props.quizConfig} setConfig={props.setQuizConfig} questions={props.quizQuestions} setQuestions={props.setQuizQuestions} answers={props.quizAnswers} setAnswers={props.setQuizAnswers} result={props.quizResult} setResult={props.setQuizResult} isLoading={props.isLoading} setIsLoading={props.setIsLoading} />;
             case 'sandbox': return <ScenarioSandboxView topic={props.sandboxTopic} setTopic={props.setSandboxTopic} chatHistory={props.sandboxChatHistory} setChatHistory={props.setSandboxChatHistory} isLoading={props.isLoading} setIsLoading={props.setIsLoading} />;
             default: return <DashboardView />;
         }
