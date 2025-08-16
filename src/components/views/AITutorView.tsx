@@ -135,7 +135,7 @@ const InteractiveLearnView = ({ topic, setTopic, chatHistory, setChatHistory, is
                             {msg.role === 'user' && <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center flex-shrink-0"><User size={16} /></div>}
                         </div>
                     ))}
-                    {isLoading && <div className="flex justify-start"><Loader className="animate-spin text-indigo-500" /></div>}
+                    {isLoading && <div className="flex justify-start"><div className="w-8 h-8 rounded-full bg-indigo-500 text-white flex items-center justify-center flex-shrink-0"><Star size={16} /></div><div className="ml-3 p-3 bg-white shadow rounded-lg"><Loader className="animate-spin text-indigo-500" /></div></div>}
                 </div>
             </div>
             <div className="mt-4 flex gap-2">
@@ -308,7 +308,7 @@ const ScenarioSandboxView = ({ topic, setTopic, chatHistory, setChatHistory, isL
                             {msg.role === 'user' && <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center flex-shrink-0"><User size={16} /></div>}
                         </div>
                     ))}
-                    {isLoading && <div className="flex justify-start"><Loader className="animate-spin text-indigo-500" /></div>}
+                    {isLoading && <div className="flex justify-start"><div className="w-8 h-8 rounded-full bg-indigo-500 text-white flex items-center justify-center flex-shrink-0"><Star size={16} /></div><div className="ml-3 p-3 bg-white shadow rounded-lg"><Loader className="animate-spin text-indigo-500" /></div></div>}
                 </div>
             </div>
             <div className="mt-4 flex gap-2">
