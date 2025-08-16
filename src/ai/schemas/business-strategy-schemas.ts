@@ -46,11 +46,10 @@ const MarketSizeSchema = z.object({
   som: z.string().describe('Serviceable Obtainable Market'),
 });
 
-const GrowthSimulationSchema = z.object({
-  labels: z.array(z.string()).describe('e.g., ["Year 1", "Year 2", ...]'),
-  optimistic: z.array(z.number()),
-  realistic: z.array(z.number()),
-  pessimistic: z.array(z.number()),
+const SuccessRoadmapStepSchema = z.object({
+    step: z.number().describe("The step number (1-10)."),
+    title: z.string().describe("A concise title for the step."),
+    description: z.string().describe("A brief explanation of the action or milestone for this step."),
 });
 
 export const GenerateStrategyOutputSchema = z.object({
@@ -63,6 +62,6 @@ export const GenerateStrategyOutputSchema = z.object({
   porters: z.array(PortersForceSchema),
   catwoe: CATWOESchema,
   marketSize: MarketSizeSchema,
-  growthSimulation: GrowthSimulationSchema,
+  successRoadmap: z.array(SuccessRoadmapStepSchema).length(10).describe("A 10-step roadmap to success for the business idea."),
 });
 export type GenerateStrategyOutput = z.infer<typeof GenerateStrategyOutputSchema>;

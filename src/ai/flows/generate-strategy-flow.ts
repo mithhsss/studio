@@ -32,7 +32,7 @@ Business Idea:
 5.  **Porter's Five Forces:** Analyze each of the five forces (Competitive Rivalry, Supplier Power, Buyer Power, Threat of Substitution, Threat of New Entry). For each force, provide a level (Low, Moderate, High) and 2-3 bullet points explaining the reasoning.
 6.  **CATWOE Analysis:** Identify the key stakeholders and elements for Customers, Actors, Transformation Process, Worldview, Owner, and Environmental Constraints. Provide 2-3 points for each.
 7.  **Market Size:** Provide concise descriptions for the Total Addressable Market (TAM), Serviceable Addressable Market (SAM), and Serviceable Obtainable Market (SOM).
-8.  **Growth Simulation:** Generate a 10-year growth projection. Provide labels for 10 years (e.g., "Year 1", "Year 2", etc.). For each year, provide projected revenue figures for "optimistic," "realistic," and "pessimistic" scenarios. The numbers should show a logical growth curve.
+8.  **10 Steps to Success:** Generate a 10-step roadmap for successfully launching and growing the business. Each step should be a clear, actionable milestone with a title and a brief description.
 
 Generate the entire analysis as a single JSON object.`,
 });

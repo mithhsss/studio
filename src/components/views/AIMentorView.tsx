@@ -119,63 +119,78 @@ const ChatView: React.FC<Pick<AIMentorViewProps, 'chatHistory' | 'setChatHistory
     };
 
     return (
-        <div className="h-[60vh] flex flex-col">
-            <div className="flex-grow space-y-4 overflow-y-auto pr-4 mb-4">
-                {chatHistory.map((msg, index) => (
-                    <div key={index} className={`flex gap-3 items-start ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                        {msg.role === 'model' && <div className="w-8 h-8 rounded-full bg-yellow-500 text-white flex items-center justify-center flex-shrink-0"><Bot size={16} /></div>}
-                        <div className={`max-w-lg p-3 rounded-lg prose prose-sm ${msg.role === 'user' ? 'bg-indigo-500 text-white' : 'bg-gray-100 text-gray-800'}`}>
-                            <p style={{ whiteSpace: 'pre-wrap' }}>{msg.text}</p>
-                        </div>
-                         {msg.role === 'user' && <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center flex-shrink-0"><User size={16} /></div>}
+        <Card>
+            <CardHeader>
+                <div className="flex items-center gap-3">
+                    <div className="bg-yellow-100 text-yellow-600 p-2 rounded-lg">
+                        <MessageSquare size={20} />
                     </div>
-                ))}
-                {isLoading && <LoadingSpinner />}
-                {chatHistory.length === 0 && (
-                     <div className="text-center text-gray-500 h-full flex flex-col justify-center">
-                        <Users size={40} className="mx-auto text-gray-300 mb-2"/>
-                        <h3 className="font-semibold text-lg">Ask me anything about your career.</h3>
-                        <p className="text-sm">For personalized advice, upload your resume first.</p>
-                     </div>
-                )}
-            </div>
+                    <div>
+                        <h3 className="text-xl font-bold text-gray-800">Career Chat</h3>
+                        <p className="text-gray-500 text-sm">Ask questions, get advice, and upload your resume for analysis.</p>
+                    </div>
+                </div>
+            </CardHeader>
+            <CardContent>
+                <div className="h-[60vh] flex flex-col">
+                    <div className="flex-grow space-y-4 overflow-y-auto pr-4 mb-4">
+                        {chatHistory.map((msg, index) => (
+                            <div key={index} className={`flex gap-3 items-start ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                {msg.role === 'model' && <div className="w-8 h-8 rounded-full bg-yellow-500 text-white flex items-center justify-center flex-shrink-0"><Bot size={16} /></div>}
+                                <div className={`max-w-lg p-3 rounded-lg prose prose-sm ${msg.role === 'user' ? 'bg-indigo-500 text-white' : 'bg-gray-100 text-gray-800'}`}>
+                                    <p style={{ whiteSpace: 'pre-wrap' }}>{msg.text}</p>
+                                </div>
+                                {msg.role === 'user' && <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center flex-shrink-0"><User size={16} /></div>}
+                            </div>
+                        ))}
+                        {isLoading && <LoadingSpinner />}
+                        {chatHistory.length === 0 && (
+                            <div className="text-center text-gray-500 h-full flex flex-col justify-center">
+                                <Users size={40} className="mx-auto text-gray-300 mb-2"/>
+                                <h3 className="font-semibold text-lg">Ask me anything about your career.</h3>
+                                <p className="text-sm">For personalized advice, upload your resume first.</p>
+                            </div>
+                        )}
+                    </div>
 
-            <div className="mt-auto flex items-center gap-2">
-                 <div className="relative">
-                    <Button asChild variant="outline" size="icon">
-                        <label htmlFor="resume-upload" className="cursor-pointer">
-                            <Paperclip size={18} />
-                            <span className="sr-only">Upload Resume</span>
-                        </label>
-                    </Button>
-                    <input id="resume-upload" type="file" className="absolute w-full h-full opacity-0 top-0 left-0 cursor-pointer" onChange={handleResumeUpload} accept=".txt,.pdf,.md" />
+                    <div className="mt-auto flex items-center gap-2">
+                        <div className="relative">
+                            <Button asChild variant="outline" size="icon">
+                                <label htmlFor="resume-upload" className="cursor-pointer">
+                                    <Paperclip size={18} />
+                                    <span className="sr-only">Upload Resume</span>
+                                </label>
+                            </Button>
+                            <input id="resume-upload" type="file" className="absolute w-full h-full opacity-0 top-0 left-0 cursor-pointer" onChange={handleResumeUpload} accept=".txt,.pdf,.md" />
+                        </div>
+                        <div className="flex-grow relative">
+                            <input
+                                type="text"
+                                value={userInput}
+                                onChange={(e) => setUserInput(e.target.value)}
+                                onKeyPress={(e) => e.key === 'Enter' && !isLoading && handleMentorSubmit()}
+                                placeholder={resumeFileName ? `Asking about ${resumeFileName}...` : "Ask a career question..."}
+                                className="w-full border-gray-300 border rounded-lg p-3 pr-12 focus:ring-yellow-500 focus:border-yellow-500"
+                                disabled={isLoading}
+                            />
+                            {resumeFileName && (
+                                <button
+                                    onClick={() => { setResumeText(null); setResumeFileName(null); toast({ title: "Resume Cleared" }) }}
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-800 text-xl font-bold p-1 leading-none"
+                                    aria-label="Clear resume"
+                                >
+                                    &times;
+                                </button>
+                            )}
+                        </div>
+                        <Button onClick={handleMentorSubmit} className="bg-yellow-600 hover:bg-yellow-700" size="icon" disabled={isLoading}>
+                            <Send size={18} />
+                        </Button>
+                    </div>
+                    {error && <p className="text-red-500 mt-2 text-sm">{error}</p>}
                 </div>
-                <div className="flex-grow relative">
-                    <input
-                        type="text"
-                        value={userInput}
-                        onChange={(e) => setUserInput(e.target.value)}
-                        onKeyPress={(e) => e.key === 'Enter' && !isLoading && handleMentorSubmit()}
-                        placeholder={resumeFileName ? `Asking about ${resumeFileName}...` : "Ask a career question..."}
-                        className="w-full border-gray-300 border rounded-lg p-3 pr-12 focus:ring-yellow-500 focus:border-yellow-500"
-                        disabled={isLoading}
-                    />
-                    {resumeFileName && (
-                        <button
-                            onClick={() => { setResumeText(null); setResumeFileName(null); toast({ title: "Resume Cleared" }) }}
-                            className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-800 text-xl font-bold p-1 leading-none"
-                            aria-label="Clear resume"
-                        >
-                            &times;
-                        </button>
-                    )}
-                </div>
-                <Button onClick={handleMentorSubmit} className="bg-yellow-600 hover:bg-yellow-700" size="icon" disabled={isLoading}>
-                    <Send size={18} />
-                </Button>
-            </div>
-            {error && <p className="text-red-500 mt-2 text-sm">{error}</p>}
-        </div>
+            </CardContent>
+        </Card>
     );
 };
 
