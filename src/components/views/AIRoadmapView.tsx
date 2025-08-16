@@ -180,8 +180,8 @@ const RoadmapViewInternal = ({ roadmapData, onBack }: { roadmapData: GenerateRoa
             const xCenter = 600;
             const xSpacingMain = 350;
             const xSpacingSub = 250;
-            const ySpacingSubSub = 80; // Increased spacing
-            const yPadding = 150; // Extra padding between main stages
+            const ySpacingSubSub = 80;
+            const yPadding = 150; // Increased padding between main stages
 
             plan.topics.forEach((topic, stageIndex) => {
                 const stageId = topic.id;
@@ -216,10 +216,12 @@ const RoadmapViewInternal = ({ roadmapData, onBack }: { roadmapData: GenerateRoa
                 
                 topic.subtopics.forEach((sub, subIndex) => {
                     const isLeft = subIndex % 2 === 0;
-                    if(isLeft) {
-                        maxSubSubNodesOnSide.left = Math.max(maxSubSubNodesOnSide.left, sub.subs.length);
-                    } else {
-                        maxSubSubNodesOnSide.right = Math.max(maxSubSubNodesOnSide.right, sub.subs.length);
+                    if(sub.subs) {
+                        if(isLeft) {
+                            maxSubSubNodesOnSide.left = Math.max(maxSubSubNodesOnSide.left, sub.subs.length);
+                        } else {
+                            maxSubSubNodesOnSide.right = Math.max(maxSubSubNodesOnSide.right, sub.subs.length);
+                        }
                     }
 
                     const subId = `${stageId}-sub-${subIndex}`;
@@ -261,8 +263,12 @@ const RoadmapViewInternal = ({ roadmapData, onBack }: { roadmapData: GenerateRoa
                     }
                 });
                 
-                const maxVerticalSpread = Math.max(maxSubSubNodesOnSide.left, maxSubSubNodesOnSide.right) * ySpacingSubSub;
-                yPos += maxVerticalSpread + yPadding;
+                // Calculate the required vertical space for the current stage's branch
+                const maxSubsOnOneSide = Math.max(maxSubSubNodesOnSide.left, maxSubSubNodesOnSide.right);
+                const verticalSpread = maxSubsOnOneSide > 0 ? (maxSubsOnOneSide -1) * ySpacingSubSub : 0;
+                
+                // Move yPos down by the calculated spread plus padding
+                yPos += verticalSpread + yPadding;
             });
 
             setNodes(newNodes);

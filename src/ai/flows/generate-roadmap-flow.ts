@@ -35,14 +35,14 @@ The output must be a single, valid JSON object.
 **Instructions for JSON Generation:**
 
 **Part 1: Hierarchical Topics ('topics')**
-- Create a 'topics' array. This array should contain a number of main topic objects appropriate for the user's goal and timeline, ensuring there are AT LEAST 5 main topics.
+- Create a 'topics' array. This array should contain a number of main topic objects appropriate for the user's goal and timeline, ensuring there are AT LEAST 5 main topics,— but in most cases, try to provide MORE THAN 5 unless the timeline is very short.
 - For each main topic object:
     - **id**: A unique string identifier.
     - **label**: A descriptive title for the main topic (e.g., "Data Engineering Fundamentals").
     - **subtopics**: An array of subtopic objects.
         - For each subtopic object:
             - **label**: The title of the subtopic (e.g., "Databases").
-            - **subs**: An array of AT LEAST 2-3 sub-subtopic strings (e.g., "SQL Basics", "NoSQL Overview"). This is mandatory.
+            - **subs**: An array of AT LEAST 2-3 sub-subtopic strings (e.g., "SQL Basics", "NoSQL Overview"). This is mandatory,but again, try to include more than the minimum when possible.
 
 **Part 2: Detailed Stages ('detailedStages')**
 - Create a 'detailedStages' array corresponding to the main topics.
@@ -50,7 +50,7 @@ The output must be a single, valid JSON object.
     - **stage**: The stage number (e.g., 1).
     - **title**: A descriptive title for the stage.
     - **objective**: A clear goal for what the user will learn in this stage.
-    - **subtopics**: An array of AT LEAST 3-4 detailed subtopics.
+    - **subtopics**: An array of AT LEAST 3-4 detailed subtopics,but ideally MORE for deeper coverage.
         - For each subtopic, provide: 'title', 'description', a 'project' idea, and 'freeResources' array.
         - If the user allows premium resources, also include a 'premiumResources' array.
         - Each resource object must have a 'name', 'url', and a 'reason' it's recommended.
