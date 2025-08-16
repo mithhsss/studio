@@ -765,7 +765,7 @@ export default function Home() {
                         handleCombine={handleCombine}
                         setCombinePair={setCombinePair}
                         handleFinalize={handleFinalize}
-                        handleRestart={handleRestart}
+                        handleRestart={handleIdeaRestart}
                     />
                 );
             case 'coder':
