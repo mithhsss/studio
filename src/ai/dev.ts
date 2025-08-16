@@ -20,4 +20,4 @@ import '@/ai/flows/tutor-scenario-flow.ts';
 import '@/ai/flows/generate-roadmap-flow.ts';
 import '@/ai/schemas/tutor-schemas.ts';
 import '@/ai/flows/mock-interview-flow.ts';
-import '@/ai/flows/business-simulation-flow.ts';
+import '@/ai/flows/generate-strategy-flow.ts';

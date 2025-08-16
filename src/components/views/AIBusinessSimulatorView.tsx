@@ -1,161 +1,247 @@
+
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Building, DollarSign, Lightbulb, Loader, Target, User, Zap } from 'lucide-react';
-import { runBusinessSimulation, type BusinessSimulationInput, type BusinessSimulationOutput } from '@/ai/flows/business-simulation-flow';
+import { Textarea } from '@/components/ui/textarea';
+import { Lightbulb, Check, AlertTriangle, Briefcase, Building, MessageSquare, Loader } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
+import { generateStrategy } from '@/ai/flows/generate-strategy-flow';
+import type { GenerateStrategyOutput } from '@/ai/schemas/business-strategy-schemas';
+import { Chart } from 'chart.js/auto';
 
-const ConfigView = ({ onStart, isLoading }: { onStart: (config: Omit<BusinessSimulationInput, 'history'>) => void, isLoading: boolean }) => {
-  const [config, setConfig] = useState({
-    businessIdea: 'An AI-powered meal planning app',
-    userExpertise: 'Intermediate' as 'Novice' | 'Intermediate' | 'Expert',
-    startingCapital: 10000,
-    market: 'Health & Wellness Tech',
-  });
-
-  const handleStartClick = () => {
-    if (config.businessIdea && config.market) {
-      onStart(config);
-    }
-  };
-
-  return (
-    <div className="max-w-lg mx-auto">
-      <div className="text-center mb-8">
-        <h3 className="text-2xl font-bold text-gray-800">Business Idea Simulator</h3>
-        <p className="text-gray-500">Enter your business concept and see how it performs over time.</p>
-      </div>
-      <div className="space-y-4">
-        <div>
-          <Label htmlFor="businessIdea" className="flex items-center gap-2 mb-1"><Lightbulb size={16}/> Business Idea</Label>
-          <Input id="businessIdea" value={config.businessIdea} onChange={(e) => setConfig({ ...config, businessIdea: e.target.value })} />
+// --- UI Components ---
+const AnalysisCard = ({ title, children, icon, className = '' }) => (
+    <div className={`border-l-4 p-4 bg-gray-50 rounded-r-lg ${className}`}>
+        <h4 className="font-semibold text-lg text-gray-700 capitalize flex items-center gap-2">
+            {icon}
+            {title}
+        </h4>
+        <div className="mt-2 text-gray-600">
+            {children}
         </div>
-        <div>
-          <Label htmlFor="market" className="flex items-center gap-2 mb-1"><Target size={16}/> Target Market</Label>
-          <Input id="market" value={config.market} onChange={(e) => setConfig({ ...config, market: e.target.value })} />
-        </div>
-        <div>
-          <Label htmlFor="startingCapital" className="flex items-center gap-2 mb-1"><DollarSign size={16}/> Starting Capital</Label>
-          <Input id="startingCapital" type="number" value={config.startingCapital} onChange={(e) => setConfig({ ...config, startingCapital: parseInt(e.target.value) || 0 })} />
-        </div>
-        <div>
-          <Label className="flex items-center gap-2 mb-1"><User size={16}/> Your Expertise Level</Label>
-          <RadioGroup value={config.userExpertise} onValueChange={(value) => setConfig({ ...config, userExpertise: value as any })} className="flex gap-4">
-            <div className="flex items-center space-x-2"><RadioGroupItem value="Novice" id="r1" /><Label htmlFor="r1">Novice</Label></div>
-            <div className="flex items-center space-x-2"><RadioGroupItem value="Intermediate" id="r2" /><Label htmlFor="r2">Intermediate</Label></div>
-            <div className="flex items-center space-x-2"><RadioGroupItem value="Expert" id="r3" /><Label htmlFor="r3">Expert</Label></div>
-          </RadioGroup>
-        </div>
-        <Button onClick={handleStartClick} disabled={isLoading} className="w-full !mt-6">
-          {isLoading ? <Loader className="animate-spin" /> : 'Start Simulation'}
-        </Button>
-      </div>
     </div>
-  );
-};
+);
 
-const SimulationView = ({ simulationOutput, onMakeChoice, isLoading }: { simulationOutput: BusinessSimulationOutput, onMakeChoice: (choice: string) => void, isLoading: boolean }) => {
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <div className="md:col-span-2 p-6 bg-gray-50 rounded-lg border">
-        <h3 className="text-lg font-bold text-gray-800 mb-1">{simulationOutput.eventName}</h3>
-        <p className="text-sm text-gray-500 mb-4">Year {simulationOutput.year}</p>
-        <p className="text-gray-700">{simulationOutput.eventDescription}</p>
+const SectionCard = ({ title, children, className = '' }) => (
+     <div className={`bg-white border rounded-xl p-6 shadow-sm hover:shadow-lg transition-shadow duration-300 ${className}`}>
+        <h2 className="text-2xl font-semibold mb-4 text-gray-800">{title}</h2>
+        {children}
+    </div>
+);
+
+
+const AIBusinessSimulatorView: React.FC = () => {
+    const { toast } = useToast();
+    const [isLoading, setIsLoading] = useState(false);
+    const [analysisResult, setAnalysisResult] = useState<GenerateStrategyOutput | null>(null);
+    const [description, setDescription] = useState('');
+    const [activeTab, setActiveTab] = useState('overview');
+    const growthChartRef = useRef<HTMLCanvasElement>(null);
+    const chartInstance = useRef<Chart | null>(null);
+
+    useEffect(() => {
+        if (analysisResult?.growthSimulation && growthChartRef.current) {
+            if (chartInstance.current) {
+                chartInstance.current.destroy();
+            }
+            const ctx = growthChartRef.current.getContext('2d');
+            if (ctx) {
+                chartInstance.current = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: analysisResult.growthSimulation.labels,
+                        datasets: [
+                            { label: 'Optimistic', data: analysisResult.growthSimulation.optimistic, borderColor: 'rgba(52, 211, 153, 1)', backgroundColor: 'rgba(52, 211, 153, 0.1)', fill: true, tension: 0.4 },
+                            { label: 'Realistic', data: analysisResult.growthSimulation.realistic, borderColor: 'rgba(79, 70, 229, 1)', backgroundColor: 'rgba(79, 70, 229, 0.1)', fill: true, tension: 0.4, borderWidth: 3 },
+                            { label: 'Pessimistic', data: analysisResult.growthSimulation.pessimistic, borderColor: 'rgba(239, 68, 68, 1)', backgroundColor: 'rgba(239, 68, 68, 0.1)', fill: true, tension: 0.4 }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { position: 'top', labels: { color: '#4b5563' } } },
+                        scales: {
+                            y: { beginAtZero: true, title: { display: true, text: 'Projected Revenue (Units)', color: '#6b7280' }, grid: { color: '#e5e7eb' }, ticks: { color: '#4b5563' } },
+                            x: { title: { display: true, text: 'Year', color: '#6b7280' }, grid: { display: false }, ticks: { color: '#4b5563' } }
+                        },
+                        animation: { duration: 1500, easing: 'easeInOutQuart' }
+                    }
+                });
+            }
+        }
+         return () => {
+            if (chartInstance.current) {
+                chartInstance.current.destroy();
+                chartInstance.current = null;
+            }
+        };
+    }, [analysisResult]);
+
+
+    const handleAnalysis = async () => {
+        if (description.trim().length < 50) {
+            toast({ variant: 'destructive', title: 'Description Too Short', description: 'Please provide a more detailed description (at least 50 characters).' });
+            return;
+        }
+        setIsLoading(true);
+        setAnalysisResult(null);
+        try {
+            const result = await generateStrategy({ businessIdea: description });
+            setAnalysisResult(result);
+            setActiveTab('overview');
+        } catch (err: any) {
+            console.error("Analysis Error:", err);
+            toast({ variant: 'destructive', title: 'Analysis Failed', description: err.message || 'The AI could not generate a response.' });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+    
+    const resetUI = () => {
+        setAnalysisResult(null);
+        setDescription('');
+    };
+
+    const TabButton = ({ tabId, children }) => (
+        <button
+            onClick={() => setActiveTab(tabId)}
+            className={`py-3 px-4 font-medium text-sm whitespace-nowrap border-b-2 transition-all duration-300 ${activeTab === tabId ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+        >
+            {children}
+        </button>
+    );
+
+    const renderTabs = () => (
+        <div className="border-b border-gray-200 mb-6">
+            <nav className="-mb-px flex space-x-6 overflow-x-auto">
+                <TabButton tabId="overview">Overview</TabButton>
+                <TabButton tabId="swot">SWOT Analysis</TabButton>
+                <TabButton tabId="pestle">PESTLE Analysis</TabButton>
+                <TabButton tabId="porters">Porter's 5 Forces</TabButton>
+                <TabButton tabId="catwoe">CATWOE Analysis</TabButton>
+                <TabButton tabId="market">Market & Growth</TabButton>
+            </nav>
+        </div>
+    );
+    
+    const renderContent = () => {
+        if (!analysisResult) return null;
         
-        <div className="mt-6">
-          <h4 className="font-semibold mb-2">What will you do?</h4>
-          <div className="space-y-3">
-            {simulationOutput.choices.map((choice, index) => (
-              <Button key={index} onClick={() => onMakeChoice(choice)} variant="outline" className="w-full justify-start text-left h-auto" disabled={isLoading}>
-                {choice}
-              </Button>
-            ))}
-          </div>
+        const swotColors = { strengths: 'border-green-500 bg-green-50', weaknesses: 'border-amber-500 bg-amber-50', opportunities: 'border-blue-500 bg-blue-50', threats: 'border-red-500 bg-red-50' };
+        const pestleColors = ['border-purple-400', 'border-sky-400', 'border-rose-400', 'border-teal-400', 'border-orange-400', 'border-green-400'];
+        const levelColors = { 'Low': 'text-green-600', 'Moderate': 'text-amber-600', 'High': 'text-red-600' };
+
+        return (
+            <div>
+                {renderTabs()}
+                <div className="animate-in fade-in">
+                    {activeTab === 'overview' && (
+                        <div className="grid lg:grid-cols-5 gap-6">
+                            <div className="lg:col-span-2">
+                                <SectionCard title="Viability Score">
+                                    <p className="text-7xl font-bold text-indigo-600 text-center">{analysisResult.viabilityScore.toFixed(1)}<span className="text-3xl text-gray-400">/10</span></p>
+                                    <p className="mt-4 text-gray-600 text-center">{analysisResult.scoreJustification}</p>
+                                </SectionCard>
+                            </div>
+                             <div className="lg:col-span-3 space-y-6">
+                                <AnalysisCard title="Game Changing Idea" icon={<Lightbulb className="text-green-500"/>} className="border-green-500 bg-green-50">
+                                    <p>{analysisResult.coreIdea}</p>
+                                </AnalysisCard>
+                                <AnalysisCard title="Winning Unique Selling Point (USP)" icon={<Check className="text-indigo-500"/>} className="border-indigo-500 bg-indigo-50">
+                                    <p>{analysisResult.usp}</p>
+                                </AnalysisCard>
+                            </div>
+                        </div>
+                    )}
+                     {activeTab === 'swot' && (
+                        <SectionCard title="SWOT Analysis">
+                            <div className="grid md:grid-cols-2 gap-6">
+                                {Object.entries(analysisResult.swot).map(([key, value]) => (
+                                    <AnalysisCard key={key} title={key} className={swotColors[key]}>
+                                        <ul className="list-disc list-inside space-y-1">{value.map((item, i) => <li key={i}>{item}</li>)}</ul>
+                                    </AnalysisCard>
+                                ))}
+                            </div>
+                        </SectionCard>
+                    )}
+                    {activeTab === 'pestle' && (
+                        <SectionCard title="PESTLE Analysis">
+                            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {Object.entries(analysisResult.pestle).map(([key, value], i) => (
+                                    <div key={key} className={`p-4 border-t-4 ${pestleColors[i]} rounded-b-lg bg-gray-50`}>
+                                        <h4 className="font-semibold text-lg capitalize">{key}</h4>
+                                        <ul className="list-disc list-inside mt-2 text-gray-600 text-sm space-y-1">{value.map((item, i) => <li key={i}>{item}</li>)}</ul>
+                                    </div>
+                                ))}
+                            </div>
+                        </SectionCard>
+                    )}
+                    {activeTab === 'porters' && (
+                         <SectionCard title="Porter's Five Forces Analysis">
+                            <div className="space-y-4">
+                                {analysisResult.porters.map(force => (
+                                    <div key={force.force} className="p-4 border rounded-lg bg-gray-50">
+                                        <h4 className="font-semibold text-lg">{force.force} <span className={`text-sm font-medium ml-2 ${levelColors[force.level]}`}>(Level: {force.level})</span></h4>
+                                        <ul className="list-disc list-inside mt-2 text-gray-600 text-sm space-y-1">{force.points.map((p, i) => <li key={i}>{p}</li>)}</ul>
+                                    </div>
+                                ))}
+                            </div>
+                        </SectionCard>
+                    )}
+                    {activeTab === 'catwoe' && (
+                         <SectionCard title="CATWOE Analysis">
+                            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {Object.entries(analysisResult.catwoe).map(([key, value], i) => (
+                                     <div key={key} className={`p-4 border-t-4 ${pestleColors[i]} rounded-b-lg bg-gray-50`}>
+                                        <h4 className="font-semibold text-lg capitalize">{key}</h4>
+                                        <ul className="list-disc list-inside mt-2 text-gray-600 text-sm space-y-1">{value.map((item, i) => <li key={i}>{item}</li>)}</ul>
+                                    </div>
+                                ))}
+                            </div>
+                        </SectionCard>
+                    )}
+                    {activeTab === 'market' && (
+                        <div className="space-y-6">
+                            <SectionCard title="Market Size Analysis (TAM, SAM, SOM)">
+                                <div className="space-y-4">
+                                    <div><h4 className="text-lg font-semibold">Total Addressable Market (TAM)</h4><p className="text-gray-600">{analysisResult.marketSize.tam}</p></div>
+                                    <div><h4 className="text-lg font-semibold">Serviceable Addressable Market (SAM)</h4><p className="text-gray-600">{analysisResult.marketSize.sam}</p></div>
+                                    <div><h4 className="text-lg font-semibold">Serviceable Obtainable Market (SOM)</h4><p className="text-gray-600">{analysisResult.marketSize.som}</p></div>
+                                </div>
+                            </SectionCard>
+                            <SectionCard title="10-Year Growth Simulation">
+                                <div className="relative h-96"><canvas ref={growthChartRef}></canvas></div>
+                            </SectionCard>
+                        </div>
+                    )}
+                </div>
+                <Button onClick={resetUI} variant="outline" className="w-full mt-8">Analyze Another Idea</Button>
+            </div>
+        );
+    };
+
+    return (
+        <div className="animate-in fade-in">
+            {!analysisResult ? (
+                <div>
+                    <h3 className="text-2xl font-bold text-gray-800">Business Strategy Analysis</h3>
+                    <p className="text-gray-500 mb-4">Describe your business concept to generate a comprehensive strategic analysis.</p>
+                    <Textarea 
+                        value={description} 
+                        onChange={(e) => setDescription(e.target.value)}
+                        className="w-full h-40 p-3"
+                        placeholder="Provide a detailed description of your business idea. The more context you give the AI, the more insightful the analysis will be."
+                    />
+                    <Button onClick={handleAnalysis} disabled={isLoading} className="mt-6 w-full">
+                        {isLoading ? <Loader className="animate-spin" /> : <Lightbulb size={18} />}
+                        {isLoading ? 'Generating Analysis...' : 'Generate Full Strategic Analysis'}
+                    </Button>
+                </div>
+            ) : renderContent()}
         </div>
-        {isLoading && <div className="mt-4 flex items-center justify-center"><Loader className="animate-spin"/></div>}
-      </div>
-      <div className="md:col-span-1 space-y-4">
-        <Card>
-          <CardHeader><h4 className="font-bold">Financials</h4></CardHeader>
-          <CardContent className="text-sm space-y-2">
-            <div className="flex justify-between"><span>Revenue:</span><span className="font-mono text-green-600">${simulationOutput.financialSummary.revenue.toLocaleString()}</span></div>
-            <div className="flex justify-between"><span>Expenses:</span><span className="font-mono text-red-600">${simulationOutput.financialSummary.expenses.toLocaleString()}</span></div>
-            <div className="flex justify-between font-bold"><span>Profit:</span><span className="font-mono">${simulationOutput.financialSummary.profit.toLocaleString()}</span></div>
-            <div className="flex justify-between pt-2 border-t font-bold"><span>Capital:</span><span className="font-mono">${simulationOutput.financialSummary.capital.toLocaleString()}</span></div>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  );
-};
-
-
-interface AIBusinessSimulatorViewProps {
-  history: any[];
-  setHistory: (history: any[]) => void;
-  simulationOutput: BusinessSimulationOutput | null;
-  setSimulationOutput: (output: BusinessSimulationOutput | null) => void;
-  isLoading: boolean;
-  setIsLoading: (loading: boolean) => void;
-}
-
-const AIBusinessSimulatorView: React.FC<AIBusinessSimulatorViewProps> = ({
-  history,
-  setHistory,
-  simulationOutput,
-  setSimulationOutput,
-  isLoading,
-  setIsLoading,
-}) => {
-  const { toast } = useToast();
-  const [initialConfig, setInitialConfig] = useState<Omit<BusinessSimulationInput, 'history'> | null>(null);
-
-  const handleStartSimulation = async (config: Omit<BusinessSimulationInput, 'history'>) => {
-    setIsLoading(true);
-    setInitialConfig(config);
-    setHistory([]);
-    try {
-      const result = await runBusinessSimulation({ ...config, history: [] });
-      setSimulationOutput(result);
-      setHistory(prev => [...prev, { role: 'model', content: `${result.eventName}: ${result.eventDescription}` }]);
-    } catch (err: any) {
-      toast({ variant: 'destructive', title: 'Simulation Error', description: err.message || 'Failed to start simulation.' });
-      setInitialConfig(null);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleMakeChoice = async (choice: string) => {
-    if (!initialConfig) return;
-    setIsLoading(true);
-    const newHistory = [...history, { role: 'user', content: choice }];
-    setHistory(newHistory);
-    try {
-      const result = await runBusinessSimulation({ ...initialConfig, history: newHistory });
-      setSimulationOutput(result);
-       setHistory(prev => [...prev, { role: 'model', content: `${result.eventName}: ${result.eventDescription}` }]);
-    } catch (err: any) {
-      toast({ variant: 'destructive', title: 'Simulation Error', description: err.message || 'Failed to process turn.' });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  return (
-    <div className="animate-in fade-in">
-        {!simulationOutput ? (
-          <ConfigView onStart={handleStartSimulation} isLoading={isLoading} />
-        ) : (
-          <SimulationView simulationOutput={simulationOutput} onMakeChoice={handleMakeChoice} isLoading={isLoading} />
-        )}
-    </div>
-  );
+    );
 };
 
 export default AIBusinessSimulatorView;

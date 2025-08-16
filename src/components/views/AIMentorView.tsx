@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,7 +9,6 @@ import { answerCareerQuestion } from '@/ai/flows/answer-career-questions';
 import { analyzeResume } from '@/ai/flows/analyze-resume-flow';
 import AIMockInterviewView from './AIMockInterviewView';
 import AIBusinessSimulatorView from './AIBusinessSimulatorView';
-import type { BusinessSimulationOutput } from '@/ai/schemas/business-simulation-schemas';
 
 interface AIMentorViewProps {
     mentorMode: MentorMode;
@@ -34,11 +34,11 @@ interface AIMentorViewProps {
     interviewResumeFileName: string;
     setInterviewResumeFileName: (name: string) => void;
 
-    // Business Sim state
-    simHistory: TutorChatHistory[];
-    setSimHistory: (history: TutorChatHistory[]) => void;
-    simulationOutput: BusinessSimulationOutput | null;
-    setSimulationOutput: (output: BusinessSimulationOutput | null) => void;
+    // Business Sim state - no longer needed as the new component is self-contained
+    // simHistory: TutorChatHistory[];
+    // setSimHistory: (history: TutorChatHistory[]) => void;
+    // simulationOutput: BusinessSimulationOutput | null;
+    // setSimulationOutput: (output: BusinessSimulationOutput | null) => void;
 
     // General
     isLoading: boolean;
@@ -209,14 +209,7 @@ const AIMentorView: React.FC<AIMentorViewProps> = (props) => {
                 );
             case 'business_simulator':
                 return (
-                    <AIBusinessSimulatorView
-                        history={props.simHistory}
-                        setHistory={props.setSimHistory}
-                        simulationOutput={props.simulationOutput}
-                        setSimulationOutput={props.setSimulationOutput}
-                        isLoading={props.isLoading}
-                        setIsLoading={props.setIsLoading}
-                    />
+                    <AIBusinessSimulatorView />
                 );
             default:
                 return <ChatView {...props} />;
@@ -243,7 +236,7 @@ const AIMentorView: React.FC<AIMentorViewProps> = (props) => {
                                 <Briefcase size={16} /> Mock Interview
                             </button>
                             <button onClick={() => props.setMentorMode('business_simulator')} className={`py-2 px-3 flex items-center gap-2 font-medium text-sm rounded-md ${props.mentorMode === 'business_simulator' ? 'bg-yellow-100 text-yellow-800' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'}`}>
-                               <Building size={16} /> Business Simulator
+                               <Building size={16} /> Business Strategy
                             </button>
                         </nav>
                     </div>

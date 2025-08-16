@@ -22,7 +22,6 @@ import { generateRoadmap } from '@/ai/flows/generate-roadmap-flow';
 
 import type { GenerateIdeasInput, Idea, ExpandIdeaOutput } from '@/ai/schemas/idea-generation-schemas';
 import type { GenerateRoadmapOutput, GenerateRoadmapInput, QuizQuestion, EvaluateQuizOutput } from '@/ai/schemas/tutor-schemas';
-import type { BusinessSimulationOutput } from '@/ai/schemas/business-simulation-schemas';
 
 
 import AITutorView from '@/components/views/AITutorView';
@@ -348,9 +347,7 @@ export default function Home() {
     const [interviewResumeText, setInterviewResumeText] = useState('');
     const [interviewResumeFileName, setInterviewResumeFileName] = useState('');
 
-    // Business Simulator State
-    const [simHistory, setSimHistory] = useState<TutorChatHistory[]>([]);
-    const [simOutput, setSimOutput] = useState<BusinessSimulationOutput | null>(null);
+    // Business Simulator State - The new component is self-contained, so no state needed here.
 
     // AI Roadmap State
     const [roadmapData, setRoadmapData] = useState<GenerateRoadmapOutput | null>(null);
@@ -715,12 +712,6 @@ export default function Home() {
                         interviewResumeFileName={interviewResumeFileName}
                         setInterviewResumeFileName={setInterviewResumeFileName}
                         
-                        // Business Sim state
-                        simHistory={simHistory}
-                        setSimHistory={setSimHistory}
-                        simulationOutput={simOutput}
-                        setSimulationOutput={setSimOutput}
-
                         // General
                         isLoading={isLoading}
                         setIsLoading={setIsLoading}
