@@ -34,12 +34,6 @@ interface AIMentorViewProps {
     interviewResumeFileName: string;
     setInterviewResumeFileName: (name: string) => void;
 
-    // Business Sim state - no longer needed as the new component is self-contained
-    // simHistory: TutorChatHistory[];
-    // setSimHistory: (history: TutorChatHistory[]) => void;
-    // simulationOutput: BusinessSimulationOutput | null;
-    // setSimulationOutput: (output: BusinessSimulationOutput | null) => void;
-
     // General
     isLoading: boolean;
     setIsLoading: (loading: boolean) => void;
