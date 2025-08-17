@@ -204,7 +204,7 @@ const QuizView = ({ quizState, setQuizState, config, setConfig, questions, setQu
     if (quizState === 'config') {
         return (
             <div className="mt-4">
-                <div className="space-y-4 max-w-lg mx-auto">
+                <div className="space-y-4">
                     <div><Label>Topic</Label><Input value={config.topic} onChange={(e) => setConfig({ ...config, topic: e.target.value })} /></div>
                     <div>
                         <Label>Number of Questions</Label>

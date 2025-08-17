@@ -613,8 +613,22 @@ export default function Home() {
     };
   
     const handleFinalize = (idea: any) => {
-      setFinalizedIdea(idea);
-      setIdeaGeneratorStep('finalized');
+        const ideaToFinalize = ideas.find(i => i.id === idea.id);
+        if (ideaToFinalize?.expandedData) {
+            setFinalizedIdea(ideaToFinalize);
+            setIdeaGeneratorStep('finalized');
+        } else {
+            // If not expanded, expand it first, then finalize
+            handleAction('expand', idea.id).then(() => {
+                // This is tricky because state updates are async.
+                // A better approach is to use the result of the action.
+                // For now, we'll just show a toast.
+                toast({
+                    title: "Idea Expanded",
+                    description: "The idea details have been generated. Click Finalize again to view the summary.",
+                });
+            });
+        }
     };
   
     const handleIdeaRestart = () => {

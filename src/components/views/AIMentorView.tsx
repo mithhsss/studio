@@ -64,20 +64,68 @@ const ChatView: React.FC<Pick<AIMentorViewProps, 'chatHistory' | 'setChatHistory
 }) => {
     const { toast } = useToast();
 
-    const handleResumeUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleResumeUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
-        if (file) {
-            setResumeFileName(file.name);
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const text = e.target?.result as string;
-                setResumeText(text);
-                toast({
-                  title: "Resume Uploaded",
-                  description: `${file.name} is now part of the conversation context.`,
-                })
-            };
-            reader.readAsText(file);
+        if (!file) return;
+
+        setResumeFileName(file.name);
+        setIsLoading(true);
+        toast({ title: "Processing Resume...", description: `Reading ${file.name}...` });
+
+        try {
+            let text = '';
+            if (file.type === 'application/pdf') {
+                const pdfjs = await import('pdfjs-dist/build/pdf');
+                await import('pdfjs-dist/build/pdf.worker.mjs');
+                pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.mjs`;
+                const reader = new FileReader();
+                reader.onload = async (e) => {
+                    if (e.target?.result) {
+                        const typedArray = new Uint8Array(e.target.result as ArrayBuffer);
+                        const pdf = await pdfjs.getDocument(typedArray).promise;
+                        let fullText = '';
+                        for (let i = 1; i <= pdf.numPages; i++) {
+                            const page = await pdf.getPage(i);
+                            const content = await page.getTextContent();
+                            fullText += content.items.map((item: any) => item.str).join(' ');
+                        }
+                        setResumeText(fullText);
+                        toast({ title: "Resume Uploaded!", description: `${file.name} is now part of the conversation context.` });
+                        setIsLoading(false);
+                    }
+                };
+                reader.readAsArrayBuffer(file);
+                return; // Prevent fall-through
+            } else if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+                const mammoth = (await import('mammoth')).default;
+                const reader = new FileReader();
+                reader.onload = async (e) => {
+                    if (e.target?.result) {
+                        const result = await mammoth.extractRawText({ arrayBuffer: e.target.result as ArrayBuffer });
+                        setResumeText(result.value);
+                        toast({ title: "Resume Uploaded!", description: `${file.name} is now part of the conversation context.` });
+                        setIsLoading(false);
+                    }
+                };
+                reader.readAsArrayBuffer(file);
+                 return; // Prevent fall-through
+            } else {
+                 // Fallback for .txt, .md
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const text = e.target?.result as string;
+                    setResumeText(text);
+                    toast({ title: "Resume Uploaded", description: `${file.name} is now part of the conversation context.` });
+                     setIsLoading(false);
+                };
+                reader.readAsText(file);
+            }
+        } catch (e) {
+            console.error("Error parsing resume:", e);
+            toast({ variant: "destructive", title: "Parsing Failed", description: "Could not read the resume file. Please try a different format." });
+            setResumeFileName(null);
+            setResumeText(null);
+            setIsLoading(false);
         }
     };
 
@@ -161,7 +209,7 @@ const ChatView: React.FC<Pick<AIMentorViewProps, 'chatHistory' | 'setChatHistory
                                     <span className="sr-only">Upload Resume</span>
                                 </label>
                             </Button>
-                            <input id="resume-upload" type="file" className="absolute w-full h-full opacity-0 top-0 left-0 cursor-pointer" onChange={handleResumeUpload} accept=".txt,.pdf,.md" />
+                            <input id="resume-upload" type="file" className="absolute w-full h-full opacity-0 top-0 left-0 cursor-pointer" onChange={handleResumeUpload} accept=".txt,.md,.pdf,.docx" />
                         </div>
                         <div className="flex-grow relative">
                             <input

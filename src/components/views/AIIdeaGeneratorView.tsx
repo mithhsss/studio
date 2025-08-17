@@ -260,33 +260,46 @@ const CombineDialog = ({ pair, onCombine, onCancel, isLoading }: { pair: any[], 
 );
 
 
-const FinalizationView = ({ idea, onRestart }: { idea: any, onRestart: any }) => (
-    <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center">
-        <Trophy size={48} className="mx-auto text-amber-400" />
-        <h2 className="text-3xl font-bold text-gray-800 mt-2">Your idea has evolved!</h2>
-        <div className="bg-gray-50 rounded-lg p-6 mt-6 text-left shadow-inner border">
-            <h3 className="text-xl font-bold text-indigo-700">{idea.title}</h3>
-            <p className="text-gray-600 mt-2">{idea.longDesc}</p>
-            <div className="mt-4 border-t pt-4">
-                <h4 className="font-semibold">Next Steps:</h4>
-                <ul className="list-disc list-inside text-sm text-gray-600">
-                    <li>Draft a project brief and budget proposal.</li>
-                    <li>Form a small team to flesh out logistics.</li>
-                    <li>Survey potential attendees for interest.</li>
-                </ul>
+const FinalizationView = ({ idea, onRestart }: { idea: any, onRestart: any }) => {
+    if (!idea || !idea.expandedData) {
+        return (
+            <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center">
+                <AlertTriangle size={48} className="mx-auto text-amber-400" />
+                <h2 className="text-3xl font-bold text-gray-800 mt-2">Could Not Finalize Idea</h2>
+                <p className="text-gray-600 mt-2">The idea has not been expanded yet. Please expand the idea before finalizing.</p>
+                <Button onClick={onRestart} className="mt-4">Back to Brainstorm</Button>
+            </motion.div>
+        );
+    }
+    
+    const { expandedIdea } = idea.expandedData;
+    
+    return (
+        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center">
+            <Trophy size={48} className="mx-auto text-amber-400" />
+            <h2 className="text-3xl font-bold text-gray-800 mt-2">Your idea has evolved!</h2>
+            <div className="bg-gray-50 rounded-lg p-6 mt-6 text-left shadow-inner border max-w-4xl mx-auto">
+                <h3 className="text-2xl font-bold text-indigo-700">{idea.title}</h3>
+                <p className="text-gray-700 mt-3 whitespace-pre-wrap">{expandedIdea.mainDescription}</p>
+
+                <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <ExpandedDetailCard icon={<Briefcase size={18} className="text-blue-500"/>} title="Core Features & Benefits">
+                        <ul className="list-disc pl-5 space-y-1">{expandedIdea.coreFeatures.points.map((point, i) => <li key={i}>{point}</li>)}</ul>
+                        <p className="pt-2">{expandedIdea.coreFeatures.summary}</p>
+                    </ExpandedDetailCard>
+                    <ExpandedDetailCard icon={<Target size={18} className="text-red-500"/>} title="Target Audience & Market Fit"><p className="whitespace-pre-wrap">{expandedIdea.targetAudience.description}</p></ExpandedDetailCard>
+                    <ExpandedDetailCard icon={<ListOrdered size={18} className="text-green-500"/>} title="Implementation Roadmap"><ul className="list-disc pl-5 space-y-1">{expandedIdea.implementationRoadmap.steps.map((step, i) => <li key={i}>{step}</li>)}</ul></ExpandedDetailCard>
+                    <ExpandedDetailCard icon={<HandCoins size={18} className="text-teal-500"/>} title="Monetization & Sustainability"><ul className="list-disc pl-5 space-y-1">{expandedIdea.monetization.points.map((point, i) => <li key={i}>{point}</li>)}</ul></ExpandedDetailCard>
+                </div>
             </div>
-            <div className="mt-4">
-                <h4 className="font-semibold">Mood Board:</h4>
-                <div className="flex gap-2 text-2xl mt-1">🌳 💻 🤝 🏆 🌎</div>
+            <div className="flex gap-3 mt-8 max-w-sm mx-auto">
+                <Button variant="outline" className="flex-1"><Download size={16} /> Download as PDF</Button>
+                <Button variant="outline" className="flex-1"><Copy size={16} /> Copy to Notion</Button>
             </div>
-        </div>
-        <div className="flex gap-3 mt-6">
-            <Button variant="outline" className="flex-1"><Download size={16} /> Download PDF</Button>
-            <Button variant="outline" className="flex-1"><Copy size={16} /> Copy to Notion</Button>
-        </div>
-        <button onClick={onRestart} className="mt-4 text-indigo-600 font-semibold hover:underline">Start a New Brainstorm</button>
-    </motion.div>
-);
+            <button onClick={onRestart} className="mt-4 text-indigo-600 font-semibold hover:underline">Start a New Brainstorm</button>
+        </motion.div>
+    );
+};
 
 
 const AIIdeaGeneratorView: React.FC<AIIdeaGeneratorViewProps> = ({
@@ -356,6 +369,13 @@ const AIIdeaGeneratorView: React.FC<AIIdeaGeneratorViewProps> = ({
             handleAction('expand', idea.id); // Also expand on refine
         }
         setActiveRefineIdea(idea);
+    };
+
+    const handleFinalizeClick = (idea: IdeaWithState) => {
+        if (!idea.expandedData) {
+            handleAction('expand', idea.id);
+        }
+        handleFinalize(idea);
     };
 
     // This effect will open the refinement hub once the data is loaded
@@ -450,7 +470,7 @@ const AIIdeaGeneratorView: React.FC<AIIdeaGeneratorViewProps> = ({
                                     onSelectCombine={() => handleSelectCombine(idea.id)}
                                     isSelectedForCombine={selectedToCombine.includes(idea.id)}
                                     isCombineDisabled={selectedToCombine.length >= 2}
-                                    onFinalize={handleFinalize}
+                                    onFinalize={() => handleFinalizeClick(idea)}
                                     isLoading={isLoading && activeChatIdea?.id === idea.id && !activeRefineIdea}
                                 />
                             ))}
