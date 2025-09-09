@@ -1,6 +1,6 @@
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { Map, Zap, Target, Clock, ArrowRight, X, Loader, Radio, BookOpen, Briefcase, Users, Award, ExternalLink, Star } from 'lucide-react';
+import { Map, Zap, Target, Clock, ArrowRight, X, Loader, Radio, BookOpen, Briefcase, Users, Award, ExternalLink, Star, Maximize, Minimize } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -168,6 +168,8 @@ const RoadmapViewInternal = ({ roadmapData, onBack }: { roadmapData: GenerateRoa
     const [edges, setEdges, onEdgesChange] = useEdgesState([]);
     const { toast } = useToast();
     const detailedPlanRef = useRef<HTMLDivElement>(null);
+    const roadmapGraphRef = useRef<HTMLDivElement>(null);
+    const [isFullScreen, setIsFullScreen] = useState(false);
 
     useEffect(() => {
         const generateFlowFromPlan = (plan: GenerateRoadmapOutput) => {
@@ -283,138 +285,197 @@ const RoadmapViewInternal = ({ roadmapData, onBack }: { roadmapData: GenerateRoa
         [setEdges],
     );
     
-    const handleDownload = () => {
+    const handleDownload = async () => {
         toast({ title: 'Preparing Download', description: 'Generating your PDF roadmap...' });
-
-        const doc = new jsPDF({
-            orientation: 'p',
-            unit: 'mm',
-            format: 'a4'
-        });
-
-        const pageWidth = doc.internal.pageSize.getWidth();
-        const pageHeight = doc.internal.pageSize.getHeight();
-        const margin = 15;
-        const maxLineWidth = pageWidth - margin * 2;
-        let y = margin;
-        
-        const checkPageBreak = (heightNeeded: number) => {
-            if (y + heightNeeded > pageHeight - margin) {
-                doc.addPage();
-                y = margin;
-            }
-        };
-
-        // Title
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(22);
-        doc.text('Your Personalized Learning Plan', pageWidth / 2, y, { align: 'center' });
-        y += 15;
-        
-        roadmapData.detailedStages.forEach((stage, index) => {
-            checkPageBreak(20);
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(16);
-            doc.text(`Stage ${stage.stage}: ${stage.title}`, margin, y);
-            y += 8;
-
-            doc.setFont('helvetica', 'normal');
-            doc.setFontSize(11);
-            doc.setTextColor(80, 80, 80);
-            const objectiveLines = doc.splitTextToSize(`Objective: ${stage.objective}`, maxLineWidth);
-            checkPageBreak(objectiveLines.length * 5);
-            doc.text(objectiveLines, margin, y);
-            y += objectiveLines.length * 5;
-
-            const durationLines = doc.splitTextToSize(`Estimated Duration: ${stage.estimatedDuration}`, maxLineWidth);
-            checkPageBreak(durationLines.length * 5);
-            doc.text(durationLines, margin, y);
-            y += 8;
-
-            stage.subtopics.forEach((sub, sIndex) => {
-                checkPageBreak(15);
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(12);
-                doc.setTextColor(0, 0, 0);
-                doc.text(sub.title, margin, y);
-                y += 6;
-
-                doc.setFont('helvetica', 'normal');
-                doc.setFontSize(10);
-                doc.setTextColor(80, 80, 80);
-                const descriptionLines = doc.splitTextToSize(sub.description, maxLineWidth);
-                checkPageBreak(descriptionLines.length * 4);
-                doc.text(descriptionLines, margin, y);
-                y += descriptionLines.length * 4 + 2;
-                
-                doc.setFont('helvetica', 'bold');
-                doc.text('Project:', margin, y);
-                y += 4;
-                doc.setFont('helvetica', 'normal');
-                const projectLines = doc.splitTextToSize(sub.project, maxLineWidth);
-                checkPageBreak(projectLines.length * 4);
-                doc.text(projectLines, margin, y);
-                y += projectLines.length * 4 + 4;
-                
-                const renderResources = (title: string, resources: any[]) => {
-                    if (resources && resources.length > 0) {
-                        checkPageBreak(8);
-                        doc.setFont('helvetica', 'bold');
-                        doc.text(title, margin, y);
-                        y += 5;
-                        doc.setFont('helvetica', 'normal');
-                        resources.forEach(res => {
-                           checkPageBreak(4);
-                           doc.setTextColor(43, 108, 176); // Blue for links
-                           doc.textWithLink(res.name, margin, y, { url: res.url });
-                           y += 5;
-                        });
-                    }
-                };
-
-                renderResources('Free Resources:', sub.freeResources);
-                renderResources('Premium Resources:', sub.premiumResources);
-                
-                y += 5; // Extra space after each subtopic
+    
+        const graphElement = roadmapGraphRef.current;
+        const detailsElement = detailedPlanRef.current;
+    
+        if (!graphElement || !detailsElement) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Could not find elements to generate PDF.' });
+            return;
+        }
+    
+        try {
+            // 1. Generate Graph Image
+            const canvas = await html2canvas(graphElement, {
+                scale: 2, // Higher scale for better quality
+                useCORS: true,
+                backgroundColor: '#f7f8fa'
             });
+            const graphImage = canvas.toDataURL('image/png');
+    
+            // 2. Initialize PDF
+            const doc = new jsPDF({
+                orientation: 'p',
+                unit: 'mm',
+                format: 'a4'
+            });
+    
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const pageHeight = doc.internal.pageSize.getHeight();
+            const margin = 15;
+            const maxLineWidth = pageWidth - margin * 2;
+    
+            // 3. Add Graph to PDF
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(22);
+            doc.text('Your Visual Roadmap', pageWidth / 2, margin, { align: 'center' });
             
-            if (index < roadmapData.detailedStages.length - 1) {
-                doc.setDrawColor(200, 200, 200);
-                doc.line(margin, y, pageWidth - margin, y);
-                y += 8;
+            const imgProps = doc.getImageProperties(graphImage);
+            const imgHeight = (imgProps.height * maxLineWidth) / imgProps.width;
+            let finalImgHeight = imgHeight;
+            let finalImgY = margin + 10;
+            
+            if (finalImgHeight > (pageHeight - finalImgY - margin)) {
+                finalImgHeight = pageHeight - finalImgY - margin;
             }
-        });
-
-        doc.save('AI_Learning_Roadmap.pdf');
+            
+            doc.addImage(graphImage, 'PNG', margin, finalImgY, maxLineWidth, finalImgHeight);
+    
+            // 4. Add Detailed Plan to PDF
+            doc.addPage();
+            let y = margin;
+    
+            const checkPageBreak = (heightNeeded: number) => {
+                if (y + heightNeeded > pageHeight - margin) {
+                    doc.addPage();
+                    y = margin;
+                }
+            };
+    
+            // Title for detailed plan
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(22);
+            doc.text('Your Detailed Learning Plan', pageWidth / 2, y, { align: 'center' });
+            y += 15;
+            
+            roadmapData.detailedStages.forEach((stage, index) => {
+                checkPageBreak(20);
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(16);
+                doc.text(`Stage ${stage.stage}: ${stage.title}`, margin, y);
+                y += 8;
+    
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(11);
+                doc.setTextColor(80, 80, 80);
+                const objectiveLines = doc.splitTextToSize(`Objective: ${stage.objective}`, maxLineWidth);
+                checkPageBreak(objectiveLines.length * 5);
+                doc.text(objectiveLines, margin, y);
+                y += objectiveLines.length * 5;
+    
+                const durationLines = doc.splitTextToSize(`Estimated Duration: ${stage.estimatedDuration}`, maxLineWidth);
+                checkPageBreak(durationLines.length * 5);
+                doc.text(durationLines, margin, y);
+                y += 8;
+    
+                stage.subtopics.forEach((sub) => {
+                    checkPageBreak(15);
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(12);
+                    doc.setTextColor(0, 0, 0);
+                    doc.text(sub.title, margin, y);
+                    y += 6;
+    
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(10);
+                    doc.setTextColor(80, 80, 80);
+                    const descriptionLines = doc.splitTextToSize(sub.description, maxLineWidth);
+                    checkPageBreak(descriptionLines.length * 4);
+                    doc.text(descriptionLines, margin, y);
+                    y += descriptionLines.length * 4 + 2;
+                    
+                    doc.setFont('helvetica', 'bold');
+                    doc.text('Project:', margin, y);
+                    y += 4;
+                    doc.setFont('helvetica', 'normal');
+                    const projectLines = doc.splitTextToSize(sub.project, maxLineWidth);
+                    checkPageBreak(projectLines.length * 4);
+                    doc.text(projectLines, margin, y);
+                    y += projectLines.length * 4 + 4;
+                    
+                    const renderResources = (title: string, resources: any[]) => {
+                        if (resources && resources.length > 0) {
+                            checkPageBreak(8);
+                            doc.setFont('helvetica', 'bold');
+                            doc.text(title, margin, y);
+                            y += 5;
+                            doc.setFont('helvetica', 'normal');
+                            resources.forEach(res => {
+                               checkPageBreak(4);
+                               doc.setTextColor(43, 108, 176);
+                               doc.textWithLink(res.name, margin, y, { url: res.url });
+                               y += 5;
+                            });
+                        }
+                    };
+    
+                    renderResources('Free Resources:', sub.freeResources);
+                    renderResources('Premium Resources:', sub.premiumResources);
+                    
+                    y += 5;
+                });
+                
+                if (index < roadmapData.detailedStages.length - 1) {
+                    doc.setDrawColor(200, 200, 200);
+                    doc.line(margin, y, pageWidth - margin, y);
+                    y += 8;
+                }
+            });
+    
+            doc.save('AI_Learning_Roadmap.pdf');
+        } catch (error) {
+            console.error("PDF Generation Error:", error);
+            toast({ variant: 'destructive', title: 'PDF Error', description: 'Failed to generate the roadmap PDF.' });
+        }
     };
+    
+    const renderFlow = (isFull: boolean) => (
+        <ReactFlow
+            nodes={nodes}
+            edges={edges}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            onConnect={onConnect}
+            nodeTypes={nodeTypes}
+            fitView
+            className="bg-gray-50/50"
+        >
+            <Controls />
+            <MiniMap nodeColor={(n) => '#a5b4fc'} />
+            <Background variant="dots" gap={12} size={1} />
+        </ReactFlow>
+    );
 
     return (
         <div className="bg-white p-4">
             <div className="flex justify-between items-center mb-4">
                 <h2 className="text-2xl font-bold text-gray-800">Your Personalized Roadmap</h2>
                  <div className="flex items-center gap-2">
+                    <Button onClick={() => setIsFullScreen(true)} variant="outline" size="sm" className="flex items-center gap-1.5"><Maximize size={14}/> Full Screen</Button>
                     <Button onClick={handleDownload} variant="outline" size="sm">Download PDF</Button>
                     <Button onClick={onBack} variant="outline" size="sm">Start Over</Button>
                  </div>
             </div>
             
             {/* Graph View */}
-            <div className="w-full h-[60vh] border rounded-lg mb-8">
-                <ReactFlow
-                    nodes={nodes}
-                    edges={edges}
-                    onNodesChange={onNodesChange}
-                    onEdgesChange={onEdgesChange}
-                    onConnect={onConnect}
-                    nodeTypes={nodeTypes}
-                    fitView
-                    className="bg-gray-50/50"
-                >
-                    <Controls />
-                    <MiniMap nodeColor={(n) => '#a5b4fc'} />
-                    <Background variant="dots" gap={12} size={1} />
-                </ReactFlow>
+            <div ref={roadmapGraphRef} className="w-full h-[60vh] border rounded-lg mb-8">
+                {renderFlow(false)}
             </div>
+
+            {/* Full Screen Modal */}
+            {isFullScreen && (
+                <div className="fixed inset-0 bg-white z-50 p-4 flex flex-col">
+                    <div className="flex justify-between items-center mb-4">
+                        <h2 className="text-xl font-bold">Full Screen Roadmap</h2>
+                        <Button onClick={() => setIsFullScreen(false)} variant="outline" size="sm" className="flex items-center gap-1.5"><Minimize size={14}/> Exit Full Screen</Button>
+                    </div>
+                    <div className="flex-grow border rounded-lg">
+                        {renderFlow(true)}
+                    </div>
+                </div>
+            )}
 
             {/* Detailed Stages View */}
             <div ref={detailedPlanRef}>
@@ -498,7 +559,7 @@ export default function AIRoadmapView({
     roadmapData, 
     handleGenerateRoadmap,
     setRoadmapData,
-    isLoading,
+    isLoading, 
     error 
 } : {
     roadmapData: GenerateRoadmapOutput | null, 
