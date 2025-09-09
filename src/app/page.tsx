@@ -1,5 +1,4 @@
 
-
 "use client";
 import React, { useState, useEffect, useRef } from 'react';
 import { BookOpen, Map, Users, Code, Plus, Sparkles, BrainCircuit, FileText, Lightbulb, Bot, Package, WandSparkles, Wind, Hash, TrendingUp, Award, BarChart, Rocket, Briefcase, Building } from 'lucide-react';
@@ -728,7 +727,7 @@ export default function Home() {
                         handleCombine={handleCombine}
                         setCombinePair={setCombinePair}
                         handleFinalize={handleFinalize}
-                        handleRestart={handleRestart}
+                        handleRestart={handleIdeaRestart}
                     />
                 );
         }
