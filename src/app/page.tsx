@@ -12,7 +12,6 @@ import { answerCareerQuestion } from '@/ai/flows/answer-career-questions';
 import { analyzeResume } from '@/ai/flows/analyze-resume-flow';
 import { generateOutline, type GenerateOutlineOutput } from '@/ai/flows/generate-outline-flow';
 import { generateDraft } from '@/ai/flows/generate-draft-flow';
-import { generateCode, type GenerateCodeOutput } from '@/ai/flows/generate-code-flow';
 import { generateIdeas } from '@/ai/flows/generate-ideas-flow';
 import { refineContent } from '@/ai/flows/refine-content-flow';
 import { chatWithIdea } from '@/ai/flows/chat-with-idea-flow';
@@ -29,18 +28,16 @@ import AIRoadmapView from '@/components/views/AIRoadmapView';
 import AIMentorView from '@/components/views/AIMentorView';
 import AIContentGeneratorView from '@/components/views/AIContentGeneratorView';
 import AIIdeaGeneratorView from '@/components/views/AIIdeaGeneratorView';
-import AICoderView from '@/components/views/AICoderView';
 import DefaultView from '@/components/views/DefaultView';
 import AIMockInterviewView from '@/components/views/AIMockInterviewView';
 import AIBusinessSimulatorView from '@/components/views/AIBusinessSimulatorView';
 
 // --- TYPE DEFINITIONS --- //
 
-export type ActiveView = 'tutor' | 'roadmap' | 'mentor' | 'coder' | 'content-generator' | 'idea-generator' | null;
+export type ActiveView = 'tutor' | 'roadmap' | 'mentor' | 'content-generator' | 'idea-generator' | null;
 export type MentorMode = 'chat' | 'interview_prep' | 'business_simulator';
 export type ContentGeneratorStep = 'idea' | 'outline' | 'draft';
 export type IdeaGeneratorStep = 'input' | 'results' | 'finalized';
-export type CoderStep = 'blueprint' | 'workbench';
 export type TutorMode = 'dashboard' | 'learn' | 'quiz' | 'sandbox';
 export type QuizState = 'config' | 'taking' | 'result';
 
@@ -294,12 +291,6 @@ const RecommendedToolsSection = () => (
                     description="Test your entrepreneurial ideas in a dynamic market simulation."
                     color="red"
                 />
-                <RecommendedTool 
-                    icon={<Code />}
-                    title="AI Coder"
-                    description="Leverage the power of AI to build and refine code components."
-                    color="green"
-                />
                 <RecommendedTool
                     icon={<FileText />}
                     title="Content Generator"
@@ -375,24 +366,6 @@ export default function Home() {
         other: 'Focus on mental wellness', 
         lens: 'What If?',
         detailedDescription: ''
-    });
-
-    // State for AI Coder
-    const [coderStep, setCoderStep] = useState<CoderStep>('blueprint');
-    const [generatedCode, setGeneratedCode] = useState<GenerateCodeOutput | null>(null);
-    const [coderChatHistory, setCoderChatHistory] = useState<any[]>([]);
-    const [coderFormData, setCoderFormData] = useState({
-        description: 'A responsive pricing table with three tiers and a selected state',
-        framework: 'React',
-        language: 'JavaScript',
-        styling: 'CSS Modules',
-        techStack: 'Next.js, Vercel',
-        schema: `[{
-  "id": 1,
-  "name": "Basic",
-  "price": 10,
-  "features": ["Feature A", "Feature B"]
-}]`
     });
 
     // State for AI Tutor
@@ -639,21 +612,6 @@ export default function Home() {
       setCombinePair([]);
     };
 
-    // AI Coder functions
-    const handleCoderGenerate = async () => {
-        setIsLoading(true);
-        // This is where the call to the real AI flow will happen
-        // For now, it's just a delay.
-        // await simulateAICall(1500); 
-        setIsLoading(false);
-        setCoderStep('workbench');
-    };
-    
-    const handleCoderGoBack = () => {
-        setCoderStep('blueprint');
-        setGeneratedCode(null);
-    };
-
     // --- RENDER LOGIC --- //
 
     const renderMainContent = () => {
@@ -773,27 +731,6 @@ export default function Home() {
                         handleRestart={handleIdeaRestart}
                     />
                 );
-            case 'coder':
-                 return (
-                    <AICoderView
-                        step={coderStep}
-                        isLoading={isLoading}
-                        generatedCode={generatedCode}
-                        setGeneratedCode={(code) => {
-                            setGeneratedCode(code);
-                            if (code) {
-                                setIsLoading(false);
-                                setCoderStep('workbench');
-                            }
-                        }}
-                        chatHistory={coderChatHistory}
-                        setCoderChatHistory={setCoderChatHistory}
-                        formData={coderFormData}
-                        setFormData={setCoderFormData}
-                        onGenerate={() => setIsLoading(true)}
-                        onGoBack={handleCoderGoBack}
-                    />
-                );
         }
     };
 
@@ -815,7 +752,6 @@ export default function Home() {
                         <NavItem icon={<Map className="h-5 w-5" />} label="AI Roadmap" subtext="Career pathing" active={activeView === 'roadmap'} onClick={() => handleViewChange('roadmap')} />
                         <NavItem icon={<FileText className="h-5 w-5" />} label="Content Generator" subtext="Generate text content" active={activeView === 'content-generator'} onClick={() => handleViewChange('content-generator')} />
                         <NavItem icon={<Lightbulb className="h-5 w-5" />} label="Idea Generator" subtext="Brainstorm new ideas" active={activeView === 'idea-generator'} onClick={() => handleViewChange('idea-generator')} />
-                        <NavItem icon={<Code className="h-5 w-5" />} label="AI Coder" subtext="Coding Companion" active={activeView === 'coder'} onClick={() => handleViewChange('coder')} />
                     </nav>
                 </CardContent>
             </Card>
