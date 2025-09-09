@@ -31,10 +31,11 @@ Follow these rules:
 
 Conversation History:
 {{#each chatHistory}}
-{{#if (eq this.role 'user')}}
-User: {{{this.content}}}
-{{else}}
-Tutor: {{{this.content}}}
+{{#if this.user}}
+User: {{{this.user}}}
+{{/if}}
+{{#if this.model}}
+Tutor: {{{this.model}}}
 {{/if}}
 {{/each}}
 
@@ -48,7 +49,19 @@ const scenarioSandboxFlow = ai.defineFlow(
     outputSchema: ScenarioSandboxOutputSchema,
   },
   async (input) => {
-    const { output } = await prompt(input);
+    // Reformat chat history for Handlebars compatibility
+    const formattedHistory = input.chatHistory.map(msg => {
+      if (msg.role === 'user') {
+        return { user: msg.content };
+      } else {
+        return { model: msg.content };
+      }
+    });
+    
+    const { output } = await prompt({
+        ...input,
+        chatHistory: formattedHistory,
+    });
     return output!;
   }
 );
