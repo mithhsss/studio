@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -42,9 +43,10 @@ Your task is to conduct a realistic mock interview with the user based on their 
 
 **Conversation History:**
 {{#each chatHistory}}
-{{#if (eq this.role 'user')}}
+{{#if this.role 'user'}}
 User: {{{this.content}}}
-{{else}}
+{{/if}}
+{{#if this.role 'model'}}
 Interviewer: {{{this.content}}}
 {{/if}}
 {{/each}}
