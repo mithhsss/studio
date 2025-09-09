@@ -39,7 +39,7 @@ export type ActiveView = 'tutor' | 'roadmap' | 'mentor' | 'content-generator' | 
 export type MentorMode = 'chat' | 'interview_prep' | 'business_simulator';
 export type ContentGeneratorStep = 'idea' | 'outline' | 'draft';
 export type IdeaGeneratorStep = 'input' | 'results' | 'finalized';
-export type TutorMode = 'dashboard' | 'learn' | 'quiz' | 'sandbox';
+export type TutorMode = 'dashboard' | 'quiz' | 'sandbox';
 export type QuizState = 'config' | 'taking' | 'result';
 
 
@@ -371,8 +371,6 @@ export default function Home() {
 
     // State for AI Tutor
     const [tutorMode, setTutorMode] = useState<TutorMode>('dashboard');
-    const [tutorChatHistory, setTutorChatHistory] = useState<TutorChatHistory[]>([]);
-    const [learnTopic, setLearnTopic] = useState('');
     const [quizState, setQuizState] = useState<QuizState>('config');
     const [quizConfig, setQuizConfig] = useState<QuizConfig>({
       topic: '',
@@ -671,10 +669,6 @@ export default function Home() {
                     <AITutorView
                         tutorMode={tutorMode}
                         setTutorMode={setTutorMode}
-                        chatHistory={tutorChatHistory}
-                        setChatHistory={setTutorChatHistory}
-                        learnTopic={learnTopic}
-                        setLearnTopic={setLearnTopic}
                         quizState={quizState}
                         setQuizState={setQuizState}
                         quizConfig={quizConfig}
