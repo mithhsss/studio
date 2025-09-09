@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -133,7 +134,7 @@ const InteractiveLearnView = ({ topic, setTopic, chatHistory, setChatHistory, is
     return (
         <div className="mt-4">
             <div className="flex gap-2 mb-4">
-                <Input placeholder="Enter a topic to learn (e.g., 'React Hooks')" value={topic} onChange={(e) => setTopic(e.target.value)} disabled={chatHistory.length > 0} />
+                <Input placeholder="Enter a topic to learn" value={topic} onChange={(e) => setTopic(e.target.value)} disabled={chatHistory.length > 0} />
                 <Button onClick={handleStartSession} disabled={chatHistory.length > 0 || isLoading}>Start Session</Button>
             </div>
             <div className="h-[50vh] bg-slate-50 rounded-lg p-4 overflow-y-auto" ref={chatContainerRef}>
@@ -203,9 +204,9 @@ const QuizView = ({ quizState, setQuizState, config, setConfig, questions, setQu
 
     if (quizState === 'config') {
         return (
-            <div className="mt-4">
+            <div className="mt-4 max-w-lg mx-auto">
                 <div className="space-y-4">
-                    <div><Label>Topic</Label><Input value={config.topic} onChange={(e) => setConfig({ ...config, topic: e.target.value })} /></div>
+                    <div><Label>Topic</Label><Input value={config.topic} onChange={(e) => setConfig({ ...config, topic: e.target.value })} placeholder="Enter a quiz topic" /></div>
                     <div>
                         <Label>Number of Questions</Label>
                         <Input 
@@ -220,7 +221,9 @@ const QuizView = ({ quizState, setQuizState, config, setConfig, questions, setQu
                         />
                     </div>
                     <div><Label>Difficulty</Label><RadioGroup value={config.difficulty} onValueChange={(v) => setConfig({ ...config, difficulty: v })} className="flex gap-4"><div className="flex items-center space-x-2"><RadioGroupItem value="Easy" id="r1" /><Label htmlFor="r1">Easy</Label></div><div className="flex items-center space-x-2"><RadioGroupItem value="Medium" id="r2" /><Label htmlFor="r2">Medium</Label></div><div className="flex items-center space-x-2"><RadioGroupItem value="Hard" id="r3" /><Label htmlFor="r3">Hard</Label></div></RadioGroup></div>
-                    <Button onClick={handleGenerateQuiz} disabled={isLoading} className="w-full">{isLoading ? <Loader className="animate-spin" /> : 'Start Quiz'}</Button>
+                    <Button onClick={handleGenerateQuiz} disabled={isLoading} className="w-full !mt-6">
+                        {isLoading ? <Loader className="animate-spin" /> : 'Start Quiz'}
+                    </Button>
                 </div>
             </div>
         );
@@ -323,7 +326,7 @@ const ScenarioSandboxView = ({ topic, setTopic, chatHistory, setChatHistory, isL
     return (
         <div className="mt-4">
             <div className="flex gap-2 mb-4">
-                <Input placeholder="Enter a topic for the scenario (e.g., 'Graph Algorithms')" value={topic} onChange={(e) => setTopic(e.target.value)} disabled={chatHistory.length > 0} />
+                <Input placeholder="Enter a topic for the scenario" value={topic} onChange={(e) => setTopic(e.target.value)} disabled={chatHistory.length > 0} />
                 <Button onClick={handleStartSession} disabled={chatHistory.length > 0 || isLoading}>Start Scenario</Button>
             </div>
             <div className="h-[50vh] bg-slate-50 rounded-lg p-4 overflow-y-auto" ref={chatContainerRef}>

@@ -374,7 +374,7 @@ export default function Home() {
     const [learnTopic, setLearnTopic] = useState('');
     const [quizState, setQuizState] = useState<QuizState>('config');
     const [quizConfig, setQuizConfig] = useState<QuizConfig>({
-      topic: 'JavaScript Fundamentals',
+      topic: '',
       numQuestions: 5,
       difficulty: 'Medium',
     });
@@ -717,7 +717,7 @@ export default function Home() {
                         finalizedIdea={finalizedIdea}
                         dragOverId={dragOverId}
                         formData={ideaFormData}
-                        setFormData={setIdeaFormData}
+                        setFormData={setFormData}
                         handleGenerateIdeas={handleGenerateIdeas}
                         handleAction={handleAction}
                         // Drag and drop is being replaced, but we'll keep the props for now
@@ -728,7 +728,7 @@ export default function Home() {
                         handleCombine={handleCombine}
                         setCombinePair={setCombinePair}
                         handleFinalize={handleFinalize}
-                        handleRestart={handleIdeaRestart}
+                        handleRestart={handleRestart}
                     />
                 );
         }
