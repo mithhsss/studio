@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
@@ -14,20 +15,51 @@ import { Label } from '@/components/ui/label';
 const SetupView = ({ onStart, isLoading, jobDescription, setJobDescription, resumeText, setResumeText, resumeFileName, setResumeFileName }) => {
   const { toast } = useToast();
 
-  const handleResumeUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleResumeUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
-      setResumeFileName(file.name);
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const text = e.target?.result as string;
-        setResumeText(text);
-        toast({
-          title: "Resume Uploaded",
-          description: `${file.name} has been successfully parsed.`,
-        });
-      };
-      reader.readAsText(file);
+    if (!file) return;
+
+    setResumeFileName(file.name);
+    toast({ title: "Processing Resume...", description: `Reading ${file.name}...` });
+
+    try {
+        if (file.type === 'application/pdf') {
+            const pdfjs = await import('pdfjs-dist/build/pdf');
+            await import('pdfjs-dist/build/pdf.worker.mjs');
+            pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.mjs`;
+
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                if (e.target?.result) {
+                    const typedArray = new Uint8Array(e.target.result as ArrayBuffer);
+                    const pdf = await pdfjs.getDocument(typedArray).promise;
+                    let fullText = '';
+                    for (let i = 1; i <= pdf.numPages; i++) {
+                        const page = await pdf.getPage(i);
+                        const content = await page.getTextContent();
+                        fullText += content.items.map((item: any) => item.str).join(' ');
+                    }
+                    setResumeText(fullText);
+                    toast({ title: "Resume Uploaded!", description: `${file.name} is now part of the conversation context.` });
+                }
+            };
+            reader.readAsArrayBuffer(file);
+            return;
+        }
+
+        // Fallback for .txt and .md
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const text = e.target?.result as string;
+            setResumeText(text);
+            toast({ title: "Resume Uploaded", description: `${file.name} is now part of the conversation context.` });
+        };
+        reader.readAsText(file);
+    } catch (e) {
+        console.error("Error parsing resume:", e);
+        toast({ variant: "destructive", title: "Parsing Failed", description: "Could not read the resume file. Please try a different format." });
+        setResumeFileName(null);
+        setResumeText('');
     }
   };
 
@@ -50,7 +82,7 @@ const SetupView = ({ onStart, isLoading, jobDescription, setJobDescription, resu
             <Button asChild variant="outline" className="w-full justify-center">
                 <label htmlFor="resume-upload-input" className="cursor-pointer flex items-center gap-2">
                     <Paperclip size={14}/>
-                    {resumeFileName ? resumeFileName : 'Upload Resume (.txt, .md)'}
+                    {resumeFileName ? resumeFileName : 'Upload Resume (.txt, .md, .pdf)'}
                 </label>
             </Button>
             <input id="resume-upload-input" type="file" className="hidden" onChange={handleResumeUpload} accept=".txt,.md,.pdf" />
