@@ -508,7 +508,7 @@ export default function Home() {
 
     const handleAction = async (action: string, id: number, data?: any) => {
         setIsLoading(true);
-        let ideaToUpdate = ideas.find(i => i.id === id);
+        const ideaToUpdate = ideas.find(i => i.id === id);
         if (!ideaToUpdate) {
              setIsLoading(false);
              return;
@@ -536,23 +536,29 @@ export default function Home() {
                 break;
               case 'message':
                 const userMessage = { sender: 'user' as const, text: data };
-                let updatedChatHistory = [...(ideaToUpdate.chatHistory || []), userMessage];
+                const currentChatHistory = [...(ideaToUpdate.chatHistory || []), userMessage];
                 
-                let updatedIdeasWithMessage = ideas.map(i => i.id === id ? { ...i, chatHistory: updatedChatHistory } : i);
-                setIdeas(updatedIdeasWithMessage);
-                setActiveChatIdea(updatedIdeasWithMessage.find(i => i.id === id) as IdeaWithState);
+                // Immediately update UI with user's message
+                let ideasWithUserMessage = ideas.map(i => 
+                    i.id === id ? { ...i, chatHistory: currentChatHistory } : i
+                );
+                setIdeas(ideasWithUserMessage);
+                setActiveChatIdea(ideasWithUserMessage.find(i => i.id === id) as IdeaWithState);
 
-
+                // Get AI response
                 const result = await chatWithIdea({ idea: ideaToUpdate, message: data });
                 const aiResponse = { sender: 'ai' as const, text: result.response };
-                const finalChatHistory = [...updatedChatHistory, aiResponse];
+                const finalChatHistory = [...currentChatHistory, aiResponse];
                 
-                const finalIdeas = ideas.map(i => i.id === id ? { 
-                    ...i, 
-                    chatHistory: finalChatHistory,
-                    title: result.updatedIdea.title, // Apply update
-                    longDesc: result.updatedIdea.longDesc // Apply update
-                } : i);
+                // Update UI with AI's response and the refined idea
+                const finalIdeas = ideasWithUserMessage.map(i => 
+                    i.id === id ? { 
+                        ...i, 
+                        chatHistory: finalChatHistory,
+                        title: result.updatedIdea.title, // Apply title update
+                        longDesc: result.updatedIdea.longDesc // Apply description update
+                    } : i
+                );
 
                 setIdeas(finalIdeas);
                 setActiveChatIdea(finalIdeas.find(i => i.id === id) as IdeaWithState);
