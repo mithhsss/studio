@@ -538,39 +538,56 @@ export default function Home() {
                 break;
               case 'message':
                 const userMessage = { sender: 'user' as const, text: data };
-                const currentIdea = ideas.find(i => i.id === id);
-                if (!currentIdea) return;
-                
-                const currentChatHistory = [...(currentIdea.chatHistory || []), userMessage];
-                
-                let ideasWithUserMessage = ideas.map(i => 
-                    i.id === id ? { ...i, chatHistory: currentChatHistory } : i
-                );
-                setIdeas(ideasWithUserMessage);
-                setActiveChatIdea(ideasWithUserMessage.find(i => i.id === id) as IdeaWithState);
+
+                // Get the *most recent* version of the idea from state
+                let ideaForChat: IdeaWithState | undefined;
+                let newIdeasState: IdeaWithState[] = [];
+
+                setIdeas(currentIdeas => {
+                    const updatedIdeas = currentIdeas.map(i => {
+                        if (i.id === id) {
+                            const newHistory = [...(i.chatHistory || []), userMessage];
+                            ideaForChat = { ...i, chatHistory: newHistory };
+                            return ideaForChat;
+                        }
+                        return i;
+                    });
+                    newIdeasState = updatedIdeas;
+                    return updatedIdeas;
+                });
+                setActiveChatIdea(ideaForChat as IdeaWithState);
+
+                if (!ideaForChat) {
+                    setIsLoading(false);
+                    return;
+                }
 
                 // Get AI response
-                const result = await chatWithIdea({ idea: currentIdea, message: data });
+                const result = await chatWithIdea({ idea: ideaForChat, message: data });
                 const aiResponse = { sender: 'ai' as const, text: result.response };
-                const finalChatHistory = [...currentChatHistory, aiResponse];
                 
-                const finalIdeas = ideas.map(i => 
-                    i.id === id ? { 
-                        ...i, 
-                        chatHistory: finalChatHistory,
-                        title: result.updatedIdea.title,
-                        longDesc: result.updatedIdea.longDesc
-                    } : i
-                );
-
-                setIdeas(finalIdeas);
-                setActiveChatIdea(finalIdeas.find(i => i.id === id) as IdeaWithState);
+                // Update the state again with the AI's response
+                setIdeas(currentIdeas => {
+                     const finalIdeas = currentIdeas.map(i => {
+                        if (i.id === id) {
+                            return {
+                                ...i,
+                                chatHistory: [...(ideaForChat?.chatHistory || []), aiResponse],
+                                title: result.updatedIdea.title,
+                                longDesc: result.updatedIdea.longDesc,
+                            };
+                        }
+                        return i;
+                    });
+                    setActiveChatIdea(finalIdeas.find(i => i.id === id) as IdeaWithState);
+                    return finalIdeas;
+                });
                 break;
               case 'finalizeRefinement':
                  const ideaToFinalize = ideas.find(i => i.id === id);
                  if (!ideaToFinalize) return;
 
-                 const finalizationResult = await refineIdeaWithChatHistory({ idea: ideaToFinalize });
+                 const finalizationResult = await refineIdeaWithChatHistory({ idea: ideaToFinalize, chatHistory: ideaToFinalize.chatHistory });
                  const finalizedIdeas = ideas.map(i => i.id === id ? { ...i, ...finalizationResult.refinedIdea, chatHistory: [] } : i);
                  setIdeas(finalizedIdeas);
                  toast({ title: "Idea Finalized!", description: "The idea has been updated with your refinements." });
