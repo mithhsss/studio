@@ -538,8 +538,8 @@ export default function Home() {
                 break;
               case 'message':
                 const userMessage = { sender: 'user' as const, text: data };
-                let ideaForChat = currentIdea;
-                
+                let ideaForChat: IdeaWithState | undefined;
+
                 // Immediately update UI with user's message
                 const newIdeasWithUserMessage = ideas.map(i => {
                     if (i.id === id) {
@@ -550,26 +550,33 @@ export default function Home() {
                     return i;
                 });
                 setIdeas(newIdeasWithUserMessage);
-                setActiveChatIdea(ideaForChat);
-                
-                // Get AI response using the most up-to-date idea
-                const result = await chatWithIdea({ idea: ideaForChat, message: data });
+                if (ideaForChat) {
+                    setActiveChatIdea(ideaForChat);
+                }
+
+                // Ensure we are sending the most up-to-date idea to the AI
+                if (!ideaForChat) return;
+
+                const result = await chatWithIdea({ idea: ideaForChat, message: data, chatHistory: ideaForChat.chatHistory });
                 const aiResponse = { sender: 'ai' as const, text: result.response };
                 
                 // Update the state again with the AI's response and refined data
                 setIdeas(currentIdeas => {
                      const finalIdeas = currentIdeas.map(i => {
-                        if (i.id === id) {
+                        if (i.id === id && ideaForChat) {
                             return {
                                 ...i,
-                                chatHistory: [...(ideaForChat?.chatHistory || []), aiResponse],
+                                chatHistory: [...(ideaForChat.chatHistory || []), aiResponse],
                                 title: result.updatedIdea.title,
                                 longDesc: result.updatedIdea.longDesc,
                             };
                         }
                         return i;
                     });
-                    setActiveChatIdea(finalIdeas.find(i => i.id === id) as IdeaWithState);
+                    const newlyUpdatedIdea = finalIdeas.find(i => i.id === id);
+                    if (newlyUpdatedIdea) {
+                        setActiveChatIdea(newlyUpdatedIdea);
+                    }
                     return finalIdeas;
                 });
                 break;
