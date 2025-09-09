@@ -32,10 +32,10 @@ Follow these rules:
 
 Conversation History (User and you, the AI Tutor):
 {{#each chatHistory}}
-{{#if (eq this.role 'user')}}
-User: {{{this.content}}}
+{{#if (eq role 'user')}}
+User: {{{content}}}
 {{else}}
-Tutor: {{{this.content}}}
+Tutor: {{{content}}}
 {{/if}}
 {{/each}}
 
