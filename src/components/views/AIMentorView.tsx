@@ -9,6 +9,8 @@ import { answerCareerQuestion } from '@/ai/flows/answer-career-questions';
 import { analyzeResume } from '@/ai/flows/analyze-resume-flow';
 import AIMockInterviewView from './AIMockInterviewView';
 import AIBusinessSimulatorView from './AIBusinessSimulatorView';
+import { marked } from 'marked';
+import mammoth from 'mammoth';
 
 interface AIMentorViewProps {
     mentorMode: MentorMode;
@@ -95,6 +97,19 @@ const ChatView: React.FC<Pick<AIMentorViewProps, 'chatHistory' | 'setChatHistory
                 };
                 reader.readAsArrayBuffer(file);
                 return;
+            } else if (file.name.endsWith('.docx')) {
+                const reader = new FileReader();
+                reader.onload = async (e) => {
+                    if(e.target?.result) {
+                        const arrayBuffer = e.target.result as ArrayBuffer;
+                        const result = await mammoth.extractRawText({ arrayBuffer });
+                        setResumeText(result.value);
+                        toast({ title: "Resume Uploaded!", description: `${file.name} is now part of the conversation context.` });
+                        setIsLoading(false);
+                    }
+                };
+                reader.readAsArrayBuffer(file);
+                return;
             }
 
             const reader = new FileReader();
@@ -170,9 +185,10 @@ const ChatView: React.FC<Pick<AIMentorViewProps, 'chatHistory' | 'setChatHistory
                         {chatHistory.map((msg, index) => (
                             <div key={index} className={`flex gap-3 items-start ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                                 {msg.role === 'model' && <div className="w-8 h-8 rounded-full bg-yellow-500 text-white flex items-center justify-center flex-shrink-0"><Bot size={16} /></div>}
-                                <div className={`max-w-lg p-3 rounded-lg prose prose-sm ${msg.role === 'user' ? 'bg-indigo-500 text-white' : 'bg-gray-100 text-gray-800'}`}>
-                                    <p style={{ whiteSpace: 'pre-wrap' }}>{msg.text}</p>
-                                </div>
+                                <div
+                                    className={`max-w-lg p-3 rounded-lg prose prose-sm ${msg.role === 'user' ? 'bg-indigo-500 text-white' : 'bg-gray-100 text-gray-800'}`}
+                                    dangerouslySetInnerHTML={{ __html: marked.parse(msg.text) }}
+                                />
                                 {msg.role === 'user' && <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center flex-shrink-0"><User size={16} /></div>}
                             </div>
                         ))}
@@ -194,7 +210,7 @@ const ChatView: React.FC<Pick<AIMentorViewProps, 'chatHistory' | 'setChatHistory
                                     <span className="sr-only">Upload Resume</span>
                                 </label>
                             </Button>
-                            <input id="resume-upload" type="file" className="absolute w-full h-full opacity-0 top-0 left-0 cursor-pointer" onChange={handleResumeUpload} accept=".txt,.md,.pdf" />
+                            <input id="resume-upload" type="file" className="absolute w-full h-full opacity-0 top-0 left-0 cursor-pointer" onChange={handleResumeUpload} accept=".txt,.md,.pdf,.docx" />
                         </div>
                         <div className="flex-grow relative">
                             <input
