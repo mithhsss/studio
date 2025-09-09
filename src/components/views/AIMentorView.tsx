@@ -73,7 +73,6 @@ const ChatView: React.FC<Pick<AIMentorViewProps, 'chatHistory' | 'setChatHistory
         toast({ title: "Processing Resume...", description: `Reading ${file.name}...` });
 
         try {
-            let text = '';
             if (file.type === 'application/pdf') {
                 const pdfjs = await import('pdfjs-dist/build/pdf');
                 await import('pdfjs-dist/build/pdf.worker.mjs');
@@ -95,31 +94,17 @@ const ChatView: React.FC<Pick<AIMentorViewProps, 'chatHistory' | 'setChatHistory
                     }
                 };
                 reader.readAsArrayBuffer(file);
-                return; // Prevent fall-through
-            } else if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
-                const mammoth = (await import('mammoth')).default;
-                const reader = new FileReader();
-                reader.onload = async (e) => {
-                    if (e.target?.result) {
-                        const result = await mammoth.extractRawText({ arrayBuffer: e.target.result as ArrayBuffer });
-                        setResumeText(result.value);
-                        toast({ title: "Resume Uploaded!", description: `${file.name} is now part of the conversation context.` });
-                        setIsLoading(false);
-                    }
-                };
-                reader.readAsArrayBuffer(file);
-                 return; // Prevent fall-through
-            } else {
-                 // Fallback for .txt, .md
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    const text = e.target?.result as string;
-                    setResumeText(text);
-                    toast({ title: "Resume Uploaded", description: `${file.name} is now part of the conversation context.` });
-                     setIsLoading(false);
-                };
-                reader.readAsText(file);
+                return;
             }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const text = e.target?.result as string;
+                setResumeText(text);
+                toast({ title: "Resume Uploaded", description: `${file.name} is now part of the conversation context.` });
+                setIsLoading(false);
+            };
+            reader.readAsText(file);
         } catch (e) {
             console.error("Error parsing resume:", e);
             toast({ variant: "destructive", title: "Parsing Failed", description: "Could not read the resume file. Please try a different format." });
@@ -209,7 +194,7 @@ const ChatView: React.FC<Pick<AIMentorViewProps, 'chatHistory' | 'setChatHistory
                                     <span className="sr-only">Upload Resume</span>
                                 </label>
                             </Button>
-                            <input id="resume-upload" type="file" className="absolute w-full h-full opacity-0 top-0 left-0 cursor-pointer" onChange={handleResumeUpload} accept=".txt,.md,.pdf,.docx" />
+                            <input id="resume-upload" type="file" className="absolute w-full h-full opacity-0 top-0 left-0 cursor-pointer" onChange={handleResumeUpload} accept=".txt,.md,.pdf" />
                         </div>
                         <div className="flex-grow relative">
                             <input
