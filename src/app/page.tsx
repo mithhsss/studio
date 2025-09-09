@@ -17,6 +17,8 @@ import { chatWithIdea } from '@/ai/flows/chat-with-idea-flow';
 import { combineIdeas } from '@/ai/flows/combine-ideas-flow';
 import { expandIdea } from '@/ai/flows/expand-idea-flow';
 import { generateRoadmap } from '@/ai/flows/generate-roadmap-flow';
+import { refineIdeaWithChatHistory } from '@/ai/flows/refine-idea-with-chat-flow';
+
 
 import type { GenerateIdeasInput, Idea, ExpandIdeaOutput } from '@/ai/schemas/idea-generation-schemas';
 import type { GenerateRoadmapOutput, GenerateRoadmapInput, QuizQuestion, EvaluateQuizOutput } from '@/ai/schemas/tutor-schemas';
@@ -536,9 +538,11 @@ export default function Home() {
                 break;
               case 'message':
                 const userMessage = { sender: 'user' as const, text: data };
-                const currentChatHistory = [...(ideaToUpdate.chatHistory || []), userMessage];
+                const currentIdea = ideas.find(i => i.id === id);
+                if (!currentIdea) return;
                 
-                // Immediately update UI with user's message
+                const currentChatHistory = [...(currentIdea.chatHistory || []), userMessage];
+                
                 let ideasWithUserMessage = ideas.map(i => 
                     i.id === id ? { ...i, chatHistory: currentChatHistory } : i
                 );
@@ -546,23 +550,31 @@ export default function Home() {
                 setActiveChatIdea(ideasWithUserMessage.find(i => i.id === id) as IdeaWithState);
 
                 // Get AI response
-                const result = await chatWithIdea({ idea: ideaToUpdate, message: data });
+                const result = await chatWithIdea({ idea: currentIdea, message: data });
                 const aiResponse = { sender: 'ai' as const, text: result.response };
                 const finalChatHistory = [...currentChatHistory, aiResponse];
                 
-                // Update UI with AI's response and the refined idea
-                const finalIdeas = ideasWithUserMessage.map(i => 
+                const finalIdeas = ideas.map(i => 
                     i.id === id ? { 
                         ...i, 
                         chatHistory: finalChatHistory,
-                        title: result.updatedIdea.title, // Apply title update
-                        longDesc: result.updatedIdea.longDesc // Apply description update
+                        title: result.updatedIdea.title,
+                        longDesc: result.updatedIdea.longDesc
                     } : i
                 );
 
                 setIdeas(finalIdeas);
                 setActiveChatIdea(finalIdeas.find(i => i.id === id) as IdeaWithState);
                 break;
+              case 'finalizeRefinement':
+                 const ideaToFinalize = ideas.find(i => i.id === id);
+                 if (!ideaToFinalize) return;
+
+                 const finalizationResult = await refineIdeaWithChatHistory({ idea: ideaToFinalize });
+                 const finalizedIdeas = ideas.map(i => i.id === id ? { ...i, ...finalizationResult.refinedIdea, chatHistory: [] } : i);
+                 setIdeas(finalizedIdeas);
+                 toast({ title: "Idea Finalized!", description: "The idea has been updated with your refinements." });
+                 break;
             }
         } catch (err) {
              toast({ variant: "destructive", title: "Action Failed", description: "An error occurred. Please try again." });
@@ -727,7 +739,7 @@ export default function Home() {
                         finalizedIdea={finalizedIdea}
                         dragOverId={dragOverId}
                         formData={ideaFormData}
-                        setFormData={setIdeaFormData}
+                        setIdeaFormData={setIdeaFormData}
                         handleGenerateIdeas={handleGenerateIdeas}
                         handleAction={handleAction}
                         // Drag and drop is being replaced, but we'll keep the props for now

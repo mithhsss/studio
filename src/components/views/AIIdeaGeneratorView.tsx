@@ -32,7 +32,7 @@ interface AIIdeaGeneratorViewProps {
     finalizedIdea: any;
     dragOverId: number | null; // This will be deprecated by the new UI but kept for compatibility
     formData: any;
-    setFormData: (formData: any) => void;
+    setIdeaFormData: (formData: any) => void;
     handleGenerateIdeas: () => void;
     handleAction: (action: string, id: number, data?: any) => void;
     // Drag and drop is being replaced, but we'll keep the props for now
@@ -56,7 +56,7 @@ const ExpandedDetailCard = ({ icon, title, children }: { icon: React.ReactNode, 
     </div>
 );
 
-const RefinementHub = ({ idea, onOpenChange, onSendMessage, onFinalize, isLoading }: { idea: IdeaWithState, onOpenChange: (open: boolean) => void, onSendMessage: (message: string) => void, onFinalize: () => void, isLoading: boolean }) => {
+const RefinementHub = ({ idea, onOpenChange, onSendMessage, onFinalizeRefinement, isLoading }: { idea: IdeaWithState, onOpenChange: (open: boolean) => void, onSendMessage: (message: string) => void, onFinalizeRefinement: () => void, isLoading: boolean }) => {
     const [message, setMessage] = useState('');
     const chatContainerRef = useRef<HTMLDivElement>(null);
 
@@ -127,11 +127,15 @@ const RefinementHub = ({ idea, onOpenChange, onSendMessage, onFinalize, isLoadin
                                 </div>
                             )}
                         </div>
-                         <div className="p-4 border-t bg-white">
-                            <div className="flex gap-2">
+                         <div className="p-4 border-t bg-white space-y-2">
+                             <div className="flex gap-2">
                                 <Input value={message} onChange={e => setMessage(e.target.value)} onKeyPress={e => e.key === 'Enter' && handleSend()} placeholder="Discuss this idea..." disabled={isLoading} />
                                 <Button onClick={handleSend} size="icon" disabled={isLoading}><Send size={16} /></Button>
                             </div>
+                            <Button onClick={onFinalizeRefinement} disabled={isLoading} className="w-full bg-green-600 hover:bg-green-700">
+                                <Sparkles size={16} className="mr-2"/>
+                                Finalize & Update Idea
+                            </Button>
                         </div>
                     </div>
                 </div>
@@ -308,7 +312,7 @@ const AIIdeaGeneratorView: React.FC<AIIdeaGeneratorViewProps> = ({
     combinePair,
     finalizedIdea,
     formData,
-    setFormData,
+    setIdeaFormData,
     handleGenerateIdeas,
     handleAction,
     handleCombine,
@@ -378,18 +382,26 @@ const AIIdeaGeneratorView: React.FC<AIIdeaGeneratorViewProps> = ({
 
     // This effect will open the refinement hub once the data is loaded
     useEffect(() => {
-        if (activeChatIdea?.expandedData && activeRefineIdea && activeChatIdea.id === activeRefineIdea.id) {
-            setActiveRefineIdea(activeChatIdea);
+        const ideaFromParent = ideas.find(i => i.id === activeChatIdea?.id);
+        if (ideaFromParent?.expandedData && activeRefineIdea && ideaFromParent.id === activeRefineIdea.id) {
+            setActiveRefineIdea(ideaFromParent);
         }
-        if (activeChatIdea?.expandedData && activeExpandIdea && activeChatIdea.id === activeExpandIdea.id) {
-            setActiveExpandIdea(activeChatIdea);
+        if (ideaFromParent?.expandedData && activeExpandIdea && ideaFromParent.id === activeExpandIdea.id) {
+            setActiveExpandIdea(ideaFromParent);
         }
-    }, [activeChatIdea, activeRefineIdea, activeExpandIdea]);
+    }, [ideas, activeChatIdea, activeRefineIdea, activeExpandIdea]);
 
 
     const handleSendMessageInHub = (message: string) => {
         if(activeRefineIdea) {
             handleAction('message', activeRefineIdea.id, message);
+        }
+    };
+
+    const handleFinalizeRefinementInHub = () => {
+        if (activeRefineIdea) {
+            handleAction('finalizeRefinement', activeRefineIdea.id);
+            setActiveRefineIdea(null);
         }
     };
 
@@ -412,10 +424,10 @@ const AIIdeaGeneratorView: React.FC<AIIdeaGeneratorViewProps> = ({
                         <div className="flex items-center gap-3 mb-2"><div className="bg-purple-100 text-purple-600 p-2 rounded-lg"><Lightbulb size={20} /></div><h2 className="text-2xl font-bold text-gray-800">Brainstorming Brief</h2></div>
                         <p className="text-gray-500 mb-6">Define your challenge and let the AI brainstorm creative solutions.</p>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                            <div><label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1"><Zap size={14} /> Core Subject</label><Input type="text" value={formData.subject} onChange={(e) => setFormData({ ...formData, subject: e.target.value })} /></div>
-                            <div><label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1"><Users size={14} /> Target Audience</label><Input type="text" value={formData.audience} onChange={(e) => setFormData({ ...formData, audience: e.target.value })} /></div>
-                            <div><label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1"><Box size={14} /> Key Constraints</label><Input type="text" value={formData.constraints} onChange={(e) => setFormData({ ...formData, constraints: e.target.value })} /></div>
-                            <div><label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1"><PlusSquare size={14} /> Other Criteria</label><Input type="text" value={formData.other} onChange={(e) => setFormData({ ...formData, other: e.target.value })} /></div>
+                            <div><label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1"><Zap size={14} /> Core Subject</label><Input type="text" value={formData.subject} onChange={(e) => setIdeaFormData({ ...formData, subject: e.target.value })} /></div>
+                            <div><label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1"><Users size={14} /> Target Audience</label><Input type="text" value={formData.audience} onChange={(e) => setIdeaFormData({ ...formData, audience: e.target.value })} /></div>
+                            <div><label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1"><Box size={14} /> Key Constraints</label><Input type="text" value={formData.constraints} onChange={(e) => setIdeaFormData({ ...formData, constraints: e.target.value })} /></div>
+                            <div><label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1"><PlusSquare size={14} /> Other Criteria</label><Input type="text" value={formData.other} onChange={(e) => setIdeaFormData({ ...formData, other: e.target.value })} /></div>
 
                             <div className="md:col-span-2">
                                 <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1">
@@ -423,14 +435,14 @@ const AIIdeaGeneratorView: React.FC<AIIdeaGeneratorViewProps> = ({
                                 </label>
                                 <Textarea
                                     value={formData.detailedDescription}
-                                    onChange={(e) => setFormData({ ...formData, detailedDescription: e.target.value })}
+                                    onChange={(e) => setIdeaFormData({ ...formData, detailedDescription: e.target.value })}
                                     rows={4}
                                     placeholder="Provide any additional context, background, or specific thoughts you have about the idea..."
                                 />
                             </div>
 
                             <div className="md:col-span-2"><label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1"><Filter size={14} /> Creativity Lens</label>
-                                <select value={formData.lens} onChange={(e) => setFormData({ ...formData, lens: e.target.value })} className="w-full p-2 border border-input rounded-lg bg-background">
+                                <select value={formData.lens} onChange={(e) => setIdeaFormData({ ...formData, lens: e.target.value })} className="w-full p-2 border border-input rounded-lg bg-background">
                                     <option>What If? (Expansive)</option>
                                     <option>Problem/Solution (Focused)</option>
                                     <option>Analogous (Borrowing)</option>
@@ -496,7 +508,7 @@ const AIIdeaGeneratorView: React.FC<AIIdeaGeneratorViewProps> = ({
                                         }
                                     }}
                                     onSendMessage={handleSendMessageInHub}
-                                    onFinalize={() => handleFinalize(activeRefineIdea)}
+                                    onFinalizeRefinement={handleFinalizeRefinementInHub}
                                     isLoading={isLoading && activeChatIdea?.id === activeRefineIdea.id}
                                 />
                             )}

@@ -19,3 +19,4 @@ import '@/ai/flows/generate-roadmap-flow.ts';
 import '@/ai/schemas/tutor-schemas.ts';
 import '@/ai/flows/mock-interview-flow.ts';
 import '@/ai/flows/generate-strategy-flow.ts';
+import '@/ai/flows/refine-idea-with-chat-flow.ts';
