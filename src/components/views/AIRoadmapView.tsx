@@ -167,7 +167,7 @@ const RoadmapViewInternal = ({ roadmapData, onBack }: { roadmapData: GenerateRoa
     const [nodes, setNodes, onNodesChange] = useNodesState([]);
     const [edges, setEdges, onEdgesChange] = useEdgesState([]);
     const { toast } = useToast();
-    const printRef = useRef<HTMLDivElement>(null);
+    const detailedPlanRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const generateFlowFromPlan = (plan: GenerateRoadmapOutput) => {
@@ -215,8 +215,8 @@ const RoadmapViewInternal = ({ roadmapData, onBack }: { roadmapData: GenerateRoa
                 let maxSubSubNodesOnSide = { left: 0, right: 0 };
                 
                 topic.subtopics.forEach((sub, subIndex) => {
-                    const isLeft = subIndex % 2 === 0;
-                    if(sub.subs) {
+                    if (sub.subs && sub.subs.length > 0) {
+                        const isLeft = subIndex % 2 === 0;
                         if(isLeft) {
                             maxSubSubNodesOnSide.left = Math.max(maxSubSubNodesOnSide.left, sub.subs.length);
                         } else {
@@ -225,7 +225,7 @@ const RoadmapViewInternal = ({ roadmapData, onBack }: { roadmapData: GenerateRoa
                     }
 
                     const subId = `${stageId}-sub-${subIndex}`;
-                    const xPos = isLeft ? xCenter - xSpacingMain : xCenter + xSpacingMain;
+                    const xPos = subIndex % 2 === 0 ? xCenter - xSpacingMain : xCenter + xSpacingMain;
                     
                     newNodes.push({
                         id: subId,
@@ -244,7 +244,7 @@ const RoadmapViewInternal = ({ roadmapData, onBack }: { roadmapData: GenerateRoa
                     if (sub.subs && sub.subs.length > 0) {
                         sub.subs.forEach((subSub, subSubIndex) => {
                             const subSubId = `${subId}-subsub-${subSubIndex}`;
-                            const subXPos = isLeft ? xPos - xSpacingSub : xPos + xSpacingSub;
+                            const subXPos = subIndex % 2 === 0 ? xPos - xSpacingSub : xPos + xSpacingSub;
                             const yOffset = (subSubIndex - (sub.subs.length - 1) / 2) * ySpacingSubSub;
 
                             newNodes.push({
@@ -263,11 +263,9 @@ const RoadmapViewInternal = ({ roadmapData, onBack }: { roadmapData: GenerateRoa
                     }
                 });
                 
-                // Calculate the required vertical space for the current stage's branch
                 const maxSubsOnOneSide = Math.max(maxSubSubNodesOnSide.left, maxSubSubNodesOnSide.right);
                 const verticalSpread = maxSubsOnOneSide > 0 ? (maxSubsOnOneSide -1) * ySpacingSubSub : 0;
                 
-                // Move yPos down by the calculated spread plus padding
                 yPos += verticalSpread + yPadding;
             });
 
@@ -285,25 +283,113 @@ const RoadmapViewInternal = ({ roadmapData, onBack }: { roadmapData: GenerateRoa
         [setEdges],
     );
     
-    const handleDownload = async () => {
-        const element = printRef.current;
-        if (!element) return;
+    const handleDownload = () => {
+        toast({ title: 'Preparing Download', description: 'Generating your PDF roadmap...' });
 
-        toast({ title: 'Preparing Download', description: 'Generating PDF, this may take a moment...' });
+        const doc = new jsPDF({
+            orientation: 'p',
+            unit: 'mm',
+            format: 'a4'
+        });
 
-        const canvas = await html2canvas(element, { scale: 2, backgroundColor: '#ffffff' });
-        const data = canvas.toDataURL('image/png');
-        const pdf = new jsPDF('p', 'mm', 'a4');
-        const imgProperties = pdf.getImageProperties(data);
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = (imgProperties.height * pdfWidth) / imgProperties.width;
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
+        const margin = 15;
+        const maxLineWidth = pageWidth - margin * 2;
+        let y = margin;
         
-        pdf.addImage(data, 'PNG', 0, 0, pdfWidth, pdfHeight);
-        pdf.save('ai-roadmap.pdf');
+        const checkPageBreak = (heightNeeded: number) => {
+            if (y + heightNeeded > pageHeight - margin) {
+                doc.addPage();
+                y = margin;
+            }
+        };
+
+        // Title
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(22);
+        doc.text('Your Personalized Learning Plan', pageWidth / 2, y, { align: 'center' });
+        y += 15;
+        
+        roadmapData.detailedStages.forEach((stage, index) => {
+            checkPageBreak(20);
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(16);
+            doc.text(`Stage ${stage.stage}: ${stage.title}`, margin, y);
+            y += 8;
+
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(11);
+            doc.setTextColor(80, 80, 80);
+            const objectiveLines = doc.splitTextToSize(`Objective: ${stage.objective}`, maxLineWidth);
+            checkPageBreak(objectiveLines.length * 5);
+            doc.text(objectiveLines, margin, y);
+            y += objectiveLines.length * 5;
+
+            const durationLines = doc.splitTextToSize(`Estimated Duration: ${stage.estimatedDuration}`, maxLineWidth);
+            checkPageBreak(durationLines.length * 5);
+            doc.text(durationLines, margin, y);
+            y += 8;
+
+            stage.subtopics.forEach((sub, sIndex) => {
+                checkPageBreak(15);
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(12);
+                doc.setTextColor(0, 0, 0);
+                doc.text(sub.title, margin, y);
+                y += 6;
+
+                doc.setFont('helvetica', 'normal');
+                doc.setFontSize(10);
+                doc.setTextColor(80, 80, 80);
+                const descriptionLines = doc.splitTextToSize(sub.description, maxLineWidth);
+                checkPageBreak(descriptionLines.length * 4);
+                doc.text(descriptionLines, margin, y);
+                y += descriptionLines.length * 4 + 2;
+                
+                doc.setFont('helvetica', 'bold');
+                doc.text('Project:', margin, y);
+                y += 4;
+                doc.setFont('helvetica', 'normal');
+                const projectLines = doc.splitTextToSize(sub.project, maxLineWidth);
+                checkPageBreak(projectLines.length * 4);
+                doc.text(projectLines, margin, y);
+                y += projectLines.length * 4 + 4;
+                
+                const renderResources = (title: string, resources: any[]) => {
+                    if (resources && resources.length > 0) {
+                        checkPageBreak(8);
+                        doc.setFont('helvetica', 'bold');
+                        doc.text(title, margin, y);
+                        y += 5;
+                        doc.setFont('helvetica', 'normal');
+                        resources.forEach(res => {
+                           checkPageBreak(4);
+                           doc.setTextColor(43, 108, 176); // Blue for links
+                           doc.textWithLink(res.name, margin, y, { url: res.url });
+                           y += 5;
+                        });
+                    }
+                };
+
+                renderResources('Free Resources:', sub.freeResources);
+                renderResources('Premium Resources:', sub.premiumResources);
+                
+                y += 5; // Extra space after each subtopic
+            });
+            
+            if (index < roadmapData.detailedStages.length - 1) {
+                doc.setDrawColor(200, 200, 200);
+                doc.line(margin, y, pageWidth - margin, y);
+                y += 8;
+            }
+        });
+
+        doc.save('AI_Learning_Roadmap.pdf');
     };
 
     return (
-        <div ref={printRef} className="bg-white p-4">
+        <div className="bg-white p-4">
             <div className="flex justify-between items-center mb-4">
                 <h2 className="text-2xl font-bold text-gray-800">Your Personalized Roadmap</h2>
                  <div className="flex items-center gap-2">
@@ -331,7 +417,7 @@ const RoadmapViewInternal = ({ roadmapData, onBack }: { roadmapData: GenerateRoa
             </div>
 
             {/* Detailed Stages View */}
-            <div>
+            <div ref={detailedPlanRef}>
                  <h3 className="text-xl font-bold text-gray-800 mb-4">Detailed Learning Plan</h3>
                  <Accordion type="single" collapsible className="w-full" defaultValue="item-0">
                     {roadmapData.detailedStages?.map((stage, index) => (
