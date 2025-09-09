@@ -34,6 +34,7 @@ interface AIIdeaGeneratorViewProps {
     formData: any;
     setIdeaFormData: (formData: any) => void;
     handleGenerateIdeas: () => void;
+    handleGenerateMoreIdeas: () => void;
     handleAction: (action: string, id: number, data?: any) => void;
     // Drag and drop is being replaced, but we'll keep the props for now
     handleDragStart: (e: React.DragEvent, id: number) => void;
@@ -167,12 +168,11 @@ const IdeaCardNew = ({ idea, onAction, onSelectCombine, isSelectedForCombine, is
                 </button>
             </div>
             <div className="grid grid-cols-2 gap-2">
-                <Button onClick={() => onAction('refine', idea.id)} variant="outline" className="w-full">Refine with AI</Button>
                 <Button onClick={() => onExpand(idea)} variant="outline" className="w-full">Expand</Button>
                 <Button onClick={onSelectCombine} variant="outline" disabled={isCombineDisabled && !isSelectedForCombine}>
                     {isSelectedForCombine ? <Check size={16} className="text-green-500" /> : <Combine size={16} />} Combine
                 </Button>
-                 <Button onClick={() => onFinalize(idea)} variant="outline" className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100 hover:text-green-800">
+                 <Button onClick={() => onFinalize(idea)} variant="outline" className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100 hover:text-green-800 col-span-2">
                     <Trophy size={16} /> Finalize
                 </Button>
             </div>
@@ -314,6 +314,7 @@ const AIIdeaGeneratorView: React.FC<AIIdeaGeneratorViewProps> = ({
     formData,
     setIdeaFormData,
     handleGenerateIdeas,
+    handleGenerateMoreIdeas,
     handleAction,
     handleCombine,
     setCombinePair,
@@ -462,7 +463,10 @@ const AIIdeaGeneratorView: React.FC<AIIdeaGeneratorViewProps> = ({
                                 <p className="text-gray-500 text-sm">Refine, combine, and finalize your new ideas.</p>
                             </div>
                              <div className="flex items-center gap-2">
-                                {isLoading && activeChatIdea && !activeRefineIdea && !activeExpandIdea && <div className="flex items-center gap-2 text-sm text-gray-500"><Loader size={16} className="animate-spin"/> Expanding...</div>}
+                                <Button onClick={handleGenerateMoreIdeas} disabled={isLoading} variant="outline" size="sm">
+                                    {isLoading ? <Loader size={16} className="animate-spin mr-2"/> : <Sparkles size={16} className="mr-2"/>}
+                                    Generate More
+                                </Button>
                                 <button onClick={handleRestart} className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900 font-medium"><ArrowLeft size={16} /> New Brainstorm</button>
                             </div>
                         </div>
@@ -472,10 +476,7 @@ const AIIdeaGeneratorView: React.FC<AIIdeaGeneratorViewProps> = ({
                                 <IdeaCardNew 
                                     key={idea.id}
                                     idea={idea}
-                                    onAction={(action, id, data) => {
-                                        if (action === 'refine') handleRefineClick(idea);
-                                        else handleAction(action, id, data);
-                                    }}
+                                    onAction={(action, id, data) => handleAction(action, id, data)}
                                     onExpand={() => handleExpand(idea)}
                                     onSelectCombine={() => handleSelectCombine(idea.id)}
                                     isSelectedForCombine={selectedToCombine.includes(idea.id)}

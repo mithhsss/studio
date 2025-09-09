@@ -484,19 +484,24 @@ export default function Home() {
     };
 
     // Idea Generator Functions
-    const handleGenerateIdeas = async () => {
+    const handleGenerateIdeas = async (append = false) => {
         setIsLoading(true);
         try {
             const result = await generateIdeas(ideaFormData);
             const ideasWithState: IdeaWithState[] = result.ideas.map((idea, index) => ({
                 ...idea,
-                id: index + 1, // Add a unique ID
+                id: Date.now() + index, // Use timestamp for more unique IDs
                 likes: 0,
                 isFavorited: false,
                 chatHistory: [],
             }));
-            setIdeas(ideasWithState);
-            setIdeaGeneratorStep('results');
+
+            if (append) {
+                setIdeas(prevIdeas => [...prevIdeas, ...ideasWithState]);
+            } else {
+                setIdeas(ideasWithState);
+                setIdeaGeneratorStep('results');
+            }
         } catch (err) {
              toast({
                 variant: "destructive",
@@ -510,85 +515,89 @@ export default function Home() {
 
     const handleAction = async (action: string, id: number, data?: any) => {
         setIsLoading(true);
-        let currentIdea = ideas.find(i => i.id === id);
-        if (!currentIdea) {
-             setIsLoading(false);
-             return;
-        }
-
         try {
             switch (action) {
-              case 'like':
-                setIdeas(ideas.map(i => i.id === id ? { ...i, likes: i.likes + 1 } : i));
-                break;
-              case 'favorite':
-                setIdeas(ideas.map(i => i.id === id ? { ...i, isFavorited: !i.isFavorited } : i));
-                break;
-              case 'expand':
-                setActiveChatIdea(currentIdea); // Used to show loading state on the right card
-                const expandedResult = await expandIdea({ idea: currentIdea, brief: ideaFormData });
-                const updatedIdeasWithExpansion = ideas.map(i => i.id === id ? { ...i, expandedData: { ...expandedResult, title: i.title } } : i);
-                setIdeas(updatedIdeasWithExpansion);
-                setActiveChatIdea(updatedIdeasWithExpansion.find(i => i.id === id) as IdeaWithState);
-                break;
-             case 'closeExpand':
-                const clearedExpansion = ideas.map(i => i.id === id ? { ...i, expandedData: undefined } : i);
-                setIdeas(clearedExpansion);
-                setActiveChatIdea(null);
-                break;
-              case 'message':
-                const userMessage = { sender: 'user' as const, text: data };
-                let ideaForChat: IdeaWithState | undefined;
+                case 'like':
+                    setIdeas(ideas.map(i => i.id === id ? { ...i, likes: i.likes + 1 } : i));
+                    break;
+                case 'favorite':
+                    setIdeas(ideas.map(i => i.id === id ? { ...i, isFavorited: !i.isFavorited } : i));
+                    break;
+                case 'expand':
+                    const currentIdeaForExpand = ideas.find(i => i.id === id);
+                    if (!currentIdeaForExpand) break;
 
-                // Immediately update UI with user's message
-                const newIdeasWithUserMessage = ideas.map(i => {
-                    if (i.id === id) {
-                        const updatedHistory = [...(i.chatHistory || []), userMessage];
-                        ideaForChat = { ...i, chatHistory: updatedHistory };
-                        return ideaForChat;
-                    }
-                    return i;
-                });
-                setIdeas(newIdeasWithUserMessage);
-                if (ideaForChat) {
-                    setActiveChatIdea(ideaForChat);
-                }
+                    setActiveChatIdea(currentIdeaForExpand); // Used to show loading state on the right card
+                    const expandedResult = await expandIdea({ idea: currentIdeaForExpand, brief: ideaFormData });
+                    const updatedIdeasWithExpansion = ideas.map(i => i.id === id ? { ...i, expandedData: { ...expandedResult, title: i.title } } : i);
+                    setIdeas(updatedIdeasWithExpansion);
+                    setActiveChatIdea(updatedIdeasWithExpansion.find(i => i.id === id) as IdeaWithState);
+                    break;
+                case 'closeExpand':
+                    const clearedExpansion = ideas.map(i => i.id === id ? { ...i, expandedData: undefined } : i);
+                    setIdeas(clearedExpansion);
+                    setActiveChatIdea(null);
+                    break;
+                case 'message':
+                    const userMessage = { sender: 'user' as const, text: data };
+                    let ideaForChat: IdeaWithState | undefined;
 
-                // Ensure we are sending the most up-to-date idea to the AI
-                if (!ideaForChat) return;
-
-                const result = await chatWithIdea({ idea: ideaForChat, message: data, chatHistory: ideaForChat.chatHistory });
-                const aiResponse = { sender: 'ai' as const, text: result.response };
-                
-                // Update the state again with the AI's response and refined data
-                setIdeas(currentIdeas => {
-                     const finalIdeas = currentIdeas.map(i => {
-                        if (i.id === id && ideaForChat) {
-                            return {
-                                ...i,
-                                chatHistory: [...(ideaForChat.chatHistory || []), aiResponse],
-                                title: result.updatedIdea.title,
-                                longDesc: result.updatedIdea.longDesc,
-                            };
+                    // Update UI immediately with user message and get the latest state
+                    const newIdeasWithUserMessage = ideas.map(i => {
+                        if (i.id === id) {
+                            ideaForChat = { ...i, chatHistory: [...(i.chatHistory || []), userMessage] };
+                            return ideaForChat;
                         }
                         return i;
                     });
-                    const newlyUpdatedIdea = finalIdeas.find(i => i.id === id);
-                    if (newlyUpdatedIdea) {
-                        setActiveChatIdea(newlyUpdatedIdea);
+                    setIdeas(newIdeasWithUserMessage);
+                    setActiveChatIdea(ideaForChat);
+                    
+                    if (!ideaForChat) {
+                        console.error("Could not find idea to chat with");
+                        break;
                     }
-                    return finalIdeas;
-                });
-                break;
-              case 'finalizeRefinement':
-                 const ideaToFinalize = ideas.find(i => i.id === id);
-                 if (!ideaToFinalize) return;
 
-                 const finalizationResult = await refineIdeaWithChatHistory({ idea: ideaToFinalize, chatHistory: ideaToFinalize.chatHistory });
-                 const finalizedIdeas = ideas.map(i => i.id === id ? { ...i, ...finalizationResult.refinedIdea, chatHistory: [] } : i);
-                 setIdeas(finalizedIdeas);
-                 toast({ title: "Idea Finalized!", description: "The idea has been updated with your refinements." });
-                 break;
+                    const historyForAI = ideaForChat.chatHistory.map(chat => ({
+                        sender: chat.sender,
+                        text: chat.text
+                    }));
+
+                    const result = await chatWithIdea({ 
+                        idea: ideaForChat, 
+                        message: data,
+                        chatHistory: historyForAI,
+                    });
+                    const aiResponse = { sender: 'ai' as const, text: result.response };
+                    
+                    setIdeas(currentIdeas => {
+                         const finalIdeas = currentIdeas.map(i => {
+                            if (i.id === id) {
+                                return {
+                                    ...i,
+                                    chatHistory: [...(ideaForChat?.chatHistory || []), aiResponse],
+                                    title: result.updatedIdea.title,
+                                    longDesc: result.updatedIdea.longDesc,
+                                };
+                            }
+                            return i;
+                        });
+                        const newlyUpdatedIdea = finalIdeas.find(i => i.id === id);
+                        if (newlyUpdatedIdea) {
+                            setActiveChatIdea(newlyUpdatedIdea);
+                        }
+                        return finalIdeas;
+                    });
+                    break;
+                case 'finalizeRefinement':
+                    const ideaToFinalize = ideas.find(i => i.id === id);
+                    if (!ideaToFinalize) return;
+
+                    const finalizationResult = await refineIdeaWithChatHistory({ idea: ideaToFinalize, chatHistory: ideaToFinalize.chatHistory });
+                    const finalizedIdeas = ideas.map(i => i.id === id ? { ...i, ...finalizationResult.refinedIdea, chatHistory: [] } : i);
+                    setIdeas(finalizedIdeas);
+                    toast({ title: "Idea Finalized!", description: "The idea has been updated with your refinements." });
+                    break;
             }
         } catch (err) {
              toast({ variant: "destructive", title: "Action Failed", description: "An error occurred. Please try again." });
@@ -754,7 +763,8 @@ export default function Home() {
                         dragOverId={dragOverId}
                         formData={ideaFormData}
                         setIdeaFormData={setIdeaFormData}
-                        handleGenerateIdeas={handleGenerateIdeas}
+                        handleGenerateIdeas={() => handleGenerateIdeas(false)}
+                        handleGenerateMoreIdeas={() => handleGenerateIdeas(true)}
                         handleAction={handleAction}
                         // Drag and drop is being replaced, but we'll keep the props for now
                         handleDragStart={(e: React.DragEvent, id: number) => {}}
