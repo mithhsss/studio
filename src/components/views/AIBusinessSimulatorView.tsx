@@ -223,7 +223,7 @@ const AIBusinessSimulatorView: React.FC = () => {
                                 </div>
                             </SectionCard>
                             <SectionCard title="10 Steps to Success Roadmap">
-                                <div className="relative h-[70vh] w-full border rounded-lg bg-gray-50">
+                                <div className="relative w-full border rounded-lg bg-gray-50 min-h-[500px] aspect-video">
                                     <ReactFlow
                                         nodes={nodes}
                                         edges={edges}
