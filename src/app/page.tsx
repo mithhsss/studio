@@ -510,8 +510,8 @@ export default function Home() {
 
     const handleAction = async (action: string, id: number, data?: any) => {
         setIsLoading(true);
-        const ideaToUpdate = ideas.find(i => i.id === id);
-        if (!ideaToUpdate) {
+        let currentIdea = ideas.find(i => i.id === id);
+        if (!currentIdea) {
              setIsLoading(false);
              return;
         }
@@ -525,8 +525,8 @@ export default function Home() {
                 setIdeas(ideas.map(i => i.id === id ? { ...i, isFavorited: !i.isFavorited } : i));
                 break;
               case 'expand':
-                setActiveChatIdea(ideaToUpdate); // Used to show loading state on the right card
-                const expandedResult = await expandIdea({ idea: ideaToUpdate, brief: ideaFormData });
+                setActiveChatIdea(currentIdea); // Used to show loading state on the right card
+                const expandedResult = await expandIdea({ idea: currentIdea, brief: ideaFormData });
                 const updatedIdeasWithExpansion = ideas.map(i => i.id === id ? { ...i, expandedData: { ...expandedResult, title: i.title } } : i);
                 setIdeas(updatedIdeasWithExpansion);
                 setActiveChatIdea(updatedIdeasWithExpansion.find(i => i.id === id) as IdeaWithState);
@@ -538,35 +538,25 @@ export default function Home() {
                 break;
               case 'message':
                 const userMessage = { sender: 'user' as const, text: data };
-
-                // Get the *most recent* version of the idea from state
-                let ideaForChat: IdeaWithState | undefined;
-                let newIdeasState: IdeaWithState[] = [];
-
-                setIdeas(currentIdeas => {
-                    const updatedIdeas = currentIdeas.map(i => {
-                        if (i.id === id) {
-                            const newHistory = [...(i.chatHistory || []), userMessage];
-                            ideaForChat = { ...i, chatHistory: newHistory };
-                            return ideaForChat;
-                        }
-                        return i;
-                    });
-                    newIdeasState = updatedIdeas;
-                    return updatedIdeas;
+                let ideaForChat = currentIdea;
+                
+                // Immediately update UI with user's message
+                const newIdeasWithUserMessage = ideas.map(i => {
+                    if (i.id === id) {
+                        const updatedHistory = [...(i.chatHistory || []), userMessage];
+                        ideaForChat = { ...i, chatHistory: updatedHistory };
+                        return ideaForChat;
+                    }
+                    return i;
                 });
-                setActiveChatIdea(ideaForChat as IdeaWithState);
-
-                if (!ideaForChat) {
-                    setIsLoading(false);
-                    return;
-                }
-
-                // Get AI response
+                setIdeas(newIdeasWithUserMessage);
+                setActiveChatIdea(ideaForChat);
+                
+                // Get AI response using the most up-to-date idea
                 const result = await chatWithIdea({ idea: ideaForChat, message: data });
                 const aiResponse = { sender: 'ai' as const, text: result.response };
                 
-                // Update the state again with the AI's response
+                // Update the state again with the AI's response and refined data
                 setIdeas(currentIdeas => {
                      const finalIdeas = currentIdeas.map(i => {
                         if (i.id === id) {
