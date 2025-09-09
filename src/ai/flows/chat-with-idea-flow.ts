@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -28,7 +29,12 @@ Current Idea:
 - Summary: {{{idea.shortDesc}}}
 - Details: {{{idea.longDesc}}}
 
-User's Message: "{{{message}}}"
+Conversation History:
+{{#each chatHistory}}
+{{#if (eq this.sender 'user')}}User: {{else}}AI: {{/if}}{{{this.text}}}
+{{/each}}
+
+User's Latest Message: "{{{message}}}"
 
 Your tasks:
 1. Provide a helpful, conversational response to the user's message. Be encouraging and help them think through their idea.
