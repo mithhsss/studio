@@ -38,6 +38,10 @@ export type ChatWithIdeaInput = z.infer<typeof ChatWithIdeaInputSchema>;
 
 export const ChatWithIdeaOutputSchema = z.object({
   response: z.string().describe("The AI's conversational response to the user's message."),
+   updatedIdea: z.object({
+    title: z.string().describe("The updated title of the idea, reflecting the user's feedback."),
+    longDesc: z.string().describe("The updated long description of the idea, reflecting the user's feedback."),
+  }).describe("The updated idea details based on the conversation.")
 });
 export type ChatWithIdeaOutput = z.infer<typeof ChatWithIdeaOutputSchema>;
 

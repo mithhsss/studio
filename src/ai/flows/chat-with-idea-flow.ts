@@ -9,7 +9,9 @@
  */
 
 import { ai } from '@/ai/genkit';
+import { z } from 'genkit';
 import { ChatWithIdeaInputSchema, ChatWithIdeaOutputSchema, type ChatWithIdeaInput, type ChatWithIdeaOutput } from '../schemas/idea-generation-schemas';
+
 
 export async function chatWithIdea(input: ChatWithIdeaInput): Promise<ChatWithIdeaOutput> {
   return chatWithIdeaFlow(input);
@@ -19,7 +21,7 @@ const prompt = ai.definePrompt({
   name: 'chatWithIdeaPrompt',
   input: { schema: ChatWithIdeaInputSchema },
   output: { schema: ChatWithIdeaOutputSchema },
-  prompt: `You are a creative strategist helping a user refine an idea. The user has selected an idea and has a question about it.
+  prompt: `You are a creative strategist helping a user refine an idea. The user has selected an idea and has a question or refinement request.
 
 Current Idea:
 - Title: {{{idea.title}}}
@@ -28,7 +30,10 @@ Current Idea:
 
 User's Message: "{{{message}}}"
 
-Provide a helpful, conversational response to the user's message. Be encouraging and help them think through their idea.`,
+Your tasks:
+1. Provide a helpful, conversational response to the user's message. Be encouraging and help them think through their idea.
+2. Based on the user's message, update the idea's title and long description. If the user's message doesn't suggest a change, return the original title and description.
+3. Return both the conversational response and the updated idea details in the required JSON format.`,
 });
 
 

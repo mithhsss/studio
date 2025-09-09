@@ -536,18 +536,24 @@ export default function Home() {
                 break;
               case 'message':
                 const userMessage = { sender: 'user' as const, text: data };
-                const updatedChatHistory = [...ideaToUpdate.chatHistory, userMessage];
+                let updatedChatHistory = [...(ideaToUpdate.chatHistory || []), userMessage];
                 
-                const updatedIdeasWithMessage = ideas.map(i => i.id === id ? { ...i, chatHistory: updatedChatHistory } : i);
+                let updatedIdeasWithMessage = ideas.map(i => i.id === id ? { ...i, chatHistory: updatedChatHistory } : i);
                 setIdeas(updatedIdeasWithMessage);
                 setActiveChatIdea(updatedIdeasWithMessage.find(i => i.id === id) as IdeaWithState);
 
 
                 const result = await chatWithIdea({ idea: ideaToUpdate, message: data });
                 const aiResponse = { sender: 'ai' as const, text: result.response };
-
                 const finalChatHistory = [...updatedChatHistory, aiResponse];
-                const finalIdeas = ideas.map(i => i.id === id ? { ...i, chatHistory: finalChatHistory } : i);
+                
+                const finalIdeas = ideas.map(i => i.id === id ? { 
+                    ...i, 
+                    chatHistory: finalChatHistory,
+                    title: result.updatedIdea.title, // Apply update
+                    longDesc: result.updatedIdea.longDesc // Apply update
+                } : i);
+
                 setIdeas(finalIdeas);
                 setActiveChatIdea(finalIdeas.find(i => i.id === id) as IdeaWithState);
                 break;
@@ -705,7 +711,6 @@ export default function Home() {
                 );
 
             case 'idea-generator':
-                const activeIdeaForExpansion = ideas.find(i => i.id === activeChatIdea?.id);
                 return (
                     <AIIdeaGeneratorView
                         step={ideaGeneratorStep}

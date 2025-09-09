@@ -20,6 +20,7 @@ import { expandIdea } from '@/ai/flows/expand-idea-flow';
 import { chatWithIdea } from '@/ai/flows/chat-with-idea-flow';
 import type { ExpandIdeaOutput } from '@/ai/schemas/idea-generation-schemas';
 import { useToast } from "@/hooks/use-toast";
+import { marked } from 'marked';
 
 
 interface AIIdeaGeneratorViewProps {
@@ -55,10 +56,9 @@ const ExpandedDetailCard = ({ icon, title, children }: { icon: React.ReactNode, 
     </div>
 );
 
-const RefinementHub = ({ idea, onOpenChange, onSendMessage, onFinalize }: { idea: IdeaWithState, onOpenChange: (open: boolean) => void, onSendMessage: (message: string) => void, onFinalize: () => void }) => {
+const RefinementHub = ({ idea, onOpenChange, onSendMessage, onFinalize, isLoading }: { idea: IdeaWithState, onOpenChange: (open: boolean) => void, onSendMessage: (message: string) => void, onFinalize: () => void, isLoading: boolean }) => {
     const [message, setMessage] = useState('');
     const chatContainerRef = useRef<HTMLDivElement>(null);
-    const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
         if (chatContainerRef.current) {
@@ -117,7 +117,7 @@ const RefinementHub = ({ idea, onOpenChange, onSendMessage, onFinalize }: { idea
                              {idea.chatHistory.map((chat: any, i: number) => (
                                 <div key={i} className={`flex items-start gap-2 ${chat.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
                                     {chat.sender === 'ai' && <div className="bg-indigo-500 text-white rounded-full h-6 w-6 flex items-center justify-center flex-shrink-0"><Lightbulb size={14}/></div> }
-                                    <div className={`p-2 rounded-lg max-w-[80%] ${chat.sender === 'user' ? 'bg-indigo-100 text-indigo-800' : 'bg-gray-200 text-gray-800'}`}>{chat.text}</div>
+                                    <div className={`p-2 rounded-lg max-w-[80%] prose prose-sm ${chat.sender === 'user' ? 'bg-indigo-100 text-indigo-800' : 'bg-gray-200 text-gray-800'}`} dangerouslySetInnerHTML={{ __html: marked.parse(chat.text) }} />
                                 </div>
                             ))}
                              {isLoading && idea.chatHistory.length > 0 && idea.chatHistory[idea.chatHistory.length - 1].sender === 'user' && (
@@ -151,9 +151,7 @@ const IdeaCardNew = ({ idea, onAction, onSelectCombine, isSelectedForCombine, is
                 </button>
             </div>
             <p className="text-sm text-gray-600 mb-3">{idea.shortDesc}</p>
-            <ul className="space-y-1.5 text-sm list-disc list-inside text-gray-500 mb-4">
-                {idea.previewPoints.map((point: string, i: number) => <li key={i}>{point}</li>)}
-            </ul>
+            <p className="text-sm text-gray-500 mb-4 h-24 overflow-y-auto">{idea.longDesc}</p>
         </div>
         <div>
             <div className="flex items-center justify-between mb-3">
@@ -499,6 +497,7 @@ const AIIdeaGeneratorView: React.FC<AIIdeaGeneratorViewProps> = ({
                                     }}
                                     onSendMessage={handleSendMessageInHub}
                                     onFinalize={() => handleFinalize(activeRefineIdea)}
+                                    isLoading={isLoading && activeChatIdea?.id === activeRefineIdea.id}
                                 />
                             )}
                         </AnimatePresence>
