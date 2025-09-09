@@ -43,11 +43,11 @@ Your task is to conduct a realistic mock interview with the user based on their 
 
 **Conversation History:**
 {{#each chatHistory}}
-{{#if this.role 'user'}}
-User: {{{this.content}}}
+{{#if this.user}}
+User: {{{this.user}}}
 {{/if}}
-{{#if this.role 'model'}}
-Interviewer: {{{this.content}}}
+{{#if this.model}}
+Interviewer: {{{this.model}}}
 {{/if}}
 {{/each}}
 
@@ -62,7 +62,20 @@ const mockInterviewFlow = ai.defineFlow(
     outputSchema: MockInterviewOutputSchema,
   },
   async (input) => {
-    const { output } = await prompt(input);
+    // Reformat chat history for Handlebars compatibility
+    const formattedHistory = input.chatHistory.map(msg => {
+      if (msg.role === 'user') {
+        return { user: msg.content };
+      } else {
+        return { model: msg.content };
+      }
+    });
+
+    const { output } = await prompt({
+      ...input,
+      chatHistory: formattedHistory,
+    });
+    
     return output!;
   }
 );
