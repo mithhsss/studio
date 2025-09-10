@@ -1,6 +1,7 @@
 
 
 
+
 /**
  * @fileOverview Zod schemas and TypeScript types for the AI Tutor flows.
  */
@@ -165,3 +166,21 @@ export const TutorFeedbackOutputSchema = z.object({
     feedback: z.string().describe("The detailed, markdown-formatted feedback for the user's performance.")
 });
 export type TutorFeedbackOutput = z.infer<typeof TutorFeedbackOutputSchema>;
+
+// Schema for Topic Validation Flow
+export const ValidateTopicInputSchema = z.object({
+  topic: z.string().describe('The topic string to validate.'),
+});
+export type ValidateTopicInput = z.infer<typeof ValidateTopicInputSchema>;
+
+export const ValidateTopicOutputSchema = z.object({
+  isValid: z
+    .boolean()
+    .describe('Whether the topic is a valid educational topic.'),
+  reason: z
+    .string()
+    .describe(
+      'The reason why the topic is invalid. If valid, this should be an empty string.'
+    ),
+});
+export type ValidateTopicOutput = z.infer<typeof ValidateTopicOutputSchema>;

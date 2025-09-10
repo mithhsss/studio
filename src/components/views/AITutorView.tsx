@@ -1,14 +1,4 @@
 
-
-
-
-
-
-
-
-
-
-
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -26,6 +16,7 @@ import { generateQuiz, evaluateQuiz } from '@/ai/flows/tutor-quiz-flow';
 import { scenarioSandbox } from '@/ai/flows/tutor-scenario-flow';
 import { interactiveLearn } from '@/ai/flows/tutor-interactive-learn-flow';
 import { getTutorFeedback } from '@/ai/flows/tutor-feedback-flow';
+import { validateTopic } from '@/ai/flows/tutor-validate-topic-flow';
 import { marked } from 'marked';
 
 
@@ -301,10 +292,17 @@ const InteractiveLearnView = ({ topic, setTopic, chatHistory, setChatHistory, is
         }
 
         setIsLoading(true);
-        setChatHistory([]);
-        setIsSessionFinished(false);
-
         try {
+            const validationResult = await validateTopic({ topic: trimmedTopic });
+            if (!validationResult.isValid) {
+                toast({ variant: "destructive", title: "Invalid Topic", description: validationResult.reason });
+                setIsLoading(false);
+                return;
+            }
+
+            setChatHistory([]);
+            setIsSessionFinished(false);
+
             const result = await interactiveLearn({ topic: trimmedTopic, chatHistory: [] });
             setChatHistory([{ role: 'model', content: result.response }]);
         } catch (err) {
