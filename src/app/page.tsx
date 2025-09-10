@@ -39,7 +39,7 @@ export type ActiveView = 'tutor' | 'roadmap' | 'mentor' | 'content-generator' | 
 export type MentorMode = 'chat' | 'interview_prep' | 'business_simulator';
 export type ContentGeneratorStep = 'idea' | 'outline' | 'draft';
 export type IdeaGeneratorStep = 'input' | 'results' | 'finalized';
-export type TutorMode = 'dashboard' | 'quiz' | 'sandbox' | 'chat';
+export type TutorMode = 'dashboard' | 'quiz' | 'sandbox' | 'interactive-learn';
 export type QuizState = 'config' | 'taking' | 'result';
 
 

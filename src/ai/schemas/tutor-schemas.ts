@@ -126,8 +126,9 @@ export const GenerateRoadmapOutputSchema = z.object({
 });
 export type GenerateRoadmapOutput = z.infer<typeof GenerateRoadmapOutputSchema>;
 
-// Schemas for Tutor Chatbot Flow
-export const TutorChatInputSchema = z.object({
+// Schemas for Interactive Learn Flow
+export const InteractiveLearnInputSchema = z.object({
+  topic: z.string().describe('The main topic the user wants to learn.'),
   chatHistory: z
     .array(
       z.object({
@@ -137,9 +138,9 @@ export const TutorChatInputSchema = z.object({
     )
     .describe('The history of the conversation so far.'),
 });
-export type TutorChatInput = z.infer<typeof TutorChatInputSchema>;
+export type InteractiveLearnInput = z.infer<typeof InteractiveLearnInputSchema>;
 
-export const TutorChatOutputSchema = z.object({
+export const InteractiveLearnOutputSchema = z.object({
   response: z.string().describe("The AI tutor's next response in the conversation."),
 });
-export type TutorChatOutput = z.infer<typeof TutorChatOutputSchema>;
+export type InteractiveLearnOutput = z.infer<typeof InteractiveLearnOutputSchema>;
