@@ -20,3 +20,5 @@ import '@/ai/flows/mock-interview-flow.ts';
 import '@/ai/flows/generate-strategy-flow.ts';
 import '@/ai/flows/refine-idea-with-chat-flow.ts';
 import '@/ai/flows/tutor-interactive-learn-flow.ts';
+import '@/ai/flows/tutor-feedback-flow.ts';
+

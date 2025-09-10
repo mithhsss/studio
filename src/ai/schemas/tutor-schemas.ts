@@ -1,4 +1,5 @@
 
+
 /**
  * @fileOverview Zod schemas and TypeScript types for the AI Tutor flows.
  */
@@ -132,7 +133,7 @@ export const InteractiveLearnInputSchema = z.object({
   chatHistory: z
     .array(
       z.object({
-        role: z.enum(['user', 'model']),
+        role: z.enum(['user', 'model', 'system']),
         content: z.string(),
       })
     )
@@ -144,3 +145,21 @@ export const InteractiveLearnOutputSchema = z.object({
   response: z.string().describe("The AI tutor's next response in the conversation."),
 });
 export type InteractiveLearnOutput = z.infer<typeof InteractiveLearnOutputSchema>;
+
+
+// Schema for Tutor Feedback Flow
+export const TutorFeedbackInputSchema = z.object({
+    topic: z.string().describe("The main topic of the learning session."),
+    chatHistory: z.array(
+        z.object({
+            role: z.enum(['user', 'model', 'system']),
+            content: z.string()
+        })
+    ).describe("The full conversation history to be analyzed for feedback.")
+});
+export type TutorFeedbackInput = z.infer<typeof TutorFeedbackInputSchema>;
+
+export const TutorFeedbackOutputSchema = z.object({
+    feedback: z.string().describe("The detailed, markdown-formatted feedback for the user's performance.")
+});
+export type TutorFeedbackOutput = z.infer<typeof TutorFeedbackOutputSchema>;

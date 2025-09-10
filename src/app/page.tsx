@@ -64,7 +64,7 @@ export interface IdeaWithState extends Idea {
 }
 
 export interface TutorChatHistory {
-    role: 'user' | 'model';
+    role: 'user' | 'model' | 'system';
     content: string;
 }
 

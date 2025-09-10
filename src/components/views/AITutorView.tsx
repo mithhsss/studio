@@ -4,6 +4,7 @@
 
 
 
+
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -12,7 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-import { BookOpen, Award, BarChart2, CheckSquare, Clock, User, DownloadCloud, Activity, Zap, BrainCircuit, MessageSquare, Loader, Send, FileQuestion, Star, BarChart, BookCopy, HardHat, Bot } from 'lucide-react';
+import { BookOpen, Award, BarChart2, CheckSquare, Clock, User, DownloadCloud, Activity, Zap, BrainCircuit, MessageSquare, Loader, Send, FileQuestion, Star, BarChart, BookCopy, HardHat, Bot, Trophy } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import type { TutorMode, QuizState, QuizConfig, TutorChatHistory } from '@/app/page';
 import type { QuizQuestion, EvaluateQuizOutput } from '@/ai/schemas/tutor-schemas';
@@ -20,6 +21,7 @@ import { useToast } from "@/hooks/use-toast";
 import { generateQuiz, evaluateQuiz } from '@/ai/flows/tutor-quiz-flow';
 import { scenarioSandbox } from '@/ai/flows/tutor-scenario-flow';
 import { interactiveLearn } from '@/ai/flows/tutor-interactive-learn-flow';
+import { getTutorFeedback } from '@/ai/flows/tutor-feedback-flow';
 import { marked } from 'marked';
 
 
@@ -294,7 +296,6 @@ const InteractiveLearnView = ({ topic, setTopic, chatHistory, setChatHistory, is
         }
 
         setIsLoading(true);
-        // We send an empty history to signal the start of a new session
         setChatHistory([]);
 
         try {
@@ -326,6 +327,18 @@ const InteractiveLearnView = ({ topic, setTopic, chatHistory, setChatHistory, is
         }
     };
 
+    const handleFinishSession = async () => {
+        setIsLoading(true);
+        try {
+            const result = await getTutorFeedback({ topic, chatHistory });
+            setChatHistory(prev => [...prev, { role: 'system', content: result.feedback }]);
+        } catch (err) {
+             toast({ variant: 'destructive', title: 'Error', description: 'Failed to generate feedback.' });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     return (
         <div className="mt-4 h-[60vh] flex flex-col">
             {!isSessionStarted ? (
@@ -349,13 +362,23 @@ const InteractiveLearnView = ({ topic, setTopic, chatHistory, setChatHistory, is
                 <>
                     <div className="flex-grow bg-slate-50 rounded-lg p-4 overflow-y-auto" ref={chatContainerRef}>
                         <div className="space-y-4">
-                            {chatHistory.map((msg, index) => (
-                                <div key={index} className={`flex gap-3 items-start ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                                    {msg.role === 'model' && <div className="w-8 h-8 rounded-full bg-orange-500 text-white flex items-center justify-center flex-shrink-0"><Bot size={16} /></div>}
-                                    <div className={`max-w-xl p-3 rounded-lg prose prose-sm ${msg.role === 'user' ? 'bg-blue-100' : 'bg-white shadow'}`} dangerouslySetInnerHTML={{ __html: marked.parse(msg.content) }}></div>
-                                    {msg.role === 'user' && <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center flex-shrink-0"><User size={16} /></div>}
-                                </div>
-                            ))}
+                            {chatHistory.map((msg, index) => {
+                                if (msg.role === 'system') {
+                                    return (
+                                        <div key={index} className="p-4 bg-indigo-50 border-l-4 border-indigo-500 rounded-r-lg my-4">
+                                            <h4 className="font-bold text-indigo-700 flex items-center gap-2"><Trophy size={18}/> Session Feedback</h4>
+                                            <div className="prose prose-sm mt-2" dangerouslySetInnerHTML={{ __html: marked.parse(msg.content) }}></div>
+                                        </div>
+                                    )
+                                }
+                                return (
+                                    <div key={index} className={`flex gap-3 items-start ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                        {msg.role === 'model' && <div className="w-8 h-8 rounded-full bg-orange-500 text-white flex items-center justify-center flex-shrink-0"><Bot size={16} /></div>}
+                                        <div className={`max-w-xl p-3 rounded-lg prose prose-sm ${msg.role === 'user' ? 'bg-blue-100' : 'bg-white shadow'}`} dangerouslySetInnerHTML={{ __html: marked.parse(msg.content) }}></div>
+                                        {msg.role === 'user' && <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center flex-shrink-0"><User size={16} /></div>}
+                                    </div>
+                                );
+                            })}
                             {isLoading && chatHistory.length > 0 && chatHistory[chatHistory.length - 1].role === 'user' && (
                                 <div className="flex justify-start">
                                     <div className="w-8 h-8 rounded-full bg-orange-500 text-white flex items-center justify-center flex-shrink-0">
@@ -371,6 +394,9 @@ const InteractiveLearnView = ({ topic, setTopic, chatHistory, setChatHistory, is
                     <div className="mt-4 flex gap-2">
                         <Input placeholder="Type your answer..." value={userInput} onChange={(e) => setUserInput(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()} disabled={isLoading} />
                         <Button onClick={handleSendMessage} disabled={isLoading}><Send size={16} /></Button>
+                        <Button onClick={handleFinishSession} disabled={isLoading} variant="outline" className="bg-green-100 text-green-800 hover:bg-green-200">
+                           <Trophy size={16} className="mr-2"/> Finish Session & Get Feedback
+                        </Button>
                     </div>
                 </>
             )}
