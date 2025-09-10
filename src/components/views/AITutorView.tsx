@@ -8,6 +8,7 @@
 
 
 
+
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -299,20 +300,8 @@ const InteractiveLearnView = ({ topic, setTopic, chatHistory, setChatHistory, is
             return;
         }
 
-        const wordCount = trimmedTopic.split(/\s+/).length;
-        if (wordCount > 15) {
-            toast({ variant: "destructive", title: "Topic Too Long", description: "Please enter a topic with 15 words or fewer." });
-            return;
-        }
-
-        if (wordCount < 2) {
-             toast({ variant: "destructive", title: "Topic Too Short", description: "Please enter a more specific topic (at least 2 words)." });
-            return;
-        }
-
-
         setIsLoading(true);
-        setChatHistory([]); 
+        setChatHistory([]);
         setIsSessionFinished(false);
 
         try {

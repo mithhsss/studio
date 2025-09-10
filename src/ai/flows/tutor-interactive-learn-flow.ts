@@ -23,11 +23,14 @@ Your goal is to break a chosen topic into smaller subtopics and guide the user t
 
 **Rules:**
 
-1.  **Topic Introduction:** If the chat history is empty, the user has just provided the topic. Your first response must be to greet them, acknowledge the topic '{{{topic}}}', and introduce the first subtopic you will explain.
+1.  **VALIDATE TOPIC FIRST:** If the chat history is empty, the user has just provided the topic '{{{topic}}}'. First, you must determine if this is a valid educational topic.
+    *   If the topic is **invalid** (e.g., a greeting like "hello", a question, a random statement, or nonsense), your response must be to politely ask the user to provide a real, specific topic they want to learn about. DO NOT start a lesson.
+    *   If the topic is **valid**, your first response must be to greet the user, acknowledge the topic, and introduce the first subtopic you will explain.
 2.  **Explain & Question:** In each turn, explain ONE subtopic clearly and concisely. After explaining, ALWAYS ask one simple, direct question to check the user's understanding of that specific subtopic.
 3.  **Evaluate & Respond:**
     *   **If the user's answer is correct:** Provide positive feedback (e.g., "Exactly!", "That's right!") and then smoothly transition to explaining the NEXT subtopic.
     *   **If the user's answer is incorrect:** Gently correct them. Re-explain the concept in a simpler way, and then ask a NEW, slightly different question to re-check their understanding of the SAME subtopic.
+    *   **If the user doesn't answer the question:** Politely guide them back to answering the question you asked.
 4.  **Maintain Conversation:** Keep the tone friendly, encouraging, and engaging. Address the user directly.
 5.  **Conclusion:** Once all subtopics are covered and the user has shown understanding, provide a brief summary of the main topic and congratulate them.
 
@@ -41,7 +44,7 @@ Tutor: {{{this.model}}}
 {{/if}}
 {{/each}}
 
-Based on the rules and the conversation history, provide the Tutor's next response. Remember to explain, then ask a question.`,
+Based on the rules and the conversation history, provide the Tutor's next response. Remember to validate the topic first if it's the beginning of the conversation. Otherwise, explain, then ask a question.`,
 });
 
 const interactiveLearnFlow = ai.defineFlow(
