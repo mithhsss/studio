@@ -113,13 +113,14 @@ const BlueprintForm = ({ formData, setFormData, onGenerate, isLoading }: {
 
         <div>
           <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2"><Target size={16}/> Your Learning Goal or Desired Skills</label>
-          <Input type="text" name="goal" value={formData.goal} onChange={handleInputChange} />
+          <Input type="text" name="goal" value={formData.goal} onChange={handleInputChange} placeholder="e.g., Become a full-stack developer" />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
              <div>
                 <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2"><Clock size={16}/> Time Commitment</label>
                 <select name="timePerWeek" value={formData.timePerWeek} onChange={handleInputChange} className="w-full p-3 border border-input bg-background rounded-lg appearance-none">
+                    <option value="" disabled>Select your time commitment</option>
                     <option>2-4 hours / week</option>
                     <option>5-7 hours / week</option>
                     <option>8+ hours / week</option>
@@ -145,6 +146,7 @@ const BlueprintForm = ({ formData, setFormData, onGenerate, isLoading }: {
             <div>
                 <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2"><Target size={16}/> Target Timeline</label>
                  <select name="timeline" value={formData.timeline} onChange={handleInputChange} className="w-full p-3 border border-input bg-background rounded-lg appearance-none">
+                    <option value="" disabled>Select your timeline</option>
                     <option>1 Month</option>
                     <option>3 Months</option>
                     <option>6 Months</option>
@@ -540,13 +542,13 @@ export default function AIRoadmapView({
     error: string | null
 }) {
   const [formData, setFormData] = useState<GenerateRoadmapInput>({
-    technicalSkills: ['HTML', 'CSS'],
-    nonTechnicalSkills: ['Communication'],
-    goal: 'Become a Data Engineer',
-    timePerWeek: '5-7 hours / week',
+    technicalSkills: [],
+    nonTechnicalSkills: [],
+    goal: '',
+    timePerWeek: '',
     learningStyle: 'mixed',
     resourceType: 'both',
-    timeline: '3 Months'
+    timeline: ''
   });
 
   const triggerAIGeneration = async () => {
