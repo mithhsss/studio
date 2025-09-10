@@ -39,7 +39,7 @@ export type ActiveView = 'tutor' | 'roadmap' | 'mentor' | 'content-generator' | 
 export type MentorMode = 'chat' | 'interview_prep' | 'business_simulator';
 export type ContentGeneratorStep = 'idea' | 'outline' | 'draft';
 export type IdeaGeneratorStep = 'input' | 'results' | 'finalized';
-export type TutorMode = 'dashboard' | 'quiz' | 'sandbox';
+export type TutorMode = 'dashboard' | 'quiz' | 'sandbox' | 'chat';
 export type QuizState = 'config' | 'taking' | 'result';
 
 
@@ -382,6 +382,7 @@ export default function Home() {
     const [quizResult, setQuizResult] = useState<EvaluateQuizOutput | null>(null);
     const [sandboxTopic, setSandboxTopic] = useState('');
     const [sandboxChatHistory, setSandboxChatHistory] = useState<TutorChatHistory[]>([]);
+    const [tutorChatHistory, setTutorChatHistory] = useState<TutorChatHistory[]>([]);
 
 
     const handleViewChange = (view: ActiveView) => {
@@ -683,6 +684,8 @@ export default function Home() {
                         setSandboxTopic={setSandboxTopic}
                         sandboxChatHistory={sandboxChatHistory}
                         setSandboxChatHistory={setSandboxChatHistory}
+                        tutorChatHistory={tutorChatHistory}
+                        setTutorChatHistory={setTutorChatHistory}
                         isLoading={isLoading}
                         setIsLoading={setIsLoading}
                     />

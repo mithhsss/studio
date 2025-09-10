@@ -1,3 +1,4 @@
+
 /**
  * @fileOverview Zod schemas and TypeScript types for the AI Tutor flows.
  */
@@ -124,3 +125,21 @@ export const GenerateRoadmapOutputSchema = z.object({
     careerTips: z.string().describe("Advice on certifications or career steps to take after completing the roadmap."),
 });
 export type GenerateRoadmapOutput = z.infer<typeof GenerateRoadmapOutputSchema>;
+
+// Schemas for Tutor Chatbot Flow
+export const TutorChatInputSchema = z.object({
+  chatHistory: z
+    .array(
+      z.object({
+        role: z.enum(['user', 'model']),
+        content: z.string(),
+      })
+    )
+    .describe('The history of the conversation so far.'),
+});
+export type TutorChatInput = z.infer<typeof TutorChatInputSchema>;
+
+export const TutorChatOutputSchema = z.object({
+  response: z.string().describe("The AI tutor's next response in the conversation."),
+});
+export type TutorChatOutput = z.infer<typeof TutorChatOutputSchema>;

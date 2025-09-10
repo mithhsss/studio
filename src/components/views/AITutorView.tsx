@@ -1,5 +1,6 @@
 
 
+
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -8,13 +9,14 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-import { BookOpen, Award, BarChart2, CheckSquare, Clock, User, DownloadCloud, Activity, Zap, BrainCircuit, MessageSquare, Loader, Send, FileQuestion, Star, BarChart, BookCopy, HardHat } from 'lucide-react';
+import { BookOpen, Award, BarChart2, CheckSquare, Clock, User, DownloadCloud, Activity, Zap, BrainCircuit, MessageSquare, Loader, Send, FileQuestion, Star, BarChart, BookCopy, HardHat, Bot } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import type { TutorMode, QuizState, QuizConfig, TutorChatHistory } from '@/app/page';
 import type { QuizQuestion, EvaluateQuizOutput } from '@/ai/schemas/tutor-schemas';
 import { useToast } from "@/hooks/use-toast";
 import { generateQuiz, evaluateQuiz } from '@/ai/flows/tutor-quiz-flow';
 import { scenarioSandbox } from '@/ai/flows/tutor-scenario-flow';
+import { tutorChat } from '@/ai/flows/tutor-chat-flow';
 import { marked } from 'marked';
 
 
@@ -271,6 +273,63 @@ const ScenarioSandboxView = ({ topic, setTopic, chatHistory, setChatHistory, isL
     );
 };
 
+// --- Chatbot Sub-component ---
+const ChatbotView = ({ chatHistory, setChatHistory, isLoading, setIsLoading }) => {
+    const [userInput, setUserInput] = React.useState('');
+    const chatContainerRef = React.useRef<HTMLDivElement>(null);
+    const { toast } = useToast();
+
+    React.useEffect(() => {
+        chatContainerRef.current?.scrollTo({ top: chatContainerRef.current.scrollHeight, behavior: 'smooth' });
+    }, [chatHistory]);
+
+    const handleSendMessage = async (message: string) => {
+        if (!message.trim()) return;
+
+        const newHistory: TutorChatHistory[] = [...chatHistory, { role: 'user', content: message }];
+        setChatHistory(newHistory);
+        setUserInput('');
+        setIsLoading(true);
+
+        try {
+            const result = await tutorChat({ chatHistory: newHistory });
+            setChatHistory(prev => [...prev, { role: 'model', content: result.response }]);
+        } catch (err) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Failed to get a response from the AI tutor.' });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    return (
+        <div className="mt-4 h-[60vh] flex flex-col">
+            <div className="flex-grow bg-slate-50 rounded-lg p-4 overflow-y-auto" ref={chatContainerRef}>
+                {chatHistory.length === 0 && (
+                    <div className="text-center text-slate-500 h-full flex flex-col justify-center items-center">
+                        <MessageSquare size={48} className="mb-4 text-slate-300" />
+                        <h3 className="text-lg font-semibold">Ask me anything!</h3>
+                        <p>I'm here to help you with any questions you have.</p>
+                    </div>
+                )}
+                <div className="space-y-4">
+                    {chatHistory.map((msg, index) => (
+                        <div key={index} className={`flex gap-3 items-start ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                            {msg.role === 'model' && <div className="w-8 h-8 rounded-full bg-orange-500 text-white flex items-center justify-center flex-shrink-0"><Bot size={16} /></div>}
+                            <div className={`max-w-xl p-3 rounded-lg prose prose-sm ${msg.role === 'user' ? 'bg-blue-100' : 'bg-white shadow'}`} dangerouslySetInnerHTML={{ __html: marked.parse(msg.content) }}></div>
+                            {msg.role === 'user' && <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center flex-shrink-0"><User size={16} /></div>}
+                        </div>
+                    ))}
+                    {isLoading && <div className="flex justify-start"><div className="w-8 h-8 rounded-full bg-orange-500 text-white flex items-center justify-center flex-shrink-0"><Bot size={16} /></div><div className="ml-3 p-3 bg-white shadow rounded-lg"><Loader className="animate-spin text-orange-500" /></div></div>}
+                </div>
+            </div>
+            <div className="mt-4 flex gap-2">
+                <Input placeholder="Type your message..." value={userInput} onChange={(e) => setUserInput(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && handleSendMessage(userInput)} disabled={isLoading} />
+                <Button onClick={() => handleSendMessage(userInput)} disabled={isLoading}><Send size={16} /></Button>
+            </div>
+        </div>
+    );
+};
+
 
 // --- Main View Component ---
 interface AITutorViewProps {
@@ -290,6 +349,8 @@ interface AITutorViewProps {
     setSandboxTopic: (topic: string) => void;
     sandboxChatHistory: TutorChatHistory[];
     setSandboxChatHistory: (history: TutorChatHistory[]) => void;
+    tutorChatHistory: TutorChatHistory[];
+    setTutorChatHistory: (history: TutorChatHistory[]) => void;
     isLoading: boolean;
     setIsLoading: (loading: boolean) => void;
 }
@@ -298,6 +359,7 @@ const AITutorView: React.FC<AITutorViewProps> = (props) => {
     const renderContent = () => {
         switch (props.tutorMode) {
             case 'dashboard': return <DashboardView />;
+            case 'chat': return <ChatbotView chatHistory={props.tutorChatHistory} setChatHistory={props.setTutorChatHistory} isLoading={props.isLoading} setIsLoading={props.setIsLoading} />;
             case 'quiz': return <QuizView quizState={props.quizState} setQuizState={props.setQuizState} config={props.quizConfig} setConfig={props.setQuizConfig} questions={props.quizQuestions} setQuestions={props.setQuizQuestions} answers={props.quizAnswers} setAnswers={props.setQuizAnswers} result={props.quizResult} setResult={props.setQuizResult} isLoading={props.isLoading} setIsLoading={props.setIsLoading} />;
             case 'sandbox': return <ScenarioSandboxView topic={props.sandboxTopic} setTopic={props.setSandboxTopic} chatHistory={props.sandboxChatHistory} setChatHistory={props.setSandboxChatHistory} isLoading={props.isLoading} setIsLoading={props.setIsLoading} />;
             default: return <DashboardView />;
@@ -321,6 +383,7 @@ const AITutorView: React.FC<AITutorViewProps> = (props) => {
                 <div className="border-b mb-4">
                     <nav className="-mb-px flex space-x-6">
                         <button onClick={() => props.setTutorMode('dashboard')} className={`py-3 px-1 border-b-2 font-medium text-sm ${props.tutorMode === 'dashboard' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}><BarChart size={16} className="inline-block mr-2" />Dashboard</button>
+                        <button onClick={() => props.setTutorMode('chat')} className={`py-3 px-1 border-b-2 font-medium text-sm ${props.tutorMode === 'chat' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}><MessageSquare size={16} className="inline-block mr-2" />Tutor Chat</button>
                         <button onClick={() => props.setTutorMode('quiz')} className={`py-3 px-1 border-b-2 font-medium text-sm ${props.tutorMode === 'quiz' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}><FileQuestion size={16} className="inline-block mr-2" />Take a Quiz</button>
                         <button onClick={() => props.setTutorMode('sandbox')} className={`py-3 px-1 border-b-2 font-medium text-sm ${props.tutorMode === 'sandbox' ? 'border-indigo-500 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}><HardHat size={16} className="inline-block mr-2" />Scenario Sandbox</button>
                     </nav>
