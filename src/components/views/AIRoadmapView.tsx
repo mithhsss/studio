@@ -287,56 +287,28 @@ const RoadmapViewInternal = ({ roadmapData, onBack }: { roadmapData: GenerateRoa
     
     const handleDownload = async () => {
         toast({ title: 'Preparing Download', description: 'Generating your PDF roadmap...' });
-    
-        const graphElement = roadmapGraphRef.current;
+
         const detailsElement = detailedPlanRef.current;
-    
-        if (!graphElement || !detailsElement) {
+
+        if (!detailsElement) {
             toast({ variant: 'destructive', title: 'Error', description: 'Could not find elements to generate PDF.' });
             return;
         }
-    
+
         try {
-            // 1. Generate Graph Image
-            const canvas = await html2canvas(graphElement, {
-                scale: 2, // Higher scale for better quality
-                useCORS: true,
-                backgroundColor: '#f7f8fa'
-            });
-            const graphImage = canvas.toDataURL('image/png');
-    
-            // 2. Initialize PDF
             const doc = new jsPDF({
                 orientation: 'p',
                 unit: 'mm',
                 format: 'a4'
             });
-    
+
             const pageWidth = doc.internal.pageSize.getWidth();
             const pageHeight = doc.internal.pageSize.getHeight();
             const margin = 15;
             const maxLineWidth = pageWidth - margin * 2;
-    
-            // 3. Add Graph to PDF
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(22);
-            doc.text('Your Visual Roadmap', pageWidth / 2, margin, { align: 'center' });
-            
-            const imgProps = doc.getImageProperties(graphImage);
-            const imgHeight = (imgProps.height * maxLineWidth) / imgProps.width;
-            let finalImgHeight = imgHeight;
-            let finalImgY = margin + 10;
-            
-            if (finalImgHeight > (pageHeight - finalImgY - margin)) {
-                finalImgHeight = pageHeight - finalImgY - margin;
-            }
-            
-            doc.addImage(graphImage, 'PNG', margin, finalImgY, maxLineWidth, finalImgHeight);
-    
-            // 4. Add Detailed Plan to PDF
-            doc.addPage();
+
             let y = margin;
-    
+
             const checkPageBreak = (heightNeeded: number) => {
                 if (y + heightNeeded > pageHeight - margin) {
                     doc.addPage();
@@ -344,7 +316,6 @@ const RoadmapViewInternal = ({ roadmapData, onBack }: { roadmapData: GenerateRoa
                 }
             };
     
-            // Title for detailed plan
             doc.setFont('helvetica', 'bold');
             doc.setFontSize(22);
             doc.text('Your Detailed Learning Plan', pageWidth / 2, y, { align: 'center' });
