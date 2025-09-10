@@ -7,6 +7,7 @@
 
 
 
+
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -292,17 +293,30 @@ const InteractiveLearnView = ({ topic, setTopic, chatHistory, setChatHistory, is
     }, [chatHistory]);
 
     const handleStartSession = async () => {
-        if (!topic.trim()) {
+        const trimmedTopic = topic.trim();
+        if (!trimmedTopic) {
             toast({ variant: "destructive", title: "Topic Required", description: "Please enter a topic to start learning." });
             return;
         }
+
+        const wordCount = trimmedTopic.split(/\s+/).length;
+        if (wordCount > 15) {
+            toast({ variant: "destructive", title: "Topic Too Long", description: "Please enter a topic with 15 words or fewer." });
+            return;
+        }
+
+        if (wordCount < 2) {
+             toast({ variant: "destructive", title: "Topic Too Short", description: "Please enter a more specific topic (at least 2 words)." });
+            return;
+        }
+
 
         setIsLoading(true);
         setChatHistory([]); 
         setIsSessionFinished(false);
 
         try {
-            const result = await interactiveLearn({ topic, chatHistory: [] });
+            const result = await interactiveLearn({ topic: trimmedTopic, chatHistory: [] });
             setChatHistory([{ role: 'model', content: result.response }]);
         } catch (err) {
             toast({ variant: 'destructive', title: 'Error', description: 'Failed to start learning session.' });
