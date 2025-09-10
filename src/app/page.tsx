@@ -383,6 +383,7 @@ export default function Home() {
     const [sandboxTopic, setSandboxTopic] = useState('');
     const [sandboxChatHistory, setSandboxChatHistory] = useState<TutorChatHistory[]>([]);
     const [tutorChatHistory, setTutorChatHistory] = useState<TutorChatHistory[]>([]);
+    const [tutorChatTopic, setTutorChatTopic] = useState('');
 
 
     const handleViewChange = (view: ActiveView) => {
@@ -686,6 +687,8 @@ export default function Home() {
                         setSandboxChatHistory={setSandboxChatHistory}
                         tutorChatHistory={tutorChatHistory}
                         setTutorChatHistory={setTutorChatHistory}
+                        tutorChatTopic={tutorChatTopic}
+                        setTutorChatTopic={setTutorChatTopic}
                         isLoading={isLoading}
                         setIsLoading={setIsLoading}
                     />
