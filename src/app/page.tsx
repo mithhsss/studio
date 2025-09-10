@@ -384,6 +384,7 @@ export default function Home() {
     const [sandboxChatHistory, setSandboxChatHistory] = useState<TutorChatHistory[]>([]);
     const [tutorChatHistory, setTutorChatHistory] = useState<TutorChatHistory[]>([]);
     const [tutorChatTopic, setTutorChatTopic] = useState('');
+    const [isTutorSessionFinished, setIsTutorSessionFinished] = useState(false);
 
 
     const handleViewChange = (view: ActiveView) => {
@@ -691,6 +692,8 @@ export default function Home() {
                         setTutorChatTopic={setTutorChatTopic}
                         isLoading={isLoading}
                         setIsLoading={setIsLoading}
+                        isSessionFinished={isTutorSessionFinished}
+                        setIsSessionFinished={setIsTutorSessionFinished}
                     />
                 );
             case 'roadmap':

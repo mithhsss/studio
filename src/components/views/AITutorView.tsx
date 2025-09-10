@@ -6,6 +6,7 @@
 
 
 
+
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -14,7 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-import { BookOpen, Award, BarChart2, CheckSquare, Clock, User, DownloadCloud, Activity, Zap, BrainCircuit, MessageSquare, Loader, Send, FileQuestion, Star, BarChart, BookCopy, HardHat, Bot, Trophy } from 'lucide-react';
+import { BookOpen, Award, BarChart2, CheckSquare, Clock, User, DownloadCloud, Activity, Zap, BrainCircuit, MessageSquare, Loader, Send, FileQuestion, Star, BarChart, BookCopy, HardHat, Bot, Trophy, RefreshCw } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import type { TutorMode, QuizState, QuizConfig, TutorChatHistory } from '@/app/page';
 import type { QuizQuestion, EvaluateQuizOutput } from '@/ai/schemas/tutor-schemas';
@@ -280,7 +281,7 @@ const ScenarioSandboxView = ({ topic, setTopic, chatHistory, setChatHistory, isL
 };
 
 // --- Interactive Learn Sub-component ---
-const InteractiveLearnView = ({ topic, setTopic, chatHistory, setChatHistory, isLoading, setIsLoading }) => {
+const InteractiveLearnView = ({ topic, setTopic, chatHistory, setChatHistory, isLoading, setIsLoading, isSessionFinished, setIsSessionFinished }) => {
     const [userInput, setUserInput] = React.useState('');
     const chatContainerRef = React.useRef<HTMLDivElement>(null);
     const { toast } = useToast();
@@ -297,8 +298,8 @@ const InteractiveLearnView = ({ topic, setTopic, chatHistory, setChatHistory, is
         }
 
         setIsLoading(true);
-        // Clear previous history, but keep the topic
         setChatHistory([]); 
+        setIsSessionFinished(false);
 
         try {
             const result = await interactiveLearn({ topic, chatHistory: [] });
@@ -335,12 +336,19 @@ const InteractiveLearnView = ({ topic, setTopic, chatHistory, setChatHistory, is
             const result = await getTutorFeedback({ topic, chatHistory });
             const feedbackContent = `**Score: ${result.score}/10**\n\n${result.feedback}`;
             setChatHistory(prev => [...prev, { role: 'system', content: feedbackContent }]);
+            setIsSessionFinished(true);
         } catch (err) {
              toast({ variant: 'destructive', title: 'Error', description: 'Failed to generate feedback.' });
         } finally {
             setIsLoading(false);
         }
     };
+
+    const handleStartNewSession = () => {
+        setChatHistory([]);
+        setTopic('');
+        setIsSessionFinished(false);
+    }
 
     return (
         <div className="mt-4 h-[60vh] flex flex-col">
@@ -395,11 +403,19 @@ const InteractiveLearnView = ({ topic, setTopic, chatHistory, setChatHistory, is
                         </div>
                     </div>
                     <div className="mt-4 flex gap-2">
-                        <Input placeholder="Type your answer..." value={userInput} onChange={(e) => setUserInput(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()} disabled={isLoading} />
-                        <Button onClick={handleSendMessage} disabled={isLoading}><Send size={16} /></Button>
-                        <Button onClick={handleFinishSession} disabled={isLoading} variant="outline" className="bg-green-100 text-green-800 hover:bg-green-200">
-                           <Trophy size={16} className="mr-2"/> Finish Session & Get Feedback
-                        </Button>
+                        {isSessionFinished ? (
+                             <Button onClick={handleStartNewSession} className="w-full">
+                                <RefreshCw size={16} className="mr-2"/> Start New Session
+                            </Button>
+                        ) : (
+                            <>
+                                <Input placeholder="Type your answer..." value={userInput} onChange={(e) => setUserInput(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()} disabled={isLoading} />
+                                <Button onClick={handleSendMessage} disabled={isLoading}><Send size={16} /></Button>
+                                <Button onClick={handleFinishSession} disabled={isLoading} variant="outline" className="bg-green-100 text-green-800 hover:bg-green-200">
+                                <Trophy size={16} className="mr-2"/> Finish Session
+                                </Button>
+                            </>
+                        )}
                     </div>
                 </>
             )}
@@ -432,13 +448,15 @@ interface AITutorViewProps {
     setTutorChatTopic: (topic: string) => void;
     isLoading: boolean;
     setIsLoading: (loading: boolean) => void;
+    isSessionFinished: boolean;
+    setIsSessionFinished: (finished: boolean) => void;
 }
 
 const AITutorView: React.FC<AITutorViewProps> = (props) => {
     const renderContent = () => {
         switch (props.tutorMode) {
             case 'dashboard': return <DashboardView />;
-            case 'interactive-learn': return <InteractiveLearnView topic={props.tutorChatTopic} setTopic={props.setTutorChatTopic} chatHistory={props.tutorChatHistory} setChatHistory={props.setTutorChatHistory} isLoading={props.isLoading} setIsLoading={props.setIsLoading} />;
+            case 'interactive-learn': return <InteractiveLearnView topic={props.tutorChatTopic} setTopic={props.setTutorChatTopic} chatHistory={props.tutorChatHistory} setChatHistory={props.setTutorChatHistory} isLoading={props.isLoading} setIsLoading={props.setIsLoading} isSessionFinished={props.isSessionFinished} setIsSessionFinished={props.setIsSessionFinished} />;
             case 'quiz': return <QuizView quizState={props.quizState} setQuizState={props.setQuizState} config={props.quizConfig} setConfig={props.setQuizConfig} questions={props.quizQuestions} setQuestions={props.setQuizQuestions} answers={props.quizAnswers} setAnswers={props.setAnswers} result={props.quizResult} setResult={props.setQuizResult} isLoading={props.isLoading} setIsLoading={props.setIsLoading} />;
             case 'sandbox': return <ScenarioSandboxView topic={props.sandboxTopic} setTopic={props.setSandboxTopic} chatHistory={props.sandboxChatHistory} setChatHistory={props.setSandboxChatHistory} isLoading={props.isLoading} setIsLoading={props.setIsLoading} />;
             default: return <DashboardView />;
