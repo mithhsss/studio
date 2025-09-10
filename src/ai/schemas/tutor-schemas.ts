@@ -1,5 +1,6 @@
 
 
+
 /**
  * @fileOverview Zod schemas and TypeScript types for the AI Tutor flows.
  */
@@ -160,6 +161,7 @@ export const TutorFeedbackInputSchema = z.object({
 export type TutorFeedbackInput = z.infer<typeof TutorFeedbackInputSchema>;
 
 export const TutorFeedbackOutputSchema = z.object({
+    score: z.number().min(0).max(10).describe("A score from 0 to 10 based on the user's understanding and performance."),
     feedback: z.string().describe("The detailed, markdown-formatted feedback for the user's performance.")
 });
 export type TutorFeedbackOutput = z.infer<typeof TutorFeedbackOutputSchema>;

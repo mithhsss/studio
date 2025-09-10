@@ -5,6 +5,7 @@
 
 
 
+
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -50,7 +51,7 @@ const ProgressRing = ({ percent = 0, size = 72, stroke = 8 }) => {
 const DashboardView = () => {
     const mockAnalytics = [{ day: "Mon", score: 55 }, { day: "Tue", score: 68 }, { day: "Wed", score: 72 }, { day: "Thu", score: 80 }, { day: "Fri", score: 76 }, { day: "Sat", score: 82 }, { day: "Sun", score: 88 }];
     const mockBadges = [{ id: 1, name: "Consistency", unlocked: true }, { id: 2, name: "Fast Learner", unlocked: true }, { id: 3, name: "Accuracy", unlocked: false }, { id: 4, name: "Quiz Champ", unlocked: false }];
-    const mockReports = [{ id: 1, topic: "Arrays", mastery: 78 }, { id: 2, topic: "Sorting", mastery: 64 }, { id: 3, topic: "Graphs", mastery: 42 }];
+    const mockReports = [{ id: 1, topic: "Arrays", mastery: 78 }, { id: 2, topic: "Sorting", mastery: 64 }, { id: 3, name: "Graphs", mastery: 42 }];
     const progress = 68;
     const nextQuiz = { title: "Recursion Practice", time: "10 mins", questions: 8 };
 
@@ -296,7 +297,8 @@ const InteractiveLearnView = ({ topic, setTopic, chatHistory, setChatHistory, is
         }
 
         setIsLoading(true);
-        setChatHistory([]);
+        // Clear previous history, but keep the topic
+        setChatHistory([]); 
 
         try {
             const result = await interactiveLearn({ topic, chatHistory: [] });
@@ -331,7 +333,8 @@ const InteractiveLearnView = ({ topic, setTopic, chatHistory, setChatHistory, is
         setIsLoading(true);
         try {
             const result = await getTutorFeedback({ topic, chatHistory });
-            setChatHistory(prev => [...prev, { role: 'system', content: result.feedback }]);
+            const feedbackContent = `**Score: ${result.score}/10**\n\n${result.feedback}`;
+            setChatHistory(prev => [...prev, { role: 'system', content: feedbackContent }]);
         } catch (err) {
              toast({ variant: 'destructive', title: 'Error', description: 'Failed to generate feedback.' });
         } finally {
@@ -436,7 +439,7 @@ const AITutorView: React.FC<AITutorViewProps> = (props) => {
         switch (props.tutorMode) {
             case 'dashboard': return <DashboardView />;
             case 'interactive-learn': return <InteractiveLearnView topic={props.tutorChatTopic} setTopic={props.setTutorChatTopic} chatHistory={props.tutorChatHistory} setChatHistory={props.setTutorChatHistory} isLoading={props.isLoading} setIsLoading={props.setIsLoading} />;
-            case 'quiz': return <QuizView quizState={props.quizState} setQuizState={props.setQuizState} config={props.quizConfig} setConfig={props.setQuizConfig} questions={props.quizQuestions} setQuestions={props.setQuizQuestions} answers={props.quizAnswers} setAnswers={props.setQuizAnswers} result={props.quizResult} setResult={props.setQuizResult} isLoading={props.isLoading} setIsLoading={props.setIsLoading} />;
+            case 'quiz': return <QuizView quizState={props.quizState} setQuizState={props.setQuizState} config={props.quizConfig} setConfig={props.setQuizConfig} questions={props.quizQuestions} setQuestions={props.setQuizQuestions} answers={props.quizAnswers} setAnswers={props.setAnswers} result={props.quizResult} setResult={props.setQuizResult} isLoading={props.isLoading} setIsLoading={props.setIsLoading} />;
             case 'sandbox': return <ScenarioSandboxView topic={props.sandboxTopic} setTopic={props.setSandboxTopic} chatHistory={props.sandboxChatHistory} setChatHistory={props.setSandboxChatHistory} isLoading={props.isLoading} setIsLoading={props.setIsLoading} />;
             default: return <DashboardView />;
         }

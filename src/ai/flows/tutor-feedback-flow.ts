@@ -22,10 +22,11 @@ Analyze the entire conversation provided in the chat history and generate a comp
 
 **Your Task:**
 
-1.  **Overall Summary:** Provide a brief summary of what the user learned.
-2.  **Strengths:** Identify 1-2 key strengths the user demonstrated during the session (e.g., quick understanding, good questions).
-3.  **Areas for Improvement:** Identify 1-2 areas where the user struggled or could improve. Be constructive and encouraging.
-4.  **Next Steps:** Suggest 2-3 specific, actionable next steps for the user to continue their learning journey on this topic. This could include related topics, practice exercises, or recommended resources.
+1.  **Performance Score**: Based on the user's answers, engagement, and overall understanding, provide a score from 0 to 10. A score of 10 means perfect understanding.
+2.  **Overall Summary:** Provide a brief summary of what the user learned.
+3.  **Strengths:** Identify 1-2 key strengths the user demonstrated during the session (e.g., quick understanding, good questions).
+4.  **Areas for Improvement:** Identify 1-2 areas where the user struggled or could improve. Be constructive and encouraging.
+5.  **Next Steps:** Suggest 2-3 specific, actionable next steps for the user to continue their learning journey on this topic. This could include related topics, practice exercises, or recommended resources with full URLs if applicable.
 
 **Conversation History:**
 {{#each chatHistory}}
@@ -37,7 +38,7 @@ Tutor: {{{this.model}}}
 {{/if}}
 {{/each}}
 
-Please provide the feedback in a clear, structured format using Markdown.`,
+Please provide the score and the detailed feedback in the required JSON format.`,
 });
 
 const getTutorFeedbackFlow = ai.defineFlow(
