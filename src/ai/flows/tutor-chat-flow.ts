@@ -21,11 +21,12 @@ const prompt = ai.definePrompt({
 
 Conversation History:
 {{#each chatHistory}}
-{{#if (eq this.role 'user')}}
-User: {{{this.content}}}
-{{else}}
-Tutor: {{{this.content}}}
-{{/if}}
+  {{#if user}}
+  User: {{{user}}}
+  {{/if}}
+  {{#if model}}
+  Tutor: {{{model}}}
+  {{/if}}
 {{/each}}
 
 Based on the conversation history, provide the next response as the Tutor.`,
@@ -38,7 +39,19 @@ const tutorChatFlow = ai.defineFlow(
     outputSchema: TutorChatOutputSchema,
   },
   async (input) => {
-    const { output } = await prompt(input);
+    // Reformat chat history for Handlebars compatibility
+    const formattedHistory = input.chatHistory.map(msg => {
+      if (msg.role === 'user') {
+        return { user: msg.content };
+      } else {
+        return { model: msg.content };
+      }
+    });
+
+    const { output } = await prompt({
+        ...input,
+        chatHistory: formattedHistory,
+    });
     return output!;
   }
 );
