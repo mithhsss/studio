@@ -2,15 +2,17 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Briefcase, FileText, Loader, Paperclip, Send, User, Bot, Mic, Video } from 'lucide-react';
+import { Briefcase, FileText, Loader, Paperclip, Send, User, Bot, Mic, Video, Trophy, RefreshCw } from 'lucide-react';
 import type { TutorChatHistory } from '@/app/page';
 import { useToast } from "@/hooks/use-toast";
 import { mockInterview } from '@/ai/flows/mock-interview-flow';
+import { getInterviewFeedback } from '@/ai/flows/get-interview-feedback-flow';
+import type { GetInterviewFeedbackOutput } from '@/ai/schemas/mock-interview-schemas';
 import { Label } from '@/components/ui/label';
+import { marked } from 'marked';
 
 const SetupView = ({ onStart, isLoading, jobDescription, setJobDescription, resumeText, setResumeText, resumeFileName, setResumeFileName }) => {
   const { toast } = useToast();
@@ -63,7 +65,20 @@ const SetupView = ({ onStart, isLoading, jobDescription, setJobDescription, resu
     }
   };
 
-  const canStart = jobDescription.trim() && resumeText.trim();
+  const isJobDescValid = jobDescription.trim().split(/\s+/).length >= 10 && !/^(good morning|good night|hello)$/i.test(jobDescription.trim());
+  const canStart = isJobDescValid && resumeText.trim();
+
+  const handleStartClick = () => {
+    if (!isJobDescValid) {
+        toast({ variant: "destructive", title: "Invalid Job Description", description: "Please provide a valid job description of at least 10 words." });
+        return;
+    }
+    if (!resumeText.trim()) {
+        toast({ variant: "destructive", title: "Resume Required", description: "Please upload your resume to start the interview." });
+        return;
+    }
+    onStart();
+  }
 
   return (
     <div className="max-w-lg mx-auto">
@@ -74,7 +89,7 @@ const SetupView = ({ onStart, isLoading, jobDescription, setJobDescription, resu
       <div className="space-y-4">
         <div>
           <Label htmlFor="job-desc" className="flex items-center gap-2 mb-1"><Briefcase size={16}/> Job Description</Label>
-          <Textarea id="job-desc" placeholder="Paste the job description here..." value={jobDescription} onChange={(e) => setJobDescription(e.target.value)} rows={8} />
+          <Textarea id="job-desc" placeholder="Paste the job description here (minimum 10 words)..." value={jobDescription} onChange={(e) => setJobDescription(e.target.value)} rows={8} />
         </div>
         <div>
           <Label htmlFor="resume-upload" className="flex items-center gap-2 mb-1"><FileText size={16}/> Your Resume</Label>
@@ -88,7 +103,7 @@ const SetupView = ({ onStart, isLoading, jobDescription, setJobDescription, resu
             <input id="resume-upload-input" type="file" className="hidden" onChange={handleResumeUpload} accept=".txt,.md,.pdf" />
           </div>
         </div>
-        <Button onClick={onStart} disabled={isLoading || !canStart} className="w-full !mt-6">
+        <Button onClick={handleStartClick} disabled={isLoading || !canStart} className="w-full !mt-6">
           {isLoading ? <Loader className="animate-spin" /> : 'Start Interview'}
         </Button>
       </div>
@@ -96,13 +111,13 @@ const SetupView = ({ onStart, isLoading, jobDescription, setJobDescription, resu
   );
 };
 
-const InterviewView = ({ chatHistory, onSendMessage, isLoading }) => {
+const InterviewView = ({ chatHistory, onSendMessage, onFinish, isLoading, feedback }) => {
     const [userInput, setUserInput] = useState('');
     const chatContainerRef = useRef<HTMLDivElement>(null);
   
     useEffect(() => {
         chatContainerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-    }, [chatHistory]);
+    }, [chatHistory, feedback]);
 
     const handleSend = () => {
         if (!userInput.trim()) return;
@@ -112,31 +127,49 @@ const InterviewView = ({ chatHistory, onSendMessage, isLoading }) => {
 
     return (
         <div className="h-[65vh] flex flex-col">
-            <div className="flex-grow overflow-y-auto pr-4 space-y-4">
+            <div ref={chatContainerRef} className="flex-grow overflow-y-auto pr-4 space-y-4">
                  {chatHistory.map((msg, index) => (
                     <div key={index} className={`flex gap-3 items-start ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                         {msg.role === 'model' && <div className="w-8 h-8 rounded-full bg-indigo-500 text-white flex items-center justify-center flex-shrink-0"><Bot size={16} /></div>}
-                        <p className={`max-w-md p-3 rounded-lg ${msg.role === 'user' ? 'bg-blue-100' : 'bg-gray-100'}`}>
-                           {msg.content}
-                        </p>
+                        <div className={`max-w-md p-3 rounded-lg prose prose-sm ${msg.role === 'user' ? 'bg-blue-100' : 'bg-gray-100'}`} dangerouslySetInnerHTML={{ __html: marked.parse(msg.content) }}></div>
                         {msg.role === 'user' && <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center flex-shrink-0"><User size={16} /></div>}
                     </div>
                 ))}
-                 {isLoading && <div className="flex justify-start"><Loader className="animate-spin text-indigo-500" /></div>}
+                 {isLoading && !feedback && <div className="flex justify-start"><Loader className="animate-spin text-indigo-500" /></div>}
+
+                 {feedback && (
+                    <div className="p-4 bg-green-50 border-l-4 border-green-500 rounded-r-lg my-4">
+                        <h4 className="font-bold text-green-700 flex items-center gap-2"><Trophy size={18}/> Interview Feedback</h4>
+                        <div className="prose prose-sm mt-2 space-y-3">
+                            <div><strong>Overall Performance:</strong> <div dangerouslySetInnerHTML={{ __html: marked.parse(feedback.overallPerformance) }} /></div>
+                            <div><strong>Clarity & Conciseness:</strong> <div dangerouslySetInnerHTML={{ __html: marked.parse(feedback.clarityAndConciseness) }} /></div>
+                            <div><strong>Relevance:</strong> <div dangerouslySetInnerHTML={{ __html: marked.parse(feedback.relevance) }} /></div>
+                            <div><strong>Strengths:</strong><ul>{feedback.strengths.map((s,i) => <li key={`s-${i}`} dangerouslySetInnerHTML={{ __html: marked.parse(s) }} />)}</ul></div>
+                            <div><strong>Areas for Improvement:</strong><ul>{feedback.areasForImprovement.map((a,i) => <li key={`a-${i}`} dangerouslySetInnerHTML={{ __html: marked.parse(a) }} />)}</ul></div>
+                            <div><strong>Next Steps:</strong><ul>{feedback.nextSteps.map((n,i) => <li key={`n-${i}`} dangerouslySetInnerHTML={{ __html: marked.parse(n) }} />)}</ul></div>
+                        </div>
+                    </div>
+                 )}
             </div>
+
             <div className="mt-4 flex-shrink-0">
-                <div className="flex items-center gap-2">
-                    <Input 
-                        value={userInput} 
-                        onChange={(e) => setUserInput(e.target.value)} 
-                        onKeyPress={e => e.key === 'Enter' && handleSend()} 
-                        placeholder="Your answer..."
-                        disabled={isLoading} 
-                    />
-                    <Button onClick={handleSend} disabled={isLoading}><Send size={16}/></Button>
-                    <Button variant="outline" size="icon" disabled={isLoading}><Mic size={16}/></Button>
-                    <Button variant="outline" size="icon" disabled={isLoading}><Video size={16}/></Button>
-                </div>
+                {feedback ? (
+                    <Button onClick={() => window.location.reload()} className="w-full"><RefreshCw size={16} className="mr-2"/> Start New Interview</Button>
+                ) : (
+                    <div className="flex items-center gap-2">
+                        <Input 
+                            value={userInput} 
+                            onChange={(e) => setUserInput(e.target.value)} 
+                            onKeyPress={e => e.key === 'Enter' && handleSend()} 
+                            placeholder="Your answer..."
+                            disabled={isLoading} 
+                        />
+                        <Button onClick={handleSend} disabled={isLoading}><Send size={16}/></Button>
+                        <Button onClick={onFinish} disabled={isLoading} variant="destructive"><Trophy size={16} /></Button>
+                        <Button variant="outline" size="icon" disabled={isLoading}><Mic size={16}/></Button>
+                        <Button variant="outline" size="icon" disabled={isLoading}><Video size={16}/></Button>
+                    </div>
+                )}
             </div>
         </div>
     );
@@ -170,11 +203,13 @@ const AIMockInterviewView: React.FC<AIMockInterviewViewProps> = ({
   setResumeFileName,
 }) => {
   const [isSessionActive, setIsSessionActive] = useState(false);
+  const [feedback, setFeedback] = useState<GetInterviewFeedbackOutput | null>(null);
   const { toast } = useToast();
 
   const startInterview = async () => {
     setIsLoading(true);
     setChatHistory([]);
+    setFeedback(null);
     try {
       const result = await mockInterview({
         resumeText,
@@ -208,6 +243,22 @@ const AIMockInterviewView: React.FC<AIMockInterviewViewProps> = ({
     }
   };
 
+  const finishInterview = async () => {
+    setIsLoading(true);
+    try {
+      const result = await getInterviewFeedback({
+          resumeText,
+          jobDescription,
+          chatHistory,
+      });
+      setFeedback(result);
+    } catch (err: any) {
+        toast({ variant: 'destructive', title: 'Feedback Error', description: err.message || 'Failed to generate feedback.' });
+    } finally {
+        setIsLoading(false);
+    }
+  };
+
 
   return (
     <div className="animate-in fade-in">
@@ -226,7 +277,9 @@ const AIMockInterviewView: React.FC<AIMockInterviewViewProps> = ({
             <InterviewView
                 chatHistory={chatHistory}
                 onSendMessage={sendMessage}
+                onFinish={finishInterview}
                 isLoading={isLoading}
+                feedback={feedback}
             />
         )}
       </div>
