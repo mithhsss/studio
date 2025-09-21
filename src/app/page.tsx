@@ -361,10 +361,10 @@ export default function Home() {
     const [finalizedIdea, setFinalizedIdea] = useState<any | null>(null);
     const [dragOverId, setDragOverId] = useState<number | null>(null);
     const [ideaFormData, setIdeaFormData] = useState<GenerateIdeasInput>({ 
-        subject: 'Annual company retreat', 
-        audience: 'Remote-first tech employees', 
-        constraints: 'Budget under $10k', 
-        other: 'Focus on mental wellness', 
+        subject: '', 
+        audience: '', 
+        constraints: '', 
+        other: '', 
         lens: 'What If?',
         detailedDescription: ''
     });
