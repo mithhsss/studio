@@ -30,12 +30,7 @@ Analyze the entire conversation provided in the chat history and generate a comp
 
 **Conversation History:**
 {{#each chatHistory}}
-{{#if this.user}}
-User: {{{this.user}}}
-{{/if}}
-{{#if this.model}}
-Tutor: {{{this.model}}}
-{{/if}}
+{{role}}: {{{content}}}
 {{/each}}
 
 Please provide the score and the detailed feedback in the required JSON format.`,
@@ -51,9 +46,9 @@ const getTutorFeedbackFlow = ai.defineFlow(
     // Reformat chat history for Handlebars compatibility
     const formattedHistory = input.chatHistory.map(msg => {
       if (msg.role === 'user') {
-        return { user: msg.content };
+        return { role: 'User', content: msg.content };
       } else {
-        return { model: msg.content };
+        return { role: 'Tutor', content: msg.content };
       }
     });
 
