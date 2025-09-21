@@ -38,7 +38,7 @@ Your task is to provide a detailed, constructive performance report based on the
 
 **Interview Transcript:**
 {{#each chatHistory}}
-{{role}}: {{{content}}}
+{{this.role}}: {{{this.content}}}
 {{/each}}
 
 **Instructions for Feedback Report:**
